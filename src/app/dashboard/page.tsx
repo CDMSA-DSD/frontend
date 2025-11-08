@@ -1,21 +1,83 @@
 "use client"
 
-import { useState, type FormEvent} from "react"
+import { useState, useEffect, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
 export default function OrganizationSettings() {
-  const [companyName, setCompanyName] = useState<string>("DSD 2025")
-  const [domain, setDomain] = useState<string>("fer.unizg.hr/rasip/dsd")
-  const [description, setDescription] = useState<string>("DSD 2025")
-  const [githubToken, setGithubToken] = useState<string>("##################")
+  const [companyName, setCompanyName] = useState("")
+  const [domain, setDomain] = useState("")
+  const [description, setDescription] = useState("")
+  const [githubToken, setGithubToken] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState("")
 
-  const handleSaveChanges = (e: FormEvent<HTMLFormElement>) => {
+  const API_BASE = "http://localhost:8080/org_details"
+
+  useEffect(() => {
+    const fetchOrg = async () => {
+      try {
+        const res = await fetch(API_BASE)
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(`GET ${res.status} ${res.statusText} — ${text}`)
+        }
+        const data = await res.json()
+        setCompanyName(data.companyName || data.name || "")
+        setDomain(data.domain || "")
+        setDescription(data.description || "")
+        setGithubToken(data.githubToken || "")
+      } catch (err) {
+        console.error(err)
+        setMessage("Failed to load organization data.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOrg()
+  }, [])
+
+  const handleSaveChanges = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log("Saving changes:", { companyName, domain, description, githubToken })
+    setSaving(true)
+    setMessage("")
+
+    try {
+      const res = await fetch(API_BASE, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName,  
+          domain,
+          description,
+          githubToken,
+        }),
+
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`PUT ${res.status} ${res.statusText} — ${text}`)
+      }
+
+      const updated = await res.json()
+      setCompanyName(updated.name ?? updated.companyName ?? "")
+      setDomain(updated.domain ?? "")
+      setDescription(updated.description ?? "")
+      setGithubToken(updated.githubToken ?? "")
+      setMessage("Changes saved successfully!")
+    } catch (err) {
+      console.error(err)
+      setMessage("Error while saving changes.")
+    } finally {
+      setSaving(false)
+    }
   }
+
+  if (loading) return <div className="p-8 text-center">Loading...</div>
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -76,10 +138,17 @@ export default function OrganizationSettings() {
 
           <Button
             type="submit"
+            disabled={saving}
             className="h-12 w-full bg-[#6366f1] text-white hover:bg-[#5558e3]"
           >
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
+
+          {message && (
+            <p className="text-sm text-center mt-4 text-muted-foreground">
+              {message}
+            </p>
+          )}
         </form>
       </div>
     </div>
