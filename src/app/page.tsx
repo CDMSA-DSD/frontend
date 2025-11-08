@@ -1,65 +1,287 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+import Background from "../components/background"
+import React, {useState} from "react";
+
+export default function Home(): React.JSX.Element {
+    const [showNewOrganizationModal, setShowNewOrganizationModal] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    return (
+        <div style={{backgroundColor: "white", height: "100vh"}}>
+            <Background/>
+
+            <div className="flex flex-col gap-4 justify-center items-center h-screen max-w-2xl mx-auto">
+                {/* Made with Figma */}
+                <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g opacity="0.6">
+                        <line y1="-1.50402" x2="26.6757" y2="-1.50402" transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71" stroke-opacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="46.9282" y2="-1.50402" transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71" stroke-opacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="46.6837" y2="-1.50402" transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71" stroke-opacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="38.7414" y2="-1.50402" transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71" stroke-opacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="41.2294" y2="-1.50402" transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71" stroke-opacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="40.2477" y2="-1.50402" transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71" stroke-opacity="0.47" strokeWidth="3.00805"/>
+                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8"/>
+                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF"/>
+                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4"/>
+                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF"/>
+                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF"/>
+                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA"/>
+                    </g>
+                </svg>
+
+                <h1 className="text-8xl text-black font-bold">Welcome</h1>
+
+                <h2 className="text-3xl text-[#625B71] text-center">Get started by creating a new organization or
+                    logging into your account</h2>
+                <div className="flex gap-3">
+                    <button className="drop-shadow-xl lg:w-[407px] h-[85px] rounded-[24px] bg-[#5E50A4] text-white"
+                            onClick={() => setShowNewOrganizationModal(true)}>
+                        Create an Organization
+                    </button>
+                    <button
+                        className="drop-shadow-xl lg:w-[245px] h-[85px] rounded-[24px] text-[#4F378A] bg-[#DFDDFF]"
+                        onClick={() => setShowLoginModal(true)}
+                    >Login
+                    </button>
+                </div>
+            </div>
+            <NewOrganizationModal open={showNewOrganizationModal} onClose={() => setShowNewOrganizationModal(false)}/>
+            <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)}/>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+    );
+}
+
+
+
+function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => void; })
+     : React.JSX.Element | null {
+
+    type NewOrganizationFormData = {
+        admin: {
+            name: string;
+            surname: string;
+            email: string;
+            password: string;
+        };
+        organization: {
+            companyName: string;
+            domain: string;
+            description: string;
+        };
+    };
+
+    const [step, setStep] = useState<1 | 2>(1);
+    const [submitting, setSubmitting] = useState(false);
+
+    const [formData, setFormData] = useState<NewOrganizationFormData>({
+        admin: { name: "", surname: "", email: "", password: "" },
+        organization: { companyName: "", domain: "", description: "" },
+    });
+
+    const setAdmin = (patch: Partial<NewOrganizationFormData["admin"]>) =>
+        setFormData((prev) => ({
+            ...prev,
+            admin: { ...prev.admin, ...patch },
+        }));
+
+    const setOrganization = (patch: Partial<NewOrganizationFormData["organization"]>) =>
+        setFormData((prev) => ({
+            ...prev,
+            organization: { ...prev.organization, ...patch },
+        }));
+
+    async function handleSubmit() {
+        try {
+            setSubmitting(true);
+            const res = await fetch("/api/organizations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            });
+            if (!res.ok) throw new Error("Erreur serveur");
+            console.log("✅ Données envoyées :", formData);
+            onClose();
+            setStep(1);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    if(!open) return null
+    return (
+        <div className="flex flex-col items-center justify-center h-screen bg-white">
+            <div
+                    className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md "
+                    onClick={() => {
+                        onClose();
+                        setStep(1);
+                    }}
+                >
+                    <div
+                        className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="text-3xl font-bold text-center text-black">
+                            Create an Organization
+                        </h2>
+
+                        {step === 1 && (
+                            <div>
+                                <p className="mt-3 text-center font-semibold text-black">
+                                    Create your admin account first
+                                </p>
+                                <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden">
+                                    <div
+                                        className="h-3 bg-[#5E50A4]"
+                                        style={{ width: "55%" }}
+                                    />
+                                </div>
+
+                                <form
+                                    className="mt-6 flex flex-col gap-5"
+                                    onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
+                                >
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <label className="block text-sm font-semibold text-black mb-1">
+                                                Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.admin.name}
+                                                onChange={(e) => setAdmin({ name: e.target.value })}
+                                                className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                                placeholder="John"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-sm font-semibold text-black mb-1">
+                                                Surname
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.admin.surname}
+                                                onChange={(e) => setAdmin({ surname: e.target.value })}
+                                                className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                                placeholder="Doe"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={formData.admin.email}
+                                            onChange={(e) => setAdmin({ email: e.target.value })}
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="john@example.com"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={formData.admin.password}
+                                            onChange={(e) => setAdmin({ password: e.target.value })}
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="********"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setStep(2)}
+                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                    >
+                                        Next
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div>
+                                <p className="mt-3 text-center font-semibold text-black">
+                                    Enter your organization details
+                                </p>
+                                <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden flex">
+                                    <div
+                                        className="h-3 bg-[#5E50A4] ml-auto"
+                                        style={{ width: "55%" }}
+                                    />
+                                </div>
+
+                                <form
+                                    className="mt-6 flex flex-col gap-5"
+                                    onSubmit={(e) => e.preventDefault()}
+                                >
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Company name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.organization.companyName}
+                                            onChange={(e) =>
+                                                setOrganization({ companyName: e.target.value })
+                                            }
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="A company"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Domain
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={formData.organization.domain}
+                                            onChange={(e) =>
+                                                setOrganization({ domain: e.target.value })
+                                            }
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="example.com"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Description
+                                        </label>
+                                        <textarea
+                                            value={formData.organization.description}
+                                            onChange={(e) =>
+                                                setOrganization({ description: e.target.value })
+                                            }
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            rows={3}
+                                            placeholder="Short description"
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={handleSubmit}
+                                            className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                        >
+                                            {submitting ? "Creating..." : "Create Organization"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                </div>
         </div>
-      </main>
-    </div>
-  );
+    );
 }
