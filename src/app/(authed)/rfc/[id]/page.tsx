@@ -73,6 +73,13 @@ interface AlternativeForm {
   consInput: string
 }
 
+interface AdrFormData {
+  title: string
+  context: string
+  decision: string
+  consequences: string
+}
+
 const formatDate = (isoString: string): string => {
   const date = new Date(isoString);
   return date.toLocaleDateString(undefined, {
@@ -118,6 +125,17 @@ export default function RFCDetailPage() {
   const [showNewAlternativeModal, setShowNewAlternativeModal] = useState(false)
   const [isSubmittingAlternative, setIsSubmittingAlternative] = useState(false)
   const [alternativeForm, setAlternativeForm] = useState<AlternativeForm>({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
+
+  const [isClosing, setIsClosing] = useState(false)
+  const [showAdrModal, setShowAdrModal] = useState(false)
+  const [winningAlternative, setWinningAlternative] = useState<Alternative | null>(null)
+  const [isSubmittingAdr, setIsSubmittingAdr] = useState(false)
+  const [adrFormData, setAdrFormData] = useState<AdrFormData>({
+    title: '',
+    context: '',
+    decision: '',
+    consequences: ''
+  })
 
   const [rfcData, setRfcData] = useState<BackendRFC | null>(null)
   const [loading, setLoading] = useState(true)
@@ -258,6 +276,117 @@ export default function RFCDetailPage() {
     }
   }
 
+const handleCloseNoDecision = async () => {
+    if (isClosing || !rfcId) return;
+
+    if (!confirm('Are you sure you want to close this RFC without a decision? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsClosing(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': '1'
+        },
+        body: JSON.stringify({
+          "alternativeId": null
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to close RFC (status ${res.status})`);
+      }
+      await fetchRfcData();
+    } catch (e) {
+      console.error('Closing RFC failed:', e);
+      alert('Failed to close RFC. See console for details.');
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
+  const handleSelectAsDecision = (alt: Alternative) => {
+    if (!rfcData) return;
+    
+    setWinningAlternative(alt);
+    
+    const { context: rfcContext } = parseDescription(rfcData.description);
+    
+    setAdrFormData({
+      title: `ADR: ${alt.title}`,
+      context: rfcContext || `Context from RFC #${rfcId}: ${rfcData.title}`,
+      decision: `We have decided to implement the "${alt.title}" alternative.\n\nDetails:\n${alt.fullText}`,
+      consequences: ''
+    });
+    
+    setShowAdrModal(true);
+  };
+
+  const handleSubmitAdr = async () => {
+    if (isSubmittingAdr || !winningAlternative || !rfcId) return;
+
+    const payload = {
+      ...adrFormData,
+      status: 'DRAFT',
+      rfcId: parseInt(rfcId as string, 10)
+    };
+
+    // Simple validation
+    if (!payload.title || !payload.context || !payload.decision || !payload.consequences) {
+      alert('Please fill in all ADR fields (Title, Context, Decision, Consequences).');
+      return;
+    }
+
+    setIsSubmittingAdr(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': '1'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to create ADR (status ${res.status})`);
+      }
+
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': '1'
+          },
+          body: JSON.stringify({
+            "alternativeId": 1 // placeholder while we have to use two endpoints for closing with decision
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to close RFC (status ${res.status})`);
+        }
+      } catch (e) {
+        console.error('Closing RFC failed:', e);
+        alert('Failed to close RFC. See console for details.');
+      }
+
+      setShowAdrModal(false);
+      setWinningAlternative(null);
+      await fetchRfcData();
+
+    } catch (e) {
+      console.error('Failed to create ADR:', e);
+      alert('Failed to create ADR. See console for details.');
+    } finally {
+      setIsSubmittingAdr(false);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-white p-8 text-center text-xl font-medium">Loading RFC details...</div>
   }
@@ -295,6 +424,16 @@ export default function RFCDetailPage() {
             )}
           </div>
         </section>
+        
+        {rfcData.status === 'UNDER_REVIEW' && (
+          <button
+            onClick={handleCloseNoDecision}
+            disabled={isClosing}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {isClosing ? 'Closing...' : 'Close RFC (No Decision)'}
+          </button>
+        )}
       </div>
     )
   }
@@ -379,6 +518,28 @@ export default function RFCDetailPage() {
               <span className="font-medium">{alt.downvotes}</span>
             </button>
           </div> */}
+
+          {rfcData.status === 'UNDER_REVIEW' && !isExpanded && (
+            <div className="mt-4">
+              <button
+                onClick={() => handleSelectAsDecision(alt)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+              >
+                Select as Decision & Close
+              </button>
+            </div>
+          )}
+
+          {rfcData.status === 'UNDER_REVIEW' && isExpanded && (
+            <div className="mt-6 border-t pt-4">
+              <button
+                onClick={() => handleSelectAsDecision(alt)}
+                className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+              >
+                Select as Decision & Close RFC
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Pros/Cons */}
@@ -434,13 +595,13 @@ export default function RFCDetailPage() {
         <>
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold text-gray-900">Alternatives ({alternatives.length})</h3>
-            <button
+            { rfcData.status === 'UNDER_REVIEW' ? (<button
               onClick={() => setShowNewAlternativeModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
             >
               <Plus className="w-5 h-5" />
               Add Alternative
-            </button>
+            </button>) : null}
           </div>
           
           {alternatives.length > 0 ? (
@@ -504,6 +665,117 @@ export default function RFCDetailPage() {
       </div>
     </div>
   )
+
+const renderCreateAdrModal = () => {
+    if (!showAdrModal || !winningAlternative) return null;
+
+    return (
+      <div
+        onClick={() => !isSubmittingAdr && setShowAdrModal(false)}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 overflow-y-auto"
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-8 border-2 border-violet-600"
+        >
+          {/* Modal Header */}
+          <div className="p-6 border-b relative">
+            <h2 className="text-2xl font-bold text-center text-gray-900">Create New ADR from Decision</h2>
+            <p className="text-center text-gray-600 mt-1">
+              Finalizing decision for alternative: <strong>{winningAlternative.title}</strong>
+            </p>
+            <button 
+              onClick={() => !isSubmittingAdr && setShowAdrModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+            </button>
+          </div>
+
+          {/* Modal Body */}
+          <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+            {/* Title */}
+            <div>
+              <label htmlFor="adr-title" className="block text-sm font-semibold text-gray-900 mb-2">
+                Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="adr-title"
+                value={adrFormData.title}
+                onChange={(e) => setAdrFormData({ ...adrFormData, title: e.target.value })}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                disabled={isSubmittingAdr}
+              />
+            </div>
+
+            {/* Context */}
+            <div>
+              <label htmlFor="adr-context" className="block text-sm font-semibold text-gray-900 mb-2">
+                Context <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="adr-context"
+                value={adrFormData.context}
+                onChange={(e) => setAdrFormData({ ...adrFormData, context: e.target.value })}
+                rows={5}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                disabled={isSubmittingAdr}
+              />
+            </div>
+
+            {/* Decision */}
+            <div>
+              <label htmlFor="adr-decision" className="block text-sm font-semibold text-gray-900 mb-2">
+                Decision <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="adr-decision"
+                value={adrFormData.decision}
+                onChange={(e) => setAdrFormData({ ...adrFormData, decision: e.target.value })}
+                rows={5}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                disabled={isSubmittingAdr}
+              />
+            </div>
+
+            {/* Consequences */}
+            <div>
+              <label htmlFor="adr-consequences" className="block text-sm font-semibold text-gray-900 mb-2">
+                Consequences <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="adr-consequences"
+                value={adrFormData.consequences}
+                onChange={(e) => setAdrFormData({ ...adrFormData, consequences: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                disabled={isSubmittingAdr}
+                placeholder="Describe the consequences of this decision..."
+              />
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
+            <button
+              onClick={() => setShowAdrModal(false)}
+              className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+              disabled={isSubmittingAdr}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmitAdr}
+              className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400"
+              disabled={isSubmittingAdr || !adrFormData.title || !adrFormData.context || !adrFormData.decision || !adrFormData.consequences}
+            >
+              {isSubmittingAdr ? 'Saving ADR...' : 'Save ADR & Close RFC'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-white p-8">
@@ -690,6 +962,7 @@ export default function RFCDetailPage() {
           </div>
         </div>
       )}
+      {renderCreateAdrModal()}
     </div>
   )
 }
