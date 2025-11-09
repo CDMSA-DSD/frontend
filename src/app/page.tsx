@@ -44,9 +44,9 @@ export default function Home(): React.JSX.Element {
                 </svg>
 
                 <h1 className="text-8xl text-black font-bold">Welcome</h1>
-
-                <h2 className="text-3xl text-[#625B71] text-center">Get started by creating a new organization or
-                    logging into your account</h2>
+                <h2 className="text-xl text-[#5E50A4] text-center">The RFC asked for comments, but the ADR made the decision. Classic architecture relationship drama.</h2>
+                <h3 className="text-1xl text-[#625B71] text-center">Get started by creating a new organization or
+                    logging into your account and keep a consistent track of decisions you take.</h3>
                 <div className="flex gap-3">
                     <button className="drop-shadow-xl lg:w-[407px] h-[85px] rounded-[24px] bg-[#5E50A4] text-white"
                             onClick={() => setShowNewOrganizationModal(true)}>
