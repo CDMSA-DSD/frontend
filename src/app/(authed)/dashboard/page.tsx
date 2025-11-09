@@ -67,13 +67,13 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen p-8 bg-background">
-      <h1 className="text-4xl font-bold mb-8">Welcome</h1>
+      <h1 className="text-4xl font-bold mb-8 text-gray-900">Welcome</h1>
 
       {/* Recent RFCs */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-semibold">Recent RFCs</h2>
-          <Link href="/rfcs" className="text-sm text-purple-600 hover:text-purple-700 hover:underline">
+          <Link href="/rfc" className="text-sm text-purple-600 hover:text-purple-700 hover:underline">
             View all &gt;
           </Link>
         </div>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             {rfcs.map((rfc, i) => (
               <Link
                 key={itemKey(rfc, i)}
-                href={`/rfcs/${rfc.id}`}
+                href={`/rfc/${rfc.id}`}
                 className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
               >
                 <span className="text-sm font-medium text-foreground">{rfc.title}</span>
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-semibold">Recent ADRs</h2>
-          <Link href="/adrs" className="text-sm text-purple-600 hover:text-purple-700 hover:underline">
+          <Link href="/adr" className="text-sm text-purple-600 hover:text-purple-700 hover:underline">
             View all &gt;
           </Link>
         </div>
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
             {adrs.map((adr, i) => (
               <Link
                 key={itemKey(adr, i)}
-                href={`/adrs/${adr.id}`}
+                href={`/adr/${adr.id}`}
                 className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
               >
                 <span className="text-sm font-medium text-foreground">{adr.title}</span>

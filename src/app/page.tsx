@@ -18,22 +18,22 @@ export default function Home(): React.JSX.Element {
                     <g opacity="0.6">
                         <line y1="-1.50402" x2="26.6757" y2="-1.50402"
                               transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
-                              stroke-opacity="0.47" strokeWidth="3.00805"/>
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="46.9282" y2="-1.50402"
                               transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
-                              stroke-opacity="0.47" strokeWidth="3.00805"/>
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="46.6837" y2="-1.50402"
                               transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
-                              stroke-opacity="0.47" strokeWidth="3.00805"/>
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="38.7414" y2="-1.50402"
                               transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
-                              stroke-opacity="0.47" strokeWidth="3.00805"/>
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="41.2294" y2="-1.50402"
                               transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
-                              stroke-opacity="0.47" strokeWidth="3.00805"/>
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="40.2477" y2="-1.50402"
                               transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
-                              stroke-opacity="0.47" strokeWidth="3.00805"/>
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8"/>
                         <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF"/>
                         <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4"/>
@@ -44,16 +44,16 @@ export default function Home(): React.JSX.Element {
                 </svg>
 
                 <h1 className="text-8xl text-black font-bold">Welcome</h1>
-                <h2 className="text-xl text-[#5E50A4] text-center">A service that keep all the issues and discussions on a RFC and your decisions in an ADR.</h2>
+                <h2 className="text-xl text-[#5E50A4] text-center">A service that keep all your organizations architectural issues and discussions on a RFC and your decisions in an ADR.</h2>
                 <h3 className="text-1xl text-[#625B71] text-center">Get started by creating a new organization or
                     logging into your account.</h3>
                 <div className="flex gap-3">
-                    <button className="drop-shadow-xl lg:w-[407px] h-[85px] rounded-[24px] bg-[#5E50A4] text-white"
+                    <button className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                             onClick={() => setShowNewOrganizationModal(true)}>
                         Create an Organization
                     </button>
                     <button
-                        className="drop-shadow-xl lg:w-[245px] h-[85px] rounded-[24px] text-[#4F378A] bg-[#DFDDFF]"
+                        className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] text-[#4F378A] bg-[#DFDDFF] hover:bg-violet-300 transition-colors"
                         onClick={() => setShowLoginModal(true)}
                     >Login
                     </button>
@@ -223,7 +223,7 @@ export default function Home(): React.JSX.Element {
 
                                     <button
                                         type="submit"
-                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                                     >
                                         Next
                                     </button>
@@ -295,7 +295,7 @@ export default function Home(): React.JSX.Element {
                                     <div className="flex gap-3">
                                         <button
                                             type="submit"
-                                            className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                            className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                                         >
                                             {submitting ? "Creating..." : "Create Organization"}
                                         </button>
@@ -390,7 +390,7 @@ export default function Home(): React.JSX.Element {
 
                             <button
                                 type="submit"
-                                className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                             >
                                 Login
                             </button>
