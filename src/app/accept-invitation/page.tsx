@@ -1,7 +1,7 @@
 "use client"
 
 import Background from "../../components/background"
-import React, {useState} from "react";
+import React, {use, useState} from "react";
 import {useRouter} from "next/navigation";
 import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -16,6 +16,7 @@ export default function AcceptInvitation() : React.JSX.Element {
         password: string,
     }
 
+    // For the moment, let says everyone is from the same org.
     const [formData, setFormData] = useState<RegisterFormData>({
         org: { id : 1},
         name: "",
@@ -23,27 +24,28 @@ export default function AcceptInvitation() : React.JSX.Element {
         email: "",
         password: "",
     })
+    const [errorMessage, setErrorMessage] = useState<string | null>();
 
-
+    /**
+     * TODO Make this version generic.
+     * Handle the submit form and redirect to the dashboard if ok
+     * @param e The form, must be used to prevent reloading
+     *
+     * @alpha
+     */
     async function handleSubmit(e : React.FormEvent<HTMLFormElement>) : Promise<void> {
         e.preventDefault(); // Prevent reloading
-
-        // Form Validity
-        const form = e.currentTarget;
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(formData),
             });
-            if (!res.ok) throw new Error(res.statusText);
-            console.log("✅ Données envoyées :", formData);
-
+            if (!res.ok){
+                console.log(res.statusText);
+                await res.json().then(data => setErrorMessage(data.message));
+                return;
+            }
             router.push("/dashboard");
         } catch (err) {
             console.error(err);
@@ -58,6 +60,14 @@ export default function AcceptInvitation() : React.JSX.Element {
                     <div
                         className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20 gap-4"
                     >
+                        {errorMessage && (
+                            <div
+                                role="alert"
+                                className="mb-4 flex items-start justify-between rounded-lg border border-red-500 bg-red-50 px-4 py-3 text-red-700"
+                            >
+                                <p className="text-sm font-medium">{errorMessage}</p>
+                            </div>
+                        )}
                         <h2 className="text-3xl font-bold text-center text-black">
                             Register
                         </h2>
