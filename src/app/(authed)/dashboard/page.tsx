@@ -67,7 +67,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen p-8 bg-background">
-      <h1 className="text-4xl font-bold mb-8">Welcome</h1>
+      <h1 className="text-4xl font-bold mb-8 text-gray-900">Welcome</h1>
 
       {/* Recent RFCs */}
       <section className="mb-8">

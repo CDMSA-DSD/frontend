@@ -44,16 +44,16 @@ export default function Home(): React.JSX.Element {
                 </svg>
 
                 <h1 className="text-8xl text-black font-bold">Welcome</h1>
-                <h2 className="text-xl text-[#5E50A4] text-center">A service that keep all the issues and discussions on a RFC and your decisions in an ADR.</h2>
+                <h2 className="text-xl text-[#5E50A4] text-center">A service that keep all your organizations architectural issues and discussions on a RFC and your decisions in an ADR.</h2>
                 <h3 className="text-1xl text-[#625B71] text-center">Get started by creating a new organization or
                     logging into your account.</h3>
                 <div className="flex gap-3">
-                    <button className="drop-shadow-xl lg:w-[407px] h-[85px] rounded-[24px] bg-[#5E50A4] text-white"
+                    <button className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                             onClick={() => setShowNewOrganizationModal(true)}>
                         Create an Organization
                     </button>
                     <button
-                        className="drop-shadow-xl lg:w-[245px] h-[85px] rounded-[24px] text-[#4F378A] bg-[#DFDDFF]"
+                        className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] text-[#4F378A] bg-[#DFDDFF] hover:bg-violet-300 transition-colors"
                         onClick={() => setShowLoginModal(true)}
                     >Login
                     </button>
@@ -223,7 +223,7 @@ export default function Home(): React.JSX.Element {
 
                                     <button
                                         type="submit"
-                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                                     >
                                         Next
                                     </button>
@@ -295,7 +295,7 @@ export default function Home(): React.JSX.Element {
                                     <div className="flex gap-3">
                                         <button
                                             type="submit"
-                                            className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                            className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                                         >
                                             {submitting ? "Creating..." : "Create Organization"}
                                         </button>
@@ -390,7 +390,7 @@ export default function Home(): React.JSX.Element {
 
                             <button
                                 type="submit"
-                                className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                             >
                                 Login
                             </button>

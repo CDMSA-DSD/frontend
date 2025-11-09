@@ -201,7 +201,7 @@ function ADRSidebar({ adr, rfc, onEdit, onApprove }: {
                 <div className="flex size-5 items-center justify-center rounded bg-green-500">
                   <Check className="size-3 text-white" />
                 </div>
-                <span className="text-muted-foreground">
+                <span className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
                   Approved on {new Date(adr.updatedAt).toLocaleDateString()}
                 </span>
               </>
@@ -413,31 +413,29 @@ export default function AdrDetailPage() {
   const title = adr.title ?? `ADR #${adr.id}`
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-background px-6 py-5">
-        <h1 className="mx-auto max-w-5xl text-center text-2xl font-semibold">{title}</h1>
-      </header>
+    <div className="min-h-screen bg-white p-8">
+      <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">{title}</h1>
 
       <div className="mx-auto flex max-w-6xl">
         <main className="flex-1 p-8">
           <div className="space-y-10">
             <section>
-              <h2 className="mb-4 text-2xl font-semibold text-purple-600">Context</h2>
-              <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+              <h2 className="text-2xl font-semibold text-violet-700 mb-4">Context</h2>
+              <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
                 {adr.context ? adr.context.split('\n').map((p, i) => <p key={i}>{p}</p>) : "—"}
               </div>
             </section>
 
             <section>
-              <h2 className="mb-4 text-2xl font-semibold text-purple-600">Decision</h2>
-              <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+              <h2 className="text-2xl font-semibold text-violet-700 mb-4">Decision</h2>
+              <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
                 {adr.decision ? adr.decision.split('\n').map((p, i) => <p key={i}>{p}</p>) : "—"}
               </div>
             </section>
 
             <section>
-              <h2 className="mb-4 text-2xl font-semibold text-purple-600">Consequences</h2>
-              <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+              <h2 className="text-2xl font-semibold text-violet-700 mb-4">Consequences</h2>
+              <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
                 {adr.consequences ? adr.consequences.split('\n').map((p, i) => <p key={i}>{p}</p>) : "—"}
               </div>
             </section>

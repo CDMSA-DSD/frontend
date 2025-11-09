@@ -81,11 +81,11 @@ export default function OrganizationSettings() {
 
   return (
     <div className="min-h-screen bg-background p-8">
-      <div className="mx-auto max-w-md">
-        <h1 className="mb-8 text-3xl font-normal text-foreground">
+        <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">
           Manage the organization's settings here
         </h1>
 
+      <div className="max-w-md">
         <form onSubmit={handleSaveChanges} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="company-name" className="text-sm font-normal">
@@ -136,13 +136,13 @@ export default function OrganizationSettings() {
             />
           </div>
 
-          <Button
+          <button
             type="submit"
             disabled={saving}
-            className="h-12 w-full bg-[#6366f1] text-white hover:bg-[#5558e3]"
+            className="h-12 w-full bg-[#5E50A4] text-white rounded-lg hover:bg-violet-700 transition-colors"
           >
             {saving ? "Saving..." : "Save Changes"}
-          </Button>
+          </button>
 
           {message && (
             <p className="text-sm text-center mt-4 text-muted-foreground">

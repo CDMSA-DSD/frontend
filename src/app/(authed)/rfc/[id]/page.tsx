@@ -363,7 +363,7 @@ const handleCloseNoDecision = async () => {
             'X-User-Id': '1'
           },
           body: JSON.stringify({
-            "alternativeId": 1 // placeholder while we have to use two endpoints for closing with decision
+            "alternativeId": winningAlternative.id
           })
         });
 
