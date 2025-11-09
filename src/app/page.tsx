@@ -68,7 +68,6 @@ function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => v
     : React.JSX.Element | null {
     const router = useRouter();
 
-
     type NewOrganizationFormData = {
         orgName: string,
         orgDomain: string,
@@ -107,7 +106,7 @@ function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => v
             if (!res.ok) throw new Error("Erreur serveur");
             console.log("✅ Données envoyées :", formData);
 
-            await router.push("/dashboard");
+            router.push("/dashboard");
         } catch (err) {
             console.error(err);
         } finally {
