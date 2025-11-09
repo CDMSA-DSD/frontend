@@ -3,6 +3,7 @@
 import Background from "../components/background"
 import React, {useState} from "react";
 import {useRouter} from "next/navigation";
+import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export default function Home(): React.JSX.Element {
     const [showNewOrganizationModal, setShowNewOrganizationModal] = useState(false);
@@ -62,108 +63,107 @@ export default function Home(): React.JSX.Element {
             <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)}/>
         </div>
     );
-}
 
-function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => void; })
-    : React.JSX.Element | null {
-    const router = useRouter();
+    function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => void; })
+        : React.JSX.Element | null {
+        const router: AppRouterInstance = useRouter();
 
-    type NewOrganizationFormData = {
-        orgName: string,
-        orgDomain: string,
-        orgDescription: string,
+        type NewOrganizationFormData = {
+            orgName: string,
+            orgDomain: string,
+            orgDescription: string,
 
-        adminName: string,
-        adminUsername: string,
-        adminEmail: string,
-        adminPassword: string,
-    };
+            adminName: string,
+            adminUsername: string,
+            adminEmail: string,
+            adminPassword: string,
+        };
 
-    const [step, setStep] = useState<1 | 2>(1);
-    const [submitting, setSubmitting] = useState(false);
-    const [formData, setFormData] = useState<NewOrganizationFormData>(
-        {
-            orgName: '',
-            orgDomain: '',
-            orgDescription: '',
+        const [step, setStep] = useState<1 | 2>(1);
+        const [submitting, setSubmitting] = useState(false);
+        const [formData, setFormData] = useState<NewOrganizationFormData>(
+            {
+                orgName: '',
+                orgDomain: '',
+                orgDescription: '',
 
-            adminName: '',
-            adminUsername: '',
-            adminEmail: '',
-            adminPassword: '',
+                adminName: '',
+                adminUsername: '',
+                adminEmail: '',
+                adminPassword: '',
+            }
+        );
+
+        async function handleSubmit() {
+            try {
+                setSubmitting(true);
+                console.log(process.env.NEXT_PUBLIC_BACKEND_URL + "/orgs")
+                const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/orgs", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(formData),
+                });
+                if (!res.ok) throw new Error("Erreur serveur");
+                console.log("✅ Données envoyées :", formData);
+
+                router.push("/dashboard");
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setSubmitting(false);
+            }
         }
-    );
 
-    async function handleSubmit() {
-        try {
-            setSubmitting(true);
-            console.log(process.env.NEXT_PUBLIC_BACKEND_URL + "/orgs")
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/orgs", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(formData),
-            });
-            if (!res.ok) throw new Error("Erreur serveur");
-            console.log("✅ Données envoyées :", formData);
-
-            router.push("/dashboard");
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setSubmitting(false);
-        }
-    }
-
-    if (!open) return null
-    return (
-        <div className="flex flex-col items-center justify-center h-screen bg-white">
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md "
-                onClick={() => {
-                    onClose();
-                    setStep(1);
-                }}
-            >
+        if (!open) return null
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-white">
                 <div
-                    className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
-                    onClick={(e) => e.stopPropagation()}
+                    className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md "
+                    onClick={() => {
+                        onClose();
+                        setStep(1);
+                    }}
                 >
-                    <h2 className="text-3xl font-bold text-center text-black">
-                        Create an Organization
-                    </h2>
+                    <div
+                        className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="text-3xl font-bold text-center text-black">
+                            Create an Organization
+                        </h2>
 
-                    {step === 1 && (
-                        <div>
-                            <p className="mt-3 text-center font-semibold text-black">
-                                Create your admin account first
-                            </p>
-                            <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden">
-                                <div
-                                    className="h-3 bg-[#5E50A4]"
-                                    style={{width: "55%"}}
-                                />
-                            </div>
+                        {step === 1 && (
+                            <div>
+                                <p className="mt-3 text-center font-semibold text-black">
+                                    Create your admin account first
+                                </p>
+                                <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden">
+                                    <div
+                                        className="h-3 bg-[#5E50A4]"
+                                        style={{width: "55%"}}
+                                    />
+                                </div>
 
-                            <form
-                                className="mt-6 flex flex-col gap-5 text-black"
-                                onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
-                            >
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-semibold text-black mb-1">
-                                            Name
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.adminName}
-                                            onChange={(e) => {
-                                                setFormData({...formData, adminName: e.currentTarget.value})
-                                            }}
-                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                            placeholder="John"
-                                        />
-                                    </div>
-                                    {/* <div className="flex-1">
+                                <form
+                                    className="mt-6 flex flex-col gap-5 text-black"
+                                    onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
+                                >
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <label className="block text-sm font-semibold text-black mb-1">
+                                                Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.adminName}
+                                                onChange={(e) => {
+                                                    setFormData({...formData, adminName: e.currentTarget.value})
+                                                }}
+                                                className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                                placeholder="John"
+                                            />
+                                        </div>
+                                        {/* <div className="flex-1">
                                             <label className="block text-sm font-semibold text-black mb-1">
                                                 Surname
                                             </label>
@@ -175,229 +175,237 @@ function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => v
                                                 placeholder="Doe"
                                             />
                                         </div> */}
-                                </div>
+                                    </div>
 
-                                <div>
-                                    <label className="block text-sm font-semibold text-black mb-1">
-                                        Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={formData.adminEmail}
-                                        onChange={(e) => {
-                                            setFormData({...formData, adminEmail: e.currentTarget.value, adminUsername: e.currentTarget.value});
-                                        }}
-                                        className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                        placeholder="john@example.com"
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={formData.adminEmail}
+                                            onChange={(e) => {
+                                                setFormData({...formData, adminEmail: e.currentTarget.value, adminUsername: e.currentTarget.value});
+                                            }}
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="john@example.com"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={formData.adminPassword}
+                                            onChange={(e) => setFormData({
+                                                ...formData,
+                                                adminPassword: e.currentTarget.value
+                                            })}
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="********"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        onClick={() => setStep(2)}
+                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                    >
+                                        Next
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {step === 2 && (
+                            <div>
+                                <p className="mt-3 text-center font-semibold text-black">
+                                    Enter your organization details
+                                </p>
+                                <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden flex">
+                                    <div
+                                        className="h-3 bg-[#5E50A4] ml-auto"
+                                        style={{width: "55%"}}
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-semibold text-black mb-1">
-                                        Password
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={formData.adminPassword}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            adminPassword: e.currentTarget.value
-                                        })}
-                                        className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                        placeholder="********"
-                                    />
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setStep(2)}
-                                    className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                <form
+                                    className="mt-6 flex flex-col gap-5 text-black"
+                                    onSubmit={(e) => e.preventDefault()}
                                 >
-                                    Next
-                                </button>
-                            </form>
-                        </div>
-                    )}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Company name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.orgName}
+                                            onChange={(e) =>
+                                                setFormData({...formData, orgName: e.currentTarget.value})
+                                            }
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="A company"
+                                        />
+                                    </div>
 
-                    {step === 2 && (
-                        <div>
-                            <p className="mt-3 text-center font-semibold text-black">
-                                Enter your organization details
-                            </p>
-                            <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden flex">
-                                <div
-                                    className="h-3 bg-[#5E50A4] ml-auto"
-                                    style={{width: "55%"}}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Domain
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={formData.orgDomain}
+                                            onChange={(e) =>
+                                                setFormData({...formData, orgDomain: e.currentTarget.value})
+                                            }
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="example.com"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Description
+                                        </label>
+                                        <textarea
+                                            value={formData.orgDescription}
+                                            onChange={(e) =>
+                                                setFormData({...formData, orgDescription: e.currentTarget.value})
+                                            }
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            rows={3}
+                                            placeholder="Short description"
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={handleSubmit}
+                                            className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                                        >
+                                            {submitting ? "Creating..." : "Create Organization"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    function LoginModal({open, onClose}: { open: boolean; onClose: () => void; })
+        : React.JSX.Element | null {
+        const router = useRouter();
+        type LoginFormData = {
+            // email: string; // is not used yet.
+            username:string
+            password: string;
+            remember: boolean;
+        }
+
+        /**
+         * TODO Make this version generic.
+         * Handle the submit form and redirect to the dashboard if ok
+         * @param e The form, must be used to prevent reloading
+         *
+         * @alpha
+         */
+        async function handleSubmit() {
+            try {
+                const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users/login", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(formData),
+                });
+                if (!res.ok) throw new Error("Erreur serveur");
+                console.log("✅ Données envoyées :", formData);
+
+                router.push("/dashboard");
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+
+        const [formData, setFormData] = useState<LoginFormData>({username: "", password: "", remember: false});
+        if (!open) return null
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-white">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md "
+                    onClick={() => onClose()}
+                >
+                    <div
+                        className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="text-3xl font-bold text-center text-black">
+                            Login
+                        </h2>
+                        <form
+                            className="mt-6 flex flex-col gap-5 text-black"
+                            onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
+                        >
+                            <div>
+                                <label className="block text-sm font-semibold text-black mb-1">
+                                    Username {/* TODO FIX FROM BACKEND IT SHOULD BE EMAIL !*/}
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.username}
+                                    onChange={(e) => setFormData(prev => ({...prev, username: e.target.value}))}
+                                    className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                    placeholder="john@example.com"
                                 />
                             </div>
 
-                            <form
-                                className="mt-6 flex flex-col gap-5 text-black"
-                                onSubmit={(e) => e.preventDefault()}
-                            >
-                                <div>
-                                    <label className="block text-sm font-semibold text-black mb-1">
-                                        Company name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.orgName}
-                                        onChange={(e) =>
-                                            setFormData({...formData, orgName: e.currentTarget.value})
-                                        }
-                                        className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                        placeholder="A company"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-black mb-1">
-                                        Domain
-                                    </label>
-                                    <input
-                                        type="url"
-                                        value={formData.orgDomain}
-                                        onChange={(e) =>
-                                            setFormData({...formData, orgDomain: e.currentTarget.value})
-                                        }
-                                        className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                        placeholder="example.com"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-black mb-1">
-                                        Description
-                                    </label>
-                                    <textarea
-                                        value={formData.orgDescription}
-                                        onChange={(e) =>
-                                            setFormData({...formData, orgDescription: e.currentTarget.value})
-                                        }
-                                        className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                        rows={3}
-                                        placeholder="Short description"
-                                    />
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={handleSubmit}
-                                        className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
-                                    >
-                                        {submitting ? "Creating..." : "Create Organization"}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function LoginModal({open, onClose}: { open: boolean; onClose: () => void; })
-    : React.JSX.Element | null {
-    const router = useRouter();
-    type LoginFormData = {
-        // email: string; // is not used yet.
-        username:string
-        password: string;
-        remember: boolean;
-    }
-
-    async function handleSubmit() {
-        try {
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users/login", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(formData),
-            });
-            if (!res.ok) throw new Error("Erreur serveur");
-            console.log("✅ Données envoyées :", formData);
-
-            router.push("/dashboard");
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
-
-    const [formData, setFormData] = useState<LoginFormData>({username: "", password: "", remember: false});
-    if (!open) return null
-    return (
-        <div className="flex flex-col items-center justify-center h-screen bg-white">
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md "
-                onClick={() => onClose()}
-            >
-                <div
-                    className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <h2 className="text-3xl font-bold text-center text-black">
-                        Login
-                    </h2>
-                    <form
-                        className="mt-6 flex flex-col gap-5 text-black"
-                        onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
-                    >
-                        <div>
-                            <label className="block text-sm font-semibold text-black mb-1">
-                                Username {/* TODO FIX FROM BACKEND IT SHOULD BE EMAIL !*/}
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.username}
-                                onChange={(e) => setFormData(prev => ({...prev, username: e.target.value}))}
-                                className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                placeholder="john@example.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-black mb-1">
-                                Password
-                            </label>
-                            <input
-                                type="password"
-                                value={formData.password}
-                                onChange={(e) => setFormData(prev => ({...prev, password: e.target.value}))}
-                                className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                                placeholder="********"
-                            />
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => handleSubmit()}
-                            className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
-                        >
-                            Login
-                        </button>
-                        <div className="flex items-center justify-between text-sm w-full">
-                            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <div>
+                                <label className="block text-sm font-semibold text-black mb-1">
+                                    Password
+                                </label>
                                 <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-gray-400 text-[#5E50A4] focus:ring-[#5E50A4]"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData(prev => ({...prev, password: e.target.value}))}
+                                    className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                    placeholder="********"
                                 />
-                                <span className="text-black">Remember me</span>
-                            </label>
+                            </div>
 
-                            <a href="/forgot-password" className="text-[#5E50A4] hover:underline">
-                                Forgot Password?
-                            </a>
-                        </div>
-                        <p className="text-sm text-center mt-4">
-                            <a href="#" className="text-[#5E50A4] font-semibold hover:underline">
-                                Create an Organization instead
-                            </a>
-                        </p>
-                    </form>
+                            <button
+                                type="button"
+                                onClick={() => handleSubmit()}
+                                className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
+                            >
+                                Login
+                            </button>
+                            <div className="flex items-center justify-between text-sm w-full">
+                                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        className="h-4 w-4 rounded border-gray-400 text-[#5E50A4] focus:ring-[#5E50A4]"
+                                    />
+                                    <span className="text-black">Remember me</span>
+                                </label>
+
+                                <a href="/forgot-password" className="text-[#5E50A4] hover:underline">
+                                    Forgot Password?
+                                </a>
+                            </div>
+                            <p className="text-sm text-center mt-4">
+                                <a href="#" onClick={() => {onClose(); setShowNewOrganizationModal(true)}} className="text-[#5E50A4] font-semibold hover:underline">
+                                    Create an Organization instead
+                                </a>
+                            </p>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    )
+        )
+    }
 }
