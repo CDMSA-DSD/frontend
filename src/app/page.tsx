@@ -1,7 +1,7 @@
 "use client"
 
 import Background from "../components/background"
-import React, {useState} from "react";
+import React, {FormEvent, useState} from "react";
 import {useRouter} from "next/navigation";
 import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -94,7 +94,8 @@ export default function Home(): React.JSX.Element {
             }
         );
 
-        async function handleSubmit() {
+        async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+            e.preventDefault(); // Prevent reloading
             try {
                 setSubmitting(true);
                 console.log(process.env.NEXT_PUBLIC_BACKEND_URL + "/orgs")
@@ -126,7 +127,7 @@ export default function Home(): React.JSX.Element {
                 >
                     <div
                         className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation() /* Because parent div close the modal */}
                     >
                         <h2 className="text-3xl font-bold text-center text-black">
                             Create an Organization
@@ -146,7 +147,7 @@ export default function Home(): React.JSX.Element {
 
                                 <form
                                     className="mt-6 flex flex-col gap-5 text-black"
-                                    onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
+                                    onSubmit={ (e) => {e.preventDefault(); setStep(2)}}
                                 >
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         <div className="flex-1">
@@ -154,7 +155,7 @@ export default function Home(): React.JSX.Element {
                                                 Name
                                             </label>
                                             <input
-                                                type="text"
+                                                type="text" required
                                                 value={formData.adminName}
                                                 onChange={(e) => {
                                                     setFormData({...formData, adminName: e.currentTarget.value})
@@ -182,10 +183,14 @@ export default function Home(): React.JSX.Element {
                                             Email
                                         </label>
                                         <input
-                                            type="email"
+                                            type="email" required
                                             value={formData.adminEmail}
                                             onChange={(e) => {
-                                                setFormData({...formData, adminEmail: e.currentTarget.value, adminUsername: e.currentTarget.value});
+                                                setFormData({
+                                                    ...formData,
+                                                    adminEmail: e.currentTarget.value,
+                                                    adminUsername: e.currentTarget.value
+                                                });
                                             }}
                                             className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
                                             placeholder="john@example.com"
@@ -197,7 +202,7 @@ export default function Home(): React.JSX.Element {
                                             Password
                                         </label>
                                         <input
-                                            type="password"
+                                            type="password" required
                                             value={formData.adminPassword}
                                             onChange={(e) => setFormData({
                                                 ...formData,
@@ -210,7 +215,6 @@ export default function Home(): React.JSX.Element {
 
                                     <button
                                         type="submit"
-                                        onClick={() => setStep(2)}
                                         className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
                                     >
                                         Next
@@ -233,14 +237,14 @@ export default function Home(): React.JSX.Element {
 
                                 <form
                                     className="mt-6 flex flex-col gap-5 text-black"
-                                    onSubmit={(e) => e.preventDefault()}
+                                    onSubmit={handleSubmit}
                                 >
                                     <div>
                                         <label className="block text-sm font-semibold text-black mb-1">
                                             Company name
                                         </label>
                                         <input
-                                            type="text"
+                                            type="text" required
                                             value={formData.orgName}
                                             onChange={(e) =>
                                                 setFormData({...formData, orgName: e.currentTarget.value})
@@ -255,7 +259,7 @@ export default function Home(): React.JSX.Element {
                                             Domain
                                         </label>
                                         <input
-                                            type="url"
+                                            type="text" required
                                             value={formData.orgDomain}
                                             onChange={(e) =>
                                                 setFormData({...formData, orgDomain: e.currentTarget.value})
@@ -282,8 +286,7 @@ export default function Home(): React.JSX.Element {
 
                                     <div className="flex gap-3">
                                         <button
-                                            type="button"
-                                            onClick={handleSubmit}
+                                            type="submit"
                                             className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
                                         >
                                             {submitting ? "Creating..." : "Create Organization"}
@@ -303,7 +306,7 @@ export default function Home(): React.JSX.Element {
         const router = useRouter();
         type LoginFormData = {
             // email: string; // is not used yet.
-            username:string
+            username: string
             password: string;
             remember: boolean;
         }
@@ -315,7 +318,8 @@ export default function Home(): React.JSX.Element {
          *
          * @alpha
          */
-        async function handleSubmit() {
+        async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+            e.preventDefault(); // Prevent reloading
             try {
                 const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users/login", {
                     method: "POST",
@@ -338,25 +342,24 @@ export default function Home(): React.JSX.Element {
             <div className="flex flex-col items-center justify-center h-screen bg-white">
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md "
-                    onClick={() => onClose()}
-                >
+                    onClick={() => onClose()}>
                     <div
                         className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()  /* Because parent div close the modal */}
                     >
                         <h2 className="text-3xl font-bold text-center text-black">
                             Login
                         </h2>
                         <form
+                            onSubmit={handleSubmit}
                             className="mt-6 flex flex-col gap-5 text-black"
-                            onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
                         >
                             <div>
                                 <label className="block text-sm font-semibold text-black mb-1">
                                     Username {/* TODO FIX FROM BACKEND IT SHOULD BE EMAIL !*/}
                                 </label>
                                 <input
-                                    type="text"
+                                    type="text" required
                                     value={formData.username}
                                     onChange={(e) => setFormData(prev => ({...prev, username: e.target.value}))}
                                     className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
@@ -369,7 +372,7 @@ export default function Home(): React.JSX.Element {
                                     Password
                                 </label>
                                 <input
-                                    type="password"
+                                    type="password" required
                                     value={formData.password}
                                     onChange={(e) => setFormData(prev => ({...prev, password: e.target.value}))}
                                     className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
@@ -378,8 +381,7 @@ export default function Home(): React.JSX.Element {
                             </div>
 
                             <button
-                                type="button"
-                                onClick={() => handleSubmit()}
+                                type="submit"
                                 className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
                             >
                                 Login
@@ -398,7 +400,10 @@ export default function Home(): React.JSX.Element {
                                 </a>
                             </div>
                             <p className="text-sm text-center mt-4">
-                                <a href="#" onClick={() => {onClose(); setShowNewOrganizationModal(true)}} className="text-[#5E50A4] font-semibold hover:underline">
+                                <a href="#" onClick={() => {
+                                    onClose();
+                                    setShowNewOrganizationModal(true)
+                                }} className="text-[#5E50A4] font-semibold hover:underline">
                                     Create an Organization instead
                                 </a>
                             </p>
