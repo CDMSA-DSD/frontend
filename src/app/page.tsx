@@ -300,12 +300,32 @@ function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => v
 
 function LoginModal({open, onClose}: { open: boolean; onClose: () => void; })
     : React.JSX.Element | null {
+    const router = useRouter();
     type LoginFormData = {
-        email: string;
+        // email: string; // is not used yet.
+        username:string
         password: string;
         remember: boolean;
     }
-    const [formData, setFormData] = useState<LoginFormData>({email: "", password: "", remember: false});
+
+    async function handleSubmit() {
+        try {
+            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users/login", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(formData),
+            });
+            if (!res.ok) throw new Error("Erreur serveur");
+            console.log("✅ Données envoyées :", formData);
+
+            router.push("/dashboard");
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+
+    const [formData, setFormData] = useState<LoginFormData>({username: "", password: "", remember: false});
     if (!open) return null
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-white">
@@ -321,17 +341,17 @@ function LoginModal({open, onClose}: { open: boolean; onClose: () => void; })
                         Login
                     </h2>
                     <form
-                        className="mt-6 flex flex-col gap-5"
+                        className="mt-6 flex flex-col gap-5 text-black"
                         onSubmit={(e) => e.preventDefault() /* Because parent div close the modal */}
                     >
                         <div>
                             <label className="block text-sm font-semibold text-black mb-1">
-                                Email
+                                Username {/* TODO FIX FROM BACKEND IT SHOULD BE EMAIL !*/}
                             </label>
                             <input
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData(prev => ({...prev, email: e.target.value}))}
+                                type="text"
+                                value={formData.username}
+                                onChange={(e) => setFormData(prev => ({...prev, username: e.target.value}))}
                                 className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
                                 placeholder="john@example.com"
                             />
@@ -344,7 +364,7 @@ function LoginModal({open, onClose}: { open: boolean; onClose: () => void; })
                             <input
                                 type="password"
                                 value={formData.password}
-                                onChange={(e) => setFormData(prev => ({...prev, username: e.target.value}))}
+                                onChange={(e) => setFormData(prev => ({...prev, password: e.target.value}))}
                                 className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
                                 placeholder="********"
                             />
@@ -352,7 +372,7 @@ function LoginModal({open, onClose}: { open: boolean; onClose: () => void; })
 
                         <button
                             type="button"
-                            onClick={() => onClose()}
+                            onClick={() => handleSubmit()}
                             className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
                         >
                             Login
