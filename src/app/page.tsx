@@ -94,6 +94,13 @@ export default function Home(): React.JSX.Element {
             }
         );
 
+        /**
+         * TODO Make this version generic.
+         * Handle the submit form and redirect to the dashboard if ok
+         * @param e The form, must be used to prevent reloading
+         *
+         * @alpha
+         */
         async function handleSubmit(e: FormEvent<HTMLFormElement>) {
             e.preventDefault(); // Prevent reloading
             try {
@@ -133,6 +140,7 @@ export default function Home(): React.JSX.Element {
                             Create an Organization
                         </h2>
 
+                        {/* "2 pages" controlled by a useState ([step, setStep]*/}
                         {step === 1 && (
                             <div>
                                 <p className="mt-3 text-center font-semibold text-black">
