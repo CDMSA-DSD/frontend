@@ -14,6 +14,8 @@ interface BackendAlternative {
   authorName: string
   createdAt: string
   updatedAt: string | null
+  yes: number
+  no: number
 }
 
 interface BackendComment {
@@ -41,6 +43,8 @@ interface BackendRFC {
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
+type VoteOutcome = boolean
+
 
 interface Alternative {
   id: number
@@ -96,15 +100,15 @@ const mapAlternative = (backendAlt: BackendAlternative): Alternative => ({
   title: backendAlt.title,
   author: backendAlt.authorName,
   publishedDate: formatDate(backendAlt.createdAt),
-  description: backendAlt.description.substring(0, 150) + '...', // Truncate for card view
-  fullText: backendAlt.description, // Use full description as fullText
-  upvotes: Math.floor(Math.random() * 10), // Mocking upvotes until we have real data
-  downvotes: Math.floor(Math.random() * 5), // Mocking downvotes until we have real data
-  // Splitting the comma-separated strings into arrays for the UI
-  pros: backendAlt.pros.split(';').map(s => s.trim()).filter(s => s.length > 0),
-  cons: backendAlt.cons.split(';').map(s => s.trim()).filter(s => s.length > 0),
-  attachments: backendAlt.id === 1 ? ['document1.pdf', 'diagram.png'] : [] // Mocking attachments only for the first one
-});
+  description: backendAlt.description.substring(0, 150) + '...',
+  fullText: backendAlt.description,
+  upvotes: backendAlt.yes ?? 0,
+  downvotes: backendAlt.no ?? 0,
+  pros: backendAlt.pros.split(';').map(s => s.trim()).filter(Boolean),
+  cons: backendAlt.cons.split(';').map(s => s.trim()).filter(Boolean),
+  attachments: backendAlt.id === 1 ? ['document1.pdf', 'diagram.png'] : []
+})
+
 
 // Function to map backend comment to client comment
 const mapComment = (backendComment: BackendComment): Comment => ({
@@ -151,30 +155,8 @@ export default function RFCDetailPage() {
     ...comments.slice(2)
   ] : []
 
-  const [voteState, setVoteState] = useState<{
-    selectedAltId: number | null
-    counts: Record<number, number>
-  }>({
-    selectedAltId: null,
-    counts: {}
-  })
-
+  const [userVotes, setUserVotes] = useState<Record<number, boolean | null>>({})
   const isReviewer = true
-
-  useEffect(() => {
-    if (!rfcData) return
-
-    const initialCounts: Record<number, number> = {}
-    rfcData.alternatives.forEach(alt => {
-      initialCounts[alt.id] = 0
-    })
-
-    setVoteState(prev => ({
-      selectedAltId: prev.selectedAltId,
-      counts: initialCounts
-    }))
-  }, [rfcData])
-
 
   useEffect(() => {
     if (!rfcId) return;
@@ -203,30 +185,14 @@ export default function RFCDetailPage() {
     }
   }
 
-  const handleVoteForAlternative = async (altId: number) => {
+  const handleVoteForAlternative = async (altId: number, outcome: boolean) => {
     if (!isReviewer) return
     if (rfcData?.status !== 'UNDER_REVIEW') return
 
-    setVoteState(prev => {
-      const counts = { ...prev.counts }
-
-      if (prev.selectedAltId !== null && prev.selectedAltId !== altId) {
-        counts[prev.selectedAltId] = Math.max(
-          0,
-          (counts[prev.selectedAltId] ?? 0) - 1
-        )
-      }
-
-      if (prev.selectedAltId === altId) {
-        return prev
-      }
-
-      counts[altId] = (counts[altId] ?? 0) + 1
-
-      return {
-        selectedAltId: altId,
-        counts
-      }
+    setUserVotes(prev => {
+      const current = prev[altId] ?? null
+      const next = current === outcome ? null : outcome
+      return { ...prev, [altId]: next }
     })
 
     try {
@@ -236,10 +202,10 @@ export default function RFCDetailPage() {
           'Content-Type': 'application/json',
           'X-User-Id': '1'
         },
-        body: JSON.stringify({
-          outcome: 'FOR'
-        })
+        body: JSON.stringify({ outcome })
       })
+
+      await fetchRfcData()
     } catch (e) {
       console.error('Vote failed', e)
     }
@@ -576,32 +542,48 @@ export default function RFCDetailPage() {
 
           {/* Voting */}
           <div className="flex items-center gap-4 mt-4">
+            {/* Thumbs up */}
             <button
-              onClick={() => handleVoteForAlternative(alt.id)}
+              type="button"
+              onClick={() => handleVoteForAlternative(alt.id, true)}
               disabled={!isReviewer || rfcData.status !== 'UNDER_REVIEW'}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
-      ${voteState.selectedAltId === alt.id
-                  ? 'bg-violet-600 text-white border-violet-600'
-                  : 'bg-white text-violet-700 border-violet-300 hover:bg-violet-50'
-                }
-      disabled:opacity-50 disabled:cursor-not-allowed
-    `}
+              className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {voteState.selectedAltId === alt.id ? 'Your vote' : 'Vote'}
+              <ThumbsUp
+                className={`w-5 h-5 ${userVotes[alt.id] === true
+                    ? 'text-violet-600'
+                    : 'text-gray-400 hover:text-violet-600'
+                  }`}
+              />
+              <span className="text-sm text-gray-700">
+                {alt.upvotes}
+              </span>
             </button>
 
-            <span className="text-sm text-gray-700">
-              {(voteState.counts[alt.id] ?? 0)} votes
-            </span>
+            {/* Thumbs down */}
+            <button
+              type="button"
+              onClick={() => handleVoteForAlternative(alt.id, false)}
+              disabled={!isReviewer || rfcData.status !== 'UNDER_REVIEW'}
+              className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ThumbsDown
+                className={`w-5 h-5 ${userVotes[alt.id] === false
+                    ? 'text-violet-600'
+                    : 'text-gray-400 hover:text-violet-600'
+                  }`}
+              />
+              <span className="text-sm text-gray-700">
+                {alt.downvotes}
+              </span>
+            </button>
 
             {(!isReviewer || rfcData.status !== 'UNDER_REVIEW') && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 ml-2">
                 Voting disabled
               </span>
             )}
           </div>
-
-
 
           {rfcData.status === 'UNDER_REVIEW' && !isExpanded && (
             <div className="mt-4">
