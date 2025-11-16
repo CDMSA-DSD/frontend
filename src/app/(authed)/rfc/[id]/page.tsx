@@ -134,6 +134,7 @@ export default function RFCDetailPage() {
   const [showAdrModal, setShowAdrModal] = useState(false)
   const [winningAlternative, setWinningAlternative] = useState<Alternative | null>(null)
   const [isSubmittingAdr, setIsSubmittingAdr] = useState(false)
+  const [isGeneratingAdr, setIsGeneratingAdr] = useState(false)
   const [adrFormData, setAdrFormData] = useState<AdrFormData>({
     title: '',
     context: '',
@@ -341,7 +342,7 @@ export default function RFCDetailPage() {
     }
   };
 
-  const handleSelectAsDecision = (alt: Alternative) => {
+  const handleSelectAsDecision = async (alt: Alternative) => {
     if (!rfcData) return;
 
     setWinningAlternative(alt);
@@ -349,14 +350,63 @@ export default function RFCDetailPage() {
     const { context: rfcContext } = parseDescription(rfcData.description);
 
     setAdrFormData({
-      title: `ADR: ${alt.title}`,
-      context: rfcContext || `Context from RFC #${rfcId}: ${rfcData.title}`,
-      decision: `We have decided to implement the "${alt.title}" alternative.\n\nDetails:\n${alt.fullText}`,
-      consequences: ''
+      title: 'Generating title...',
+      context: 'Generating context...',
+      decision: 'Generating decision...',
+      consequences: 'Generating consequences...'
     });
 
     setShowAdrModal(true);
+
+    // Attempt to fill from backend LLM endpoint.
+    try {
+      await fetchGeneratedAdr(alt.id)
+    } catch (e) {
+      console.log(`Failed to fetch generated ADR:`, e)
+
+      // Fill with default values if backend generation fails
+      setAdrFormData({
+        title: `ADR: ${alt.title}`,
+        context: rfcContext || `Context from RFC #${rfcId}: ${rfcData.title}`,
+        decision: `We have decided to implement the "${alt.title}" alternative.\n\nDetails:\n${alt.fullText}`,
+        consequences: ''
+      });
+    }
   };
+
+  const fetchGeneratedAdr = async (altId: number) => {
+    if (!rfcId) return
+    setIsGeneratingAdr(true)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/generateadr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': '1'
+        },
+        body: JSON.stringify({ alternativeId: altId })
+      })
+
+      if (!res.ok) {
+        throw new Error(`Generate ADR failed (status ${res.status})`)
+      }
+
+      const data = await res.json()
+
+      if (data) {
+        setAdrFormData({
+          title: data.title,
+          context: data.context,
+          decision: data.decision,
+          consequences: data.consequences
+        })
+      }
+    } catch (e) {
+      console.error('Failed to generate ADR from backend:', e)
+    } finally {
+      setIsGeneratingAdr(false)
+    }
+  }
 
   const handleSubmitAdr = async () => {
     if (isSubmittingAdr || !winningAlternative || !rfcId) return;
@@ -823,13 +873,24 @@ export default function RFCDetailPage() {
 
           {/* Modal Footer */}
           <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
-            <button
-              onClick={() => setShowAdrModal(false)}
-              className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
-              disabled={isSubmittingAdr}
-            >
-              Cancel
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAdrModal(false)}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                disabled={isSubmittingAdr}
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={() => { if (winningAlternative) fetchGeneratedAdr(winningAlternative.id) }}
+                className="px-4 py-2 bg-sky-600 text-white border border-gray-300 rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                disabled={isGeneratingAdr || isSubmittingAdr}
+              >
+                {isGeneratingAdr ? 'Regenerating...' : 'Regenerate from LLM'}
+              </button>
+            </div>
+
             <button
               onClick={handleSubmitAdr}
               className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400"
