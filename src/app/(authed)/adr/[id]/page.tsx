@@ -366,25 +366,6 @@ export default function AdrDetailPage() {
 
       const updatedAdr = await res.json()
       setAdr({ ...adr, ...updatedAdr, status: 'APPROVED' })
-      
-      // After successful approval, call publish endpoint with the adrId
-      try {
-        const publishRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/publish`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ adrId: adr.id })
-        })
-
-        if (!publishRes.ok) {
-          const t = await publishRes.text()
-          throw new Error(`POST /adrs/publish ${publishRes.status} — ${t}`)
-        }
-      } catch (e: any) {
-        // Inform user that publish failed, but approval already succeeded
-        alert(`ADR approved but failed to publish: ${e?.message ?? String(e)}`)
-      }
     } catch (e: any) {
       alert(`Failed to approve ADR: ${e.message}`)
     }
