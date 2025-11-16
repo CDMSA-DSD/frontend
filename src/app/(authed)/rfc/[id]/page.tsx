@@ -48,7 +48,7 @@ interface Alternative {
   author: string
   publishedDate: string
   description: string
-  fullText: string 
+  fullText: string
   upvotes: number
   downvotes: number
   pros: string[]
@@ -108,18 +108,18 @@ const mapAlternative = (backendAlt: BackendAlternative): Alternative => ({
 
 // Function to map backend comment to client comment
 const mapComment = (backendComment: BackendComment): Comment => ({
-    id: backendComment.id,
-    author: backendComment.author,
-    date: formatDate(backendComment.createdAt),
-    content: backendComment.content,
-    replies: [] // Backend doesn't provide replies, keep empty for now
+  id: backendComment.id,
+  author: backendComment.author,
+  date: formatDate(backendComment.createdAt),
+  content: backendComment.content,
+  replies: [] // Backend doesn't provide replies, keep empty for now
 });
 
 
 export default function RFCDetailPage() {
   const params = useParams()
   const rfcId = params.id
-  
+
   const [activeTab, setActiveTab] = useState<TabType>('presentation')
   const [selectedAlternative, setSelectedAlternative] = useState<Alternative | null>(null)
   const [showNewAlternativeModal, setShowNewAlternativeModal] = useState(false)
@@ -147,9 +147,34 @@ export default function RFCDetailPage() {
   const comments: Comment[] = rfcData ? rfcData.comments.map(mapComment) : []
 
   const clientComments: Comment[] = comments.length > 0 ? [
-    { ...comments[0], replies: comments.slice(1).length > 0 ? [{...comments[1], replies: []}] : [] }, // Simulating a reply chain
+    { ...comments[0], replies: comments.slice(1).length > 0 ? [{ ...comments[1], replies: [] }] : [] }, // Simulating a reply chain
     ...comments.slice(2)
   ] : []
+
+  const [voteState, setVoteState] = useState<{
+    selectedAltId: number | null
+    counts: Record<number, number>
+  }>({
+    selectedAltId: null,
+    counts: {}
+  })
+
+  const isReviewer = true
+
+  useEffect(() => {
+    if (!rfcData) return
+
+    const initialCounts: Record<number, number> = {}
+    rfcData.alternatives.forEach(alt => {
+      initialCounts[alt.id] = 0
+    })
+
+    setVoteState(prev => ({
+      selectedAltId: prev.selectedAltId,
+      counts: initialCounts
+    }))
+  }, [rfcData])
+
 
   useEffect(() => {
     if (!rfcId) return;
@@ -175,6 +200,48 @@ export default function RFCDetailPage() {
       setError(e instanceof Error ? e.message : 'An unknown error occurred')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleVoteForAlternative = async (altId: number) => {
+    if (!isReviewer) return
+    if (rfcData?.status !== 'UNDER_REVIEW') return
+
+    setVoteState(prev => {
+      const counts = { ...prev.counts }
+
+      if (prev.selectedAltId !== null && prev.selectedAltId !== altId) {
+        counts[prev.selectedAltId] = Math.max(
+          0,
+          (counts[prev.selectedAltId] ?? 0) - 1
+        )
+      }
+
+      if (prev.selectedAltId === altId) {
+        return prev
+      }
+
+      counts[altId] = (counts[altId] ?? 0) + 1
+
+      return {
+        selectedAltId: altId,
+        counts
+      }
+    })
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': '1'
+        },
+        body: JSON.stringify({
+          outcome: 'FOR'
+        })
+      })
+    } catch (e) {
+      console.error('Vote failed', e)
     }
   }
 
@@ -276,7 +343,7 @@ export default function RFCDetailPage() {
     }
   }
 
-const handleCloseNoDecision = async () => {
+  const handleCloseNoDecision = async () => {
     if (isClosing || !rfcId) return;
 
     if (!confirm('Are you sure you want to close this RFC without a decision? This action cannot be undone.')) {
@@ -310,18 +377,18 @@ const handleCloseNoDecision = async () => {
 
   const handleSelectAsDecision = (alt: Alternative) => {
     if (!rfcData) return;
-    
+
     setWinningAlternative(alt);
-    
+
     const { context: rfcContext } = parseDescription(rfcData.description);
-    
+
     setAdrFormData({
       title: `ADR: ${alt.title}`,
       context: rfcContext || `Context from RFC #${rfcId}: ${rfcData.title}`,
       decision: `We have decided to implement the "${alt.title}" alternative.\n\nDetails:\n${alt.fullText}`,
       consequences: ''
     });
-    
+
     setShowAdrModal(true);
   };
 
@@ -424,7 +491,7 @@ const handleCloseNoDecision = async () => {
             )}
           </div>
         </section>
-        
+
         {rfcData.status === 'UNDER_REVIEW' && (
           <button
             onClick={handleCloseNoDecision}
@@ -448,31 +515,31 @@ const handleCloseNoDecision = async () => {
         <div className="flex-shrink-0">
           <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
             <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g opacity="0.6">
-                  <line y1="-1.50402" x2="26.6757" y2="-1.50402"
-                        transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
-                        strokeOpacity="0.47" strokeWidth="3.00805"/>
-                  <line y1="-1.50402" x2="46.9282" y2="-1.50402"
-                        transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
-                        strokeOpacity="0.47" strokeWidth="3.00805"/>
-                  <line y1="-1.50402" x2="46.6837" y2="-1.50402"
-                        transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
-                        strokeOpacity="0.47" strokeWidth="3.00805"/>
-                  <line y1="-1.50402" x2="38.7414" y2="-1.50402"
-                        transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
-                        strokeOpacity="0.47" strokeWidth="3.00805"/>
-                  <line y1="-1.50402" x2="41.2294" y2="-1.50402"
-                        transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
-                        strokeOpacity="0.47" strokeWidth="3.00805"/>
-                  <line y1="-1.50402" x2="40.2477" y2="-1.50402"
-                        transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
-                        strokeOpacity="0.47" strokeWidth="3.00805"/>
-                  <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8"/>
-                  <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF"/>
-                  <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4"/>
-                  <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF"/>
-                  <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF"/>
-                  <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA"/>
+              <g opacity="0.6">
+                <line y1="-1.50402" x2="26.6757" y2="-1.50402"
+                  transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
+                  strokeOpacity="0.47" strokeWidth="3.00805" />
+                <line y1="-1.50402" x2="46.9282" y2="-1.50402"
+                  transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
+                  strokeOpacity="0.47" strokeWidth="3.00805" />
+                <line y1="-1.50402" x2="46.6837" y2="-1.50402"
+                  transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
+                  strokeOpacity="0.47" strokeWidth="3.00805" />
+                <line y1="-1.50402" x2="38.7414" y2="-1.50402"
+                  transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
+                  strokeOpacity="0.47" strokeWidth="3.00805" />
+                <line y1="-1.50402" x2="41.2294" y2="-1.50402"
+                  transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
+                  strokeOpacity="0.47" strokeWidth="3.00805" />
+                <line y1="-1.50402" x2="40.2477" y2="-1.50402"
+                  transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
+                  strokeOpacity="0.47" strokeWidth="3.00805" />
+                <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8" />
+                <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF" />
+                <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4" />
+                <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF" />
+                <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF" />
+                <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA" />
               </g>
             </svg>
           </div>
@@ -480,7 +547,7 @@ const handleCloseNoDecision = async () => {
 
         {/* Content */}
         <div className="flex-1">
-          <h3 
+          <h3
             className="text-xl font-semibold text-violet-700 mb-2 cursor-pointer hover:text-violet-800"
             onClick={() => setSelectedAlternative(alt)}
           >
@@ -507,17 +574,34 @@ const handleCloseNoDecision = async () => {
             </div>
           )}
 
-          {/* Voting, disabled for now */}
-          {/* <div className="flex items-center gap-4 mt-4">
-            <button className="flex items-center gap-2 text-violet-600 hover:text-violet-700">
-              <ThumbsUp className="w-5 h-5" />
-              <span className="font-medium">{alt.upvotes}</span>
+          {/* Voting */}
+          <div className="flex items-center gap-4 mt-4">
+            <button
+              onClick={() => handleVoteForAlternative(alt.id)}
+              disabled={!isReviewer || rfcData.status !== 'UNDER_REVIEW'}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
+      ${voteState.selectedAltId === alt.id
+                  ? 'bg-violet-600 text-white border-violet-600'
+                  : 'bg-white text-violet-700 border-violet-300 hover:bg-violet-50'
+                }
+      disabled:opacity-50 disabled:cursor-not-allowed
+    `}
+            >
+              {voteState.selectedAltId === alt.id ? 'Your vote' : 'Vote'}
             </button>
-            <button className="flex items-center gap-2 text-red-500 hover:text-red-600">
-              <ThumbsDown className="w-5 h-5" />
-              <span className="font-medium">{alt.downvotes}</span>
-            </button>
-          </div> */}
+
+            <span className="text-sm text-gray-700">
+              {(voteState.counts[alt.id] ?? 0)} votes
+            </span>
+
+            {(!isReviewer || rfcData.status !== 'UNDER_REVIEW') && (
+              <span className="text-xs text-gray-500">
+                Voting disabled
+              </span>
+            )}
+          </div>
+
+
 
           {rfcData.status === 'UNDER_REVIEW' && !isExpanded && (
             <div className="mt-4">
@@ -595,7 +679,7 @@ const handleCloseNoDecision = async () => {
         <>
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold text-gray-900">Alternatives ({alternatives.length})</h3>
-            { rfcData.status === 'UNDER_REVIEW' ? (<button
+            {rfcData.status === 'UNDER_REVIEW' ? (<button
               onClick={() => setShowNewAlternativeModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
             >
@@ -603,7 +687,7 @@ const handleCloseNoDecision = async () => {
               Add Alternative
             </button>) : null}
           </div>
-          
+
           {alternatives.length > 0 ? (
             <>
               {alternatives.map((alt) => renderAlternativeCard(alt))}
@@ -658,15 +742,15 @@ const handleCloseNoDecision = async () => {
       {/* Comments */}
       <div>
         {clientComments.length > 0 ? (
-            clientComments.map((comment) => renderComment(comment))
+          clientComments.map((comment) => renderComment(comment))
         ) : (
-            <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
+          <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
         )}
       </div>
     </div>
   )
 
-const renderCreateAdrModal = () => {
+  const renderCreateAdrModal = () => {
     if (!showAdrModal || !winningAlternative) return null;
 
     return (
@@ -684,7 +768,7 @@ const renderCreateAdrModal = () => {
             <p className="text-center text-gray-600 mt-1">
               Finalizing decision for alternative: <strong>{winningAlternative.title}</strong>
             </p>
-            <button 
+            <button
               onClick={() => !isSubmittingAdr && setShowAdrModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
             >
@@ -790,33 +874,30 @@ const renderCreateAdrModal = () => {
         <div className="flex gap-8">
           <button
             onClick={() => setActiveTab('presentation')}
-            className={`flex items-center gap-2 pb-4 transition-colors ${
-              activeTab === 'presentation'
-                ? 'text-violet-700 border-b-2 border-violet-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex items-center gap-2 pb-4 transition-colors ${activeTab === 'presentation'
+              ? 'text-violet-700 border-b-2 border-violet-700'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <FileText className="w-5 h-5" />
             <span className="font-medium">Presentation</span>
           </button>
           <button
             onClick={() => setActiveTab('alternatives')}
-            className={`flex items-center gap-2 pb-4 transition-colors ${
-              activeTab === 'alternatives'
-                ? 'text-violet-700 border-b-2 border-violet-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex items-center gap-2 pb-4 transition-colors ${activeTab === 'alternatives'
+              ? 'text-violet-700 border-b-2 border-violet-700'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <Lightbulb className="w-5 h-5" />
             <span className="font-medium">Alternatives ({alternatives.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('discussion')}
-            className={`flex items-center gap-2 pb-4 transition-colors ${
-              activeTab === 'discussion'
-                ? 'text-violet-700 border-b-2 border-violet-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex items-center gap-2 pb-4 transition-colors ${activeTab === 'discussion'
+              ? 'text-violet-700 border-b-2 border-violet-700'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <MessageSquare className="w-5 h-5" />
             <span className="font-medium">Discussion ({comments.length})</span>
@@ -947,7 +1028,7 @@ const renderCreateAdrModal = () => {
                 className="flex items-center gap-2 px-6 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
                 disabled={isSubmittingAlternative}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 Cancel
               </button>
               <button
@@ -955,7 +1036,7 @@ const renderCreateAdrModal = () => {
                 className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400 disabled:cursor-not-allowed"
                 disabled={isSubmittingAlternative || !alternativeForm.title || !alternativeForm.description}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2l-7 20-4-9-9-4 20-7z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M22 2l-7 20-4-9-9-4 20-7z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 {isSubmittingAlternative ? 'Submitting...' : 'Submit Alternative'}
               </button>
             </div>
