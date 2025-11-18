@@ -3,6 +3,7 @@ import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLe
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
+import fetcher from '@/src/lib/fetcher'
 
 interface BackendAlternative {
   id: number
@@ -43,8 +44,6 @@ interface BackendRFC {
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
-type VoteOutcome = boolean
-
 
 interface Alternative {
   id: number
@@ -170,7 +169,7 @@ export default function RFCDetailPage() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
 
       if (!response.ok) {
         throw new Error(`Failed to fetch RFC (Status: ${response.status})`)
@@ -197,11 +196,10 @@ export default function RFCDetailPage() {
     })
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/vote`, {
+      await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify({ outcome })
       })
@@ -225,18 +223,17 @@ export default function RFCDetailPage() {
 
     setIsSubmittingAlternative(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       })
 
       if (!res.ok) throw new Error(`Failed to create alternative (status ${res.status})`)
 
-      const refreshed = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
+      const refreshed = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
       if (refreshed.ok) {
         const data: BackendRFC = await refreshed.json()
         setRfcData(data)
@@ -287,11 +284,10 @@ export default function RFCDetailPage() {
 
     setIsPostingComment(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/comments`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       })
@@ -319,11 +315,10 @@ export default function RFCDetailPage() {
 
     setIsClosing(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify({
           "alternativeId": null
@@ -378,11 +373,10 @@ export default function RFCDetailPage() {
     if (!rfcId) return
     setIsGeneratingAdr(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/generateadr`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/generateadr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify({ alternativeId: altId })
       })
@@ -425,11 +419,10 @@ export default function RFCDetailPage() {
 
     setIsSubmittingAdr(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       });
@@ -439,11 +432,10 @@ export default function RFCDetailPage() {
       }
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+        const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-User-Id': '1'
           },
           body: JSON.stringify({
             "alternativeId": winningAlternative.id
