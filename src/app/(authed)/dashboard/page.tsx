@@ -1,8 +1,9 @@
+"use client";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { getRecentRfcs, getRecentAdrs } from "@/lib/backend";
 import type { AdrResponse, RfcResponse } from "@/lib/types";
-import { cookies } from "next/headers";
+import { authFetch } from "@/lib/fetcher";
 
 function formatRelative(iso?: string) {
   if (!iso) return "";
@@ -28,42 +29,59 @@ function pickTimestamp<T extends { createdAt?: string; updatedAt?: string }>(x: 
   return x.createdAt ?? x.updatedAt ?? "";
 }
 
-// stabilan ključ sa fallbackom (id || index) + timestamp
-function itemKey(
-  x: { id?: number | string; createdAt?: string; updatedAt?: string },
-  idx: number
-) {
-  const ts = x.updatedAt ?? x.createdAt ?? "na";
-  const id = x.id ?? `i${idx}`;
-  return `${id}-${ts}`;
-}
+export default function DashboardPage() {
+  const [rfcs, setRfcs] = useState<RfcResponse[]>([]);
+  const [adrs, setAdrs] = useState<AdrResponse[]>([]);
+  const [rfcsErr, setRfcsErr] = useState<string | null>(null);
+  const [adrsErr, setAdrsErr] = useState<string | null>(null);
+  const [loadingRfcs, setLoadingRfcs] = useState(true);
+  const [loadingAdrs, setLoadingAdrs] = useState(true);
 
-export default async function DashboardPage() {
-  const userId = (await cookies()).get("x-user-id")?.value ?? "1";
-
-  let rfcs: RfcResponse[] = [];
-  let adrs: AdrResponse[] = [];
-  let rfcsErr: string | null = null;
-  let adrsErr: string | null = null;
-
-  await Promise.all([
+  useEffect(() => {
+    // Fetch RFCs
     (async () => {
+      setLoadingRfcs(true);
       try {
-        const page = await getRecentRfcs(4);
-        rfcs = page.content;
-      } catch (e: unknown) {
-        rfcsErr = e instanceof Error ? e.message : "Failed to load RFCs";
+        const res = await authFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`);
+        if (!res.ok) {
+          const txt = await res.text();
+          setRfcsErr(`Failed to load RFCs: ${res.status} ${txt}`);
+          setRfcs([]);
+        } else {
+          const json = await res.json();
+          setRfcs((json?.content as RfcResponse[]) ?? []);
+          setRfcsErr(null);
+        }
+      } catch (err: any) {
+        setRfcsErr(err?.message ?? String(err));
+        setRfcs([]);
+      } finally {
+        setLoadingRfcs(false);
       }
-    })(),
+    })();
+
+    // Fetch ADRs
     (async () => {
+      setLoadingAdrs(true);
       try {
-        const page = await getRecentAdrs(4);
-        adrs = page.content;
-      } catch (e: unknown) {
-        adrsErr = e instanceof Error ? e.message : "Failed to load ADRs";
+        const res = await authFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`);
+        if (!res.ok) {
+          const txt = await res.text();
+          setAdrsErr(`Failed to load ADRs: ${res.status} ${txt}`);
+          setAdrs([]);
+        } else {
+          const json = await res.json();
+          setAdrs((json?.content as AdrResponse[]) ?? []);
+          setAdrsErr(null);
+        }
+      } catch (err: any) {
+        setAdrsErr(err?.message ?? String(err));
+        setAdrs([]);
+      } finally {
+        setLoadingAdrs(false);
       }
-    })(),
-  ]);
+    })();
+  }, []);
 
   return (
     <main className="min-h-screen p-8 bg-background">
@@ -82,19 +100,22 @@ export default async function DashboardPage() {
           <p className="text-sm text-red-600">{rfcsErr}</p>
         ) : (
           <Card className="border border-gray-200 divide-y divide-gray-200 px-4 shadow-sm rounded-xl">
-            {rfcs.length === 0 && (
+            {loadingRfcs ? (
+              <div className="py-3 text-sm text-muted-foreground">Loading…</div>
+            ) : rfcs.length === 0 ? (
               <div className="py-3 text-sm text-muted-foreground">No RFCs yet.</div>
+            ) : (
+              rfcs.map((rfc) => (
+                <Link
+                  key={`rfc${rfc.id}`}
+                  href={`/rfc/${rfc.id}`}
+                  className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
+                >
+                  <span className="text-sm font-medium text-foreground">{rfc.title}</span>
+                  <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(rfc))}</span>
+                </Link>
+              ))
             )}
-            {rfcs.map((rfc, i) => (
-              <Link
-                key={itemKey(rfc, i)}
-                href={`/rfc/${rfc.id}`}
-                className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
-              >
-                <span className="text-sm font-medium text-foreground">{rfc.title}</span>
-                <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(rfc))}</span>
-              </Link>
-            ))}
           </Card>
         )}
       </section>
@@ -112,19 +133,22 @@ export default async function DashboardPage() {
           <p className="text-sm text-red-600">{adrsErr}</p>
         ) : (
           <Card className="border border-gray-200 divide-y divide-gray-200 px-4 shadow-sm rounded-xl">
-            {adrs.length === 0 && (
+            {loadingAdrs ? (
+              <div className="py-3 text-sm text-muted-foreground">Loading…</div>
+            ) : adrs.length === 0 ? (
               <div className="py-3 text-sm text-muted-foreground">No ADRs yet.</div>
+            ) : (
+              adrs.map((adr) => (
+                <Link
+                  key={`adr${adr.id}`}
+                  href={`/adr/${adr.id}`}
+                  className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
+                >
+                  <span className="text-sm font-medium text-foreground">{adr.title}</span>
+                  <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(adr))}</span>
+                </Link>
+              ))
             )}
-            {adrs.map((adr, i) => (
-              <Link
-                key={itemKey(adr, i)}
-                href={`/adr/${adr.id}`}
-                className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
-              >
-                <span className="text-sm font-medium text-foreground">{adr.title}</span>
-                <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(adr))}</span>
-              </Link>
-            ))}
           </Card>
         )}
       </section>

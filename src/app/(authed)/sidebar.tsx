@@ -31,7 +31,7 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
   const logout = () => {
     fetch('/api/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
     try { localStorage.removeItem('auth'); } catch (e) {}
-    router.push('/login');
+    router.push('/');
   }
 
   const [auth, setAuth] = useState<{ isAdmin?: boolean; contextIsAdmin?: any[] } | null>(null);
