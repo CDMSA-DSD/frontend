@@ -1,7 +1,13 @@
 "use client"
 
-import React, {useEffect, useState} from "react";
+import React, {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import {useParams} from "next/navigation";
+import { AutoComplete } from 'primereact/autocomplete';
+
+const headers = { // TODO: Authentication
+    "X-User-Id": "1",
+    "Content-Type": "application/json",
+};
 
 export default function GetContextById(): React.JSX.Element {
     type Context = {
@@ -18,17 +24,28 @@ export default function GetContextById(): React.JSX.Element {
         "contextAdmin":boolean
     }
 
+    const [email, setEmail] = useState<string>("")
+    const [emails, setEmails] = useState<string[]>([]);
+    const [selectedEmails, setSelectedEmails] = useState(null);
+    const [filteredEmails, setFilteredEmails] = useState(null);
+
     const { id } = useParams();
     const [context, setContext] = useState<Context>()
     const [members, setMembers] = useState<Member[]>()
 
-    const getExistingContext = async () => {
+    // TODO: Currently no endpoint to get users from org
+/*    const getOrgEmails = async (): Promise<void> => {
+        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id, {
+            method: "GET",
+            headers,
+        });
+    }*/
+    const getExistingContext = async () : Promise<void> => {
         try {
+
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id, {
                 method: "GET",
-                headers: {
-                    "X-User-Id": "1",
-                },
+                headers,
             });
             if (res.ok) setContext(JSON.parse(await res.text()));
             else throw new Error("Could not find context");
@@ -36,14 +53,11 @@ export default function GetContextById(): React.JSX.Element {
             console.log(err);
         }
     };
-
-    const getContextMembers = async () => {
+    const getContextMembers = async () : Promise<void> => {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
                 method: "GET",
-                headers: {
-                    "X-User-Id": "1",
-                },
+                headers
             });
             if (res.ok) setMembers(JSON.parse(await res.text()));
             else throw new Error("Could not find members");
@@ -51,15 +65,11 @@ export default function GetContextById(): React.JSX.Element {
             console.log(err);
         }
     };
-
     const addContextAdmin = async (userId : number) => {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins", {
                 method: "POST",
-                headers: {
-                    "X-User-Id": "1",
-                    "Content-Type": "application/json",
-                },
+                headers,
                 body: JSON.stringify({userId}),
             });
             if (res.ok) await getContextMembers();
@@ -72,10 +82,7 @@ export default function GetContextById(): React.JSX.Element {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins/" + userId , {
                 method: "DELETE",
-                headers: {
-                    "X-User-Id": "1",
-                    "Content-Type": "application/json",
-                },
+                headers
             });
             if (res.ok) await getContextMembers();
             else throw new Error("Could not find members");
@@ -83,14 +90,29 @@ export default function GetContextById(): React.JSX.Element {
             console.log(err);
         }
     }
+
+    async function emailSubmit(e: FormEvent<HTMLFormElement>) {
+        e.preventDefault(); // Prevent reloading
+        try {
+            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({userId:email}),
+            });
+            if (!res.ok) throw new Error("Erreur serveur");
+            console.log("✅ Données envoyées :", email);
+            getContextMembers();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setEmail("")
+        }
+    }
     const removeContextMember = async (userId : number) => {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members/" + userId , {
                 method: "DELETE",
-                headers: {
-                    "X-User-Id": "1",
-                    "Content-Type": "application/json",
-                },
+                headers
             });
             if (res.ok) await getContextMembers();
             else throw new Error("Could not find members");
@@ -134,6 +156,28 @@ export default function GetContextById(): React.JSX.Element {
             </div>
             <div>
                 <h1 className="text-4xl text-[#5E50A4]">Context Members</h1>
+                <div className="">
+                    <form className="mb-4 flex flex-row items-center gap-3">
+                        <input
+                            className="flex-grow h-[56px] rounded-[24px] border px-4"
+                            required
+                            type="text"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+
+                        <button
+                            className="flex-none h-[56px] px-6 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
+                            type="submit"
+                            onClick={emailSubmit}
+                        >
+                            Add Member
+                        </button>
+                    </form>
+                    {   // TODO: Version with autocomplete https://primereact.org/autocomplete/#multiple
+                        /* <AutoComplete field="name" multiple value={selectedCountries} suggestions={filteredCountries} completeMethod={search} onChange={(e) => setSelectedCountries(e.value)} /> */
+                    }
+                </div>
                 {members?.every((member) => member.contextAdmin) && (
                     <div className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
                         <p>There is currently no regular member!</p>
