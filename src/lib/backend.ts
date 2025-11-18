@@ -8,6 +8,22 @@ type FetchOpts = {
 };
 
 async function fetchJson<T>({ path, init }: FetchOpts): Promise<T> {
+  // Attach Authorization header with stored token when available (client-side only)
+  let authHeader: Record<string, string> = {};
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("auth");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.token) {
+          authHeader = { Authorization: `Bearer ${parsed.token}` };
+        }
+      }
+    } catch (e) {
+      // ignore parsing errors
+    }
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     cache: "no-store",
@@ -15,6 +31,7 @@ async function fetchJson<T>({ path, init }: FetchOpts): Promise<T> {
       "Content-Type": "application/json",
       "X-User-Id": (init?.headers as Record<string, string>)?.["X-User-Id"] ?? "1",
       ...(init?.headers ?? {}),
+      ...authHeader,
     },
   });
   if (!res.ok) {

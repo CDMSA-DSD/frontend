@@ -1,9 +1,9 @@
 "use client"
+import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from "next/navigation"
 import { MessageSquare, FileText, Users, Building2, FolderTree, LayoutDashboard, Settings } from 'lucide-react'
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 
 interface SidebarProps {
   open?: boolean;
@@ -26,14 +26,26 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
     { name: 'Manage Contexts', href: `/admin/contexts`, icon: FolderTree },
   ]
 
-  const logout = (router: AppRouterInstance) => {
-    // This endpoint does not exist yet; placeholder for future implementation
-    fetch('/api/logout', {
-      method: 'POST',
-      credentials: 'include',
-    })
+  // Logout: clear local auth and redirect to login
+  const router = useRouter();
+  const logout = () => {
+    fetch('/api/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    try { localStorage.removeItem('auth'); } catch (e) {}
     router.push('/login');
   }
+
+  const [auth, setAuth] = useState<{ isAdmin?: boolean; contextIsAdmin?: any[] } | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem('auth');
+      if (!raw) { setAuth(null); return; }
+      const parsed = JSON.parse(raw);
+      setAuth({ isAdmin: !!parsed?.isAdmin, contextIsAdmin: parsed?.contextIsAdmin ?? [] });
+    } catch (e) {
+      setAuth(null);
+    }
+  }, []);
 
   return (
     <>
@@ -110,35 +122,59 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
 
           {/* Admin Navigation */}
           <div className="pt-4">
-            {adminNavigation.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
-                    isActive
-                      ? "bg-[#C5B8E0] text-gray-900"
-                      : "text-gray-700 hover:bg-[#D4CBEB]"
-                  )}
-                  onClick={onClose}
-                >
-                  <item.icon className="mr-3 h-5 w-5" strokeWidth={2} />
-                  {item.name}
-                </Link>
-              )
-            })}
+            {
+              // Decide which admin links to show based on auth
+              (() => {
+                const itemsToShow = auth?.isAdmin
+                  ? adminNavigation
+                  : (auth?.contextIsAdmin && auth.contextIsAdmin.length > 0)
+                    ? adminNavigation.filter(i => i.name === 'Manage Contexts')
+                    : [];
+
+                return itemsToShow.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors",
+                        isActive
+                          ? "bg-[#C5B8E0] text-gray-900"
+                          : "text-gray-700 hover:bg-[#D4CBEB]"
+                      )}
+                      onClick={onClose}
+                    >
+                      <item.icon className="mr-3 h-5 w-5" strokeWidth={2} />
+                      {item.name}
+                    </Link>
+                  )
+                })
+              })()
+            }
           </div>
         </nav>
 
-        {/* Settings Button */}
-        <div className="p-4 mt-auto">
+        {/* Settings + Logout */}
+        <div className="p-4 mt-auto space-y-3">
           <button
             className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#D4CBEB] rounded-lg transition-colors w-full cursor-pointer focus:outline-none"
             onClick={onClose}
+            aria-label="Open settings"
           >
             <Settings className="h-5 w-5" strokeWidth={2} />
+            <span className="ml-3">Settings</span>
+          </button>
+
+          <button
+            className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#F8D7DA] rounded-lg transition-colors w-full cursor-pointer focus:outline-none"
+            onClick={logout}
+            aria-label="Logout"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" />
+            </svg>
+            <span className="ml-3">Logout</span>
           </button>
         </div>
       </aside>
