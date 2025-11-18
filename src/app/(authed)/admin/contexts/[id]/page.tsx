@@ -169,7 +169,7 @@ export default function GetContextById(): React.JSX.Element {
                         <button
                             className="flex-none h-[56px] px-6 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                             type="submit"
-                            onClick={emailSubmit}
+                            onClick={() => emailSubmit}
                         >
                             Add Member
                         </button>
