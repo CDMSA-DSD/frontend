@@ -3,6 +3,8 @@
 import React, {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import {useParams} from "next/navigation";
 import {AutoComplete, AutoCompleteCompleteEvent} from 'primereact/autocomplete';
+import ErrorBanner from "@/components/ui/errorBanner"
+import OkBanner from "@/components/ui/okBanner"
 
 const headers = { // TODO: Authentication
     "X-User-Id": "1",
@@ -31,29 +33,13 @@ export default function GetContextById(): React.JSX.Element {
     const [error, setError] = useState<string>("");
     const [ok, setOk] = useState<string>("");
 
-
-    /**
-     @brief Look if the input value starts as the same as other emails from the same organization
-     */
-    const search = (event: AutoCompleteCompleteEvent) => {
-
-            let _filteredEmails : string[];
-
-            if (!event.query.trim().length) {
-                _filteredEmails = [...emails];
-            }
-            else {
-                _filteredEmails = emails.filter((email) => {
-                    return email.toLowerCase().startsWith(event.query.trim().toLowerCase());
-                });
-            }
-            setFilteredEmails(_filteredEmails);
-    }
-
     const { id } = useParams();
     const [context, setContext] = useState<Context>()
     const [members, setMembers] = useState<Member[]>()
 
+    /**
+     * @brief Get all emails from the organization of the current [id] context in order to suggest them when adding a new context member
+     */
     const getOrgEmails = async (): Promise<void> => {
         const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users", {
             method: "GET",
@@ -67,6 +53,28 @@ export default function GetContextById(): React.JSX.Element {
         setEmails(orgEmails);
         setFilteredEmails(orgEmails);
     }
+
+    /**
+     * @brief Look if the input value starts as the same as other emails from the same organization. -> getOrgEmails()
+     */
+    const search = (event: AutoCompleteCompleteEvent) => {
+
+        let _filteredEmails : string[];
+
+        if (!event.query.trim().length) {
+            _filteredEmails = [...emails];
+        }
+        else {
+            _filteredEmails = emails.filter((email) => {
+                return email.toLowerCase().startsWith(event.query.trim().toLowerCase());
+            });
+        }
+        setFilteredEmails(_filteredEmails);
+    }
+
+    /**
+     * @brief Get related information from context (Title, type...)
+     */
     const getExistingContext = async () : Promise<void> => {
         try {
 
@@ -75,11 +83,15 @@ export default function GetContextById(): React.JSX.Element {
                 headers,
             });
             if (res.ok) setContext(JSON.parse(await res.text()));
-            else throw new Error("Could not find context");
+            else throw new Error("Server error");
         } catch (err) {
             console.log(err);
         }
     };
+
+    /**
+     * @brief Get all the user from context [id]
+     */
     const getContextMembers = async () : Promise<void> => {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
@@ -92,6 +104,11 @@ export default function GetContextById(): React.JSX.Element {
             console.log(err);
         }
     };
+
+    /**
+     * @brief Promote an existing context member to local admin
+     * @param userId
+     */
     const addContextAdmin = async (userId : number) => {
 
         try {
@@ -106,6 +123,11 @@ export default function GetContextById(): React.JSX.Element {
             console.log(err);
         }
     }
+
+    /**
+     * @brief Downgrade an existing local admin from the context to normal member.
+     * @param userId
+     */
     const removeContextAdmin = async (userId : number) => {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins/" + userId , {
@@ -119,21 +141,25 @@ export default function GetContextById(): React.JSX.Element {
         }
     }
 
-    async function emailSubmit(email:string) {
+    /**
+     * @brief Add a new context member via email
+     * @param email
+     */
+    const addContextMember = async (email:string) => {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
                 method: "POST",
                 headers,
                 body: JSON.stringify({email}),
             });
-            if (res.ok) setOk(`${ok}\nMember ${email} added.`)
-            else setError(`${error}\nCannot add member ${email}`);
-
+            if (res.ok) setOk(`${ok}\nMember ${email} added.`);
+            else {
+                const data : {message:string} = await res.json()
+                setError(`${error}\nCannot add member ${email}: ${data.message}`);
+            };
             getContextMembers();
-        } catch (err) {
+        } catch (err){
             throw err;
-        } finally {
-            // setEmail("")
         }
     }
 
@@ -144,7 +170,7 @@ export default function GetContextById(): React.JSX.Element {
                 headers
             });
             if (res.ok) await getContextMembers();
-            else throw new Error("Could not find members");
+            else throw new Error("Server Error");
         } catch (err) {
             console.log(err);
         }
@@ -156,8 +182,12 @@ export default function GetContextById(): React.JSX.Element {
         getOrgEmails();
     }, []);
 
+
+    // Terrible code
     return (
         <div className="flex flex-col mt-5 h-screen max-w-2xl mx-auto ml-auto mr-auto text-black">
+            <ErrorBanner text={error}/>
+            <OkBanner text={ok}/>
             <h1 className="text-4xl text-[#5E50A4]">{context?.name}</h1>
             <div className="p-4">
                 <h2 className="text-1xl text-[#625B71]">Type: {context?.type}</h2>
@@ -192,7 +222,7 @@ export default function GetContextById(): React.JSX.Element {
                                   e.preventDefault();
                                   setOk("");
                                   setError("");
-                                  selectedEmails.map(email => emailSubmit(email));
+                                  selectedEmails.map(email => addContextMember(email));
                                   setSelectedEmails([]);
                               }}
                     >
