@@ -39,6 +39,7 @@ interface BackendRFC {
   status: string
   createdAt: string
   updatedAt: string
+  isAuthor: boolean
   alternatives: BackendAlternative[]
   comments: BackendComment[]
 }
@@ -500,7 +501,7 @@ export default function RFCDetailPage() {
           </div>
         </section>
 
-        {rfcData.status === 'UNDER_REVIEW' && (
+        {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
             onClick={handleCloseNoDecision}
             disabled={isClosing}
@@ -627,7 +628,7 @@ export default function RFCDetailPage() {
             )}
           </div>
 
-          {rfcData.status === 'UNDER_REVIEW' && !isExpanded && (
+          {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && !isExpanded && (
             <div className="mt-4">
               <button
                 onClick={() => handleSelectAsDecision(alt)}
@@ -638,7 +639,7 @@ export default function RFCDetailPage() {
             </div>
           )}
 
-          {rfcData.status === 'UNDER_REVIEW' && isExpanded && (
+          {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && isExpanded && (
             <div className="mt-6 border-t pt-4">
               <button
                 onClick={() => handleSelectAsDecision(alt)}
@@ -703,13 +704,15 @@ export default function RFCDetailPage() {
         <>
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold text-gray-900">Alternatives ({alternatives.length})</h3>
-            {rfcData.status === 'UNDER_REVIEW' ? (<button
-              onClick={() => setShowNewAlternativeModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-            >
-              <Plus className="w-5 h-5" />
-              Add Alternative
-            </button>) : null}
+            {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor ? (
+              <button
+                onClick={() => setShowNewAlternativeModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+              >
+                <Plus className="w-5 h-5" />
+                Add Alternative
+              </button>
+            ) : null}
           </div>
 
           {alternatives.length > 0 ? (

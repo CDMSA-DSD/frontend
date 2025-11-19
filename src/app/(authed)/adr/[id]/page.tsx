@@ -9,6 +9,7 @@ import fetcher from "@/src/lib/fetcher"
 type DetailedADR = {
   id: number
   rfcId: number
+  author: boolean
   title: string
   context: string
   decision: string
@@ -237,7 +238,7 @@ function ADRSidebar({ adr, rfc, onEdit, onApprove }: {
               </div>
 
               <div className="mt-4 flex flex-col items-start gap-3">
-                {isUnderReview && (
+                {(isUnderReview && adr.author) && (
                   <>
                     <button 
                       className="flex size-10 items-center justify-center rounded-full bg-purple-600 text-white shadow hover:bg-purple-700"
