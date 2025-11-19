@@ -40,15 +40,16 @@ export default function GetContextById(): React.JSX.Element {
     /**
      * @brief Get all emails from the organization of the current [id] context in order to suggest them when adding a new context member
      */
-    const getOrgEmails = async (): Promise<void> => {
+    const getOrgEmails = async (orgId : number): Promise<void> => {
         const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users", {
             method: "GET",
             headers
         });
 
         const data = await res.json();
+        console.log(data);
         const orgEmails = data
-            .filter((user : {"org" : {"id":number}}) => user["org"]["id"].toString() == id)
+            .filter((user : {"org" : {"id":number}}) => user.org.id === orgId)
             .map((user : { email:string }) => user.email)
         setEmails(orgEmails);
         setFilteredEmails(orgEmails);
@@ -82,7 +83,11 @@ export default function GetContextById(): React.JSX.Element {
                 method: "GET",
                 headers,
             });
-            if (res.ok) setContext(JSON.parse(await res.text()));
+            if (res.ok) {
+                const data : Context = await res.json();
+                setContext(data);
+                await getOrgEmails(data.organizationId)
+            }
             else throw new Error("Server error");
         } catch (err) {
             console.log(err);
@@ -179,7 +184,6 @@ export default function GetContextById(): React.JSX.Element {
     useEffect(() => {
         getExistingContext();
         getContextMembers();
-        getOrgEmails();
     }, []);
 
 
