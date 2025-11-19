@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer components {
+    .p-autocomplete-token {
+        @apply pr-3 rounded-full;
+    }
+
+    .p-autocomplete-token-icon {
+        @apply text-[#5E50A4] ml-1 text-sm cursor-pointer;
+    }
+
+    .p-autocomplete-token-icon:hover {
+        @apply text-[#3e2d78];
+    }
+}

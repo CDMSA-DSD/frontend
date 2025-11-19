@@ -2,7 +2,7 @@
 
 import React, {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import {useParams} from "next/navigation";
-import { AutoComplete } from 'primereact/autocomplete';
+import {AutoComplete, AutoCompleteCompleteEvent} from 'primereact/autocomplete';
 
 const headers = { // TODO: Authentication
     "X-User-Id": "1",
@@ -24,22 +24,49 @@ export default function GetContextById(): React.JSX.Element {
         "contextAdmin":boolean
     }
 
-    const [email, setEmail] = useState<string>("")
     const [emails, setEmails] = useState<string[]>([]);
-    const [selectedEmails, setSelectedEmails] = useState(null);
-    const [filteredEmails, setFilteredEmails] = useState(null);
+    const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+    const [filteredEmails, setFilteredEmails] = useState<string[]>([]);
+
+    const [error, setError] = useState<string>("");
+    const [ok, setOk] = useState<string>("");
+
+
+    /**
+     @brief Look if the input value starts as the same as other emails from the same organization
+     */
+    const search = (event: AutoCompleteCompleteEvent) => {
+
+            let _filteredEmails : string[];
+
+            if (!event.query.trim().length) {
+                _filteredEmails = [...emails];
+            }
+            else {
+                _filteredEmails = emails.filter((email) => {
+                    return email.toLowerCase().startsWith(event.query.trim().toLowerCase());
+                });
+            }
+            setFilteredEmails(_filteredEmails);
+    }
 
     const { id } = useParams();
     const [context, setContext] = useState<Context>()
     const [members, setMembers] = useState<Member[]>()
 
-    // TODO: Currently no endpoint to get users from org
-/*    const getOrgEmails = async (): Promise<void> => {
-        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id, {
+    const getOrgEmails = async (): Promise<void> => {
+        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users", {
             method: "GET",
-            headers,
+            headers
         });
-    }*/
+
+        const data = await res.json();
+        const orgEmails = data
+            .filter((user : {"org" : {"id":number}}) => user["org"]["id"].toString() == id)
+            .map((user : { email:string }) => user.email)
+        setEmails(orgEmails);
+        setFilteredEmails(orgEmails);
+    }
     const getExistingContext = async () : Promise<void> => {
         try {
 
@@ -66,6 +93,7 @@ export default function GetContextById(): React.JSX.Element {
         }
     };
     const addContextAdmin = async (userId : number) => {
+
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins", {
                 method: "POST",
@@ -91,23 +119,24 @@ export default function GetContextById(): React.JSX.Element {
         }
     }
 
-    async function emailSubmit(e: FormEvent<HTMLFormElement>) {
-        e.preventDefault(); // Prevent reloading
+    async function emailSubmit(email:string) {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
                 method: "POST",
                 headers,
-                body: JSON.stringify({userId:email}),
+                body: JSON.stringify({email}),
             });
-            if (!res.ok) throw new Error("Erreur serveur");
-            console.log("✅ Données envoyées :", email);
+            if (res.ok) setOk(`${ok}\nMember ${email} added.`)
+            else setError(`${error}\nCannot add member ${email}`);
+
             getContextMembers();
         } catch (err) {
-            console.error(err);
+            throw err;
         } finally {
-            setEmail("")
+            // setEmail("")
         }
     }
+
     const removeContextMember = async (userId : number) => {
         try {
             const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members/" + userId , {
@@ -124,6 +153,7 @@ export default function GetContextById(): React.JSX.Element {
     useEffect(() => {
         getExistingContext();
         getContextMembers();
+        getOrgEmails();
     }, []);
 
     return (
@@ -157,26 +187,49 @@ export default function GetContextById(): React.JSX.Element {
             <div>
                 <h1 className="text-4xl text-[#5E50A4]">Context Members</h1>
                 <div className="">
-                    <form className="mb-4 flex flex-row items-center gap-3">
-                        <input
-                            className="flex-grow h-[56px] rounded-[24px] border px-4"
-                            required
-                            type="text"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                    <form     className="mb-4 flex flex-row items-center gap-3"
+                              onSubmit={(e) => {
+                                  e.preventDefault();
+                                  setOk("");
+                                  setError("");
+                                  selectedEmails.map(email => emailSubmit(email));
+                                  setSelectedEmails([]);
+                              }}
+                    >
+                        <div className="flex w-full border border-[#5E50A4] rounded-[24px] p-4">
+                            <AutoComplete
+                                multiple
+                                value={selectedEmails}
+                                suggestions={filteredEmails}
+                                completeMethod={search}
+                                onChange={(e) => setSelectedEmails(e.value)}
+                                panelClassName="rounded-[24px] p-4 bg-white text-black shadow-lg"
+                                style={{
 
-                        <button
-                            className="flex-none h-[56px] px-6 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
-                            type="submit"
-                            onClick={() => emailSubmit}
-                        >
-                            Add Member
+                                }}
+                                selectedItemTemplate={(email: string) => (
+                                    <div className="flex items-center rounded-2xl bg-[#F5F0FF] border border-[#5E50A4] px-3 py-1 mr-2">
+                                        <span className="text-sm text-[#1D1B20]">{email}</span>
+
+                                        <button
+                                            type="button"
+                                            className="ml-2 flex items-center justify-center w-5 h-5 rounded-full hover:bg-[#E0D4FF] transition-colors"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedEmails((prev) => prev.filter((v) => v !== email));
+                                            }}
+                                        >
+                                            <i className="pi pi-times text-xs text-[#5E50A4]" />
+                                        </button>
+                                    </div>
+                                )}
+
+                            />
+                        </div>
+                        <button className="flex-none h-[56px] px-6 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors">
+                            Add Member(s)
                         </button>
                     </form>
-                    {   // TODO: Version with autocomplete https://primereact.org/autocomplete/#multiple
-                        /* <AutoComplete field="name" multiple value={selectedCountries} suggestions={filteredCountries} completeMethod={search} onChange={(e) => setSelectedCountries(e.value)} /> */
-                    }
                 </div>
                 {members?.every((member) => member.contextAdmin) && (
                     <div className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
