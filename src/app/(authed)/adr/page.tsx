@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import fetcher from '@/src/lib/fetcher';
 
 interface BackendADR {
   id: number;
@@ -31,7 +32,7 @@ export default function ADRPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`);
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
