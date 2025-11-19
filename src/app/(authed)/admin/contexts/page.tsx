@@ -3,6 +3,7 @@
 import React, {useEffect, useState} from "react";
 import Background from "@/components/background"
 import Link from "next/link";
+import ErrorBanner from "@/components/ui/errorBanner"
 
 export default function Contexts(): React.JSX.Element {
     type ContextType = {
@@ -75,7 +76,7 @@ export default function Contexts(): React.JSX.Element {
             type: "",
             description: "",
         });
-        const [errorMessage, setErrorMessage] = useState<string | null>();
+        const [errorMessage, setErrorMessage] = useState<string>();
 
         /**
          * TODO Make this version generic.
@@ -100,14 +101,16 @@ export default function Contexts(): React.JSX.Element {
                 );
 
                 if (!res.ok) {
-
-                    throw new Error(await JSON.parse(await res.text()));
+                    const data : {message:string} = await res.json()
+                    setErrorMessage(data.message)
+                }else{
+                    setErrorMessage("")
+                    await getExistingContexts();
+                    onClose();
                 }
-                setErrorMessage(null)
-                await getExistingContexts();
-                onClose();
+
             } catch (err) {
-                setErrorMessage("This context name is already used.");
+                console.log(err);
             }
         }
 
@@ -122,12 +125,7 @@ export default function Contexts(): React.JSX.Element {
                     onClick={(e) => e.stopPropagation()}
                 >
                     {errorMessage && (
-                        <div
-                            role="alert"
-                            className="mb-4 flex items-start justify-between rounded-lg border border-red-500 bg-red-50 px-4 py-3 text-red-700"
-                        >
-                            <p className="text-sm font-medium">{errorMessage}</p>
-                        </div>
+                        <ErrorBanner text={errorMessage} />
                     )}
                     <h2 className="text-3xl font-bold text-center text-black mb-6">
                         New context
