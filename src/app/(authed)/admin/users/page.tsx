@@ -54,7 +54,7 @@ export default function UsersPage() {
           email: u.email,
           role: "Employee", // temporary until backend sends roles
           status: "ACTIVE", // temporary status
-          joinedAt: undefined,
+          joinedAt: u.joinedAt,
         }))
 
         setUsers(mapped)

@@ -13,7 +13,7 @@ export function UserRow({ email, role, joinedOn, onDelete }: UserRowProps) {
       <div className="text-sm text-foreground">{email}</div>
       <div className="w-32 text-sm text-foreground">{role}</div>
       <div className="w-32 text-sm text-foreground">
-        {joinedOn || "\u2014"}
+        {joinedOn || "-"}
       </div>
       <button
         type="button"
