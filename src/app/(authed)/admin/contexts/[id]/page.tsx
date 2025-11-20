@@ -157,10 +157,10 @@ export default function GetContextById(): React.JSX.Element {
                 headers,
                 body: JSON.stringify({email}),
             });
-            if (res.ok) setOk(`${ok}\nMember ${email} added.`);
+            if (res.ok) setOk(prev => `${prev}\nMember ${email} added.`);
             else {
                 const data : {message:string} = await res.json()
-                setError(`${error}\nCannot add member ${email}: ${data.message}`);
+                setError(prev =>`${prev}\nCannot add member ${email}: ${data.message}`);
             };
             getContextMembers();
         } catch (err){
