@@ -3,6 +3,7 @@ import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLe
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
+import fetcher from '@/src/lib/fetcher'
 
 interface BackendAlternative {
   id: number
@@ -38,13 +39,12 @@ interface BackendRFC {
   status: string
   createdAt: string
   updatedAt: string
+  isAuthor: boolean
   alternatives: BackendAlternative[]
   comments: BackendComment[]
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
-type VoteOutcome = boolean
-
 
 interface Alternative {
   id: number
@@ -170,7 +170,7 @@ export default function RFCDetailPage() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
 
       if (!response.ok) {
         throw new Error(`Failed to fetch RFC (Status: ${response.status})`)
@@ -197,11 +197,10 @@ export default function RFCDetailPage() {
     })
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/vote`, {
+      await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify({ outcome })
       })
@@ -225,18 +224,17 @@ export default function RFCDetailPage() {
 
     setIsSubmittingAlternative(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       })
 
       if (!res.ok) throw new Error(`Failed to create alternative (status ${res.status})`)
 
-      const refreshed = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
+      const refreshed = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
       if (refreshed.ok) {
         const data: BackendRFC = await refreshed.json()
         setRfcData(data)
@@ -287,11 +285,10 @@ export default function RFCDetailPage() {
 
     setIsPostingComment(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/comments`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       })
@@ -319,11 +316,10 @@ export default function RFCDetailPage() {
 
     setIsClosing(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify({
           "alternativeId": null
@@ -378,11 +374,10 @@ export default function RFCDetailPage() {
     if (!rfcId) return
     setIsGeneratingAdr(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/generateadr`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/generateadr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify({ alternativeId: altId })
       })
@@ -425,11 +420,10 @@ export default function RFCDetailPage() {
 
     setIsSubmittingAdr(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       });
@@ -439,11 +433,10 @@ export default function RFCDetailPage() {
       }
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+        const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-User-Id': '1'
           },
           body: JSON.stringify({
             "alternativeId": winningAlternative.id
@@ -508,7 +501,7 @@ export default function RFCDetailPage() {
           </div>
         </section>
 
-        {rfcData.status === 'UNDER_REVIEW' && (
+        {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
             onClick={handleCloseNoDecision}
             disabled={isClosing}
@@ -635,7 +628,7 @@ export default function RFCDetailPage() {
             )}
           </div>
 
-          {rfcData.status === 'UNDER_REVIEW' && !isExpanded && (
+          {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && !isExpanded && (
             <div className="mt-4">
               <button
                 onClick={() => handleSelectAsDecision(alt)}
@@ -646,7 +639,7 @@ export default function RFCDetailPage() {
             </div>
           )}
 
-          {rfcData.status === 'UNDER_REVIEW' && isExpanded && (
+          {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && isExpanded && (
             <div className="mt-6 border-t pt-4">
               <button
                 onClick={() => handleSelectAsDecision(alt)}
@@ -711,13 +704,15 @@ export default function RFCDetailPage() {
         <>
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold text-gray-900">Alternatives ({alternatives.length})</h3>
-            {rfcData.status === 'UNDER_REVIEW' ? (<button
-              onClick={() => setShowNewAlternativeModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-            >
-              <Plus className="w-5 h-5" />
-              Add Alternative
-            </button>) : null}
+            {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor ? (
+              <button
+                onClick={() => setShowNewAlternativeModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+              >
+                <Plus className="w-5 h-5" />
+                Add Alternative
+              </button>
+            ) : null}
           </div>
 
           {alternatives.length > 0 ? (

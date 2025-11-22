@@ -3,6 +3,7 @@ import { MessageCircle, Plus, X, Paperclip, Send } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { parseDescription } from '@/lib/utils'
 import Link from 'next/link'
+import fetcher from '@/src/lib/fetcher'
 
 interface BackendRFC {
   id: number;
@@ -46,7 +47,7 @@ export default function RFCPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`);
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -74,17 +75,15 @@ export default function RFCPage() {
     const postBody = {
       title: formData.title,
       description: description,
-      templateId: 1, // Default value as per requirements for MVP presentation
-      orgId: 1 // Default value as per requirements for MVP presentation
+      templateId: 1, // Default value, only working with one template
     };
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`, {
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1' // Required header as per requirements for MVP presentation
         },
         body: JSON.stringify(postBody)
       });
