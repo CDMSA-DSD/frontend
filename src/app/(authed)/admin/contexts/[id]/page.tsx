@@ -1,15 +1,11 @@
 "use client"
 
 import React, {ChangeEvent, FormEvent, useEffect, useState} from "react";
-import {useParams} from "next/navigation";
+import {useParams, useRouter} from "next/navigation";
 import {AutoComplete, AutoCompleteCompleteEvent} from 'primereact/autocomplete';
 import ErrorBanner from "@/components/ui/errorBanner"
 import OkBanner from "@/components/ui/okBanner"
-
-const headers = { // TODO: Authentication
-    "X-User-Id": "1",
-    "Content-Type": "application/json",
-};
+import fetcher from "@/src/lib/fetcher"
 
 export default function GetContextById(): React.JSX.Element {
     type Context = {
@@ -22,7 +18,9 @@ export default function GetContextById(): React.JSX.Element {
 
     type Member = {
         "userId": number,
-        "username": string,
+        "firstname": string,
+        "lastname": string,
+        "email": string,
         "contextAdmin":boolean
     }
 
@@ -34,6 +32,7 @@ export default function GetContextById(): React.JSX.Element {
     const [ok, setOk] = useState<string>("");
 
     const { id } = useParams();
+    const router = useRouter();
     const [context, setContext] = useState<Context>()
     const [members, setMembers] = useState<Member[]>()
 
@@ -41,16 +40,10 @@ export default function GetContextById(): React.JSX.Element {
      * @brief Get all emails from the organization of the current [id] context in order to suggest them when adding a new context member
      */
     const getOrgEmails = async (orgId : number): Promise<void> => {
-        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users", {
-            method: "GET",
-            headers
-        });
+        const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users");
 
         const data = await res.json();
-        console.log(data);
-        const orgEmails = data
-            .filter((user : {"org" : {"id":number}}) => user.org.id === orgId)
-            .map((user : { email:string }) => user.email)
+        const orgEmails = data._embedded?.users?.map((user: { email: string }) => user.email) || [];
         setEmails(orgEmails);
         setFilteredEmails(orgEmails);
     }
@@ -79,10 +72,7 @@ export default function GetContextById(): React.JSX.Element {
     const getExistingContext = async () : Promise<void> => {
         try {
 
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id, {
-                method: "GET",
-                headers,
-            });
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id);
             if (res.ok) {
                 const data : Context = await res.json();
                 setContext(data);
@@ -99,10 +89,7 @@ export default function GetContextById(): React.JSX.Element {
      */
     const getContextMembers = async () : Promise<void> => {
         try {
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
-                method: "GET",
-                headers
-            });
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members");
             if (res.ok) setMembers(JSON.parse(await res.text()));
             else throw new Error("Could not find members");
         } catch (err) {
@@ -111,15 +98,15 @@ export default function GetContextById(): React.JSX.Element {
     };
 
     /**
-     * @brief Promote an existing context member to local admin
+     * @brief Promote an existing context member to context admin
      * @param userId
      */
     const addContextAdmin = async (userId : number) => {
 
         try {
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins", {
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins", {
                 method: "POST",
-                headers,
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({userId}),
             });
             if (res.ok) await getContextMembers();
@@ -130,14 +117,13 @@ export default function GetContextById(): React.JSX.Element {
     }
 
     /**
-     * @brief Downgrade an existing local admin from the context to normal member.
+     * @brief Downgrade an existing context admin from the context to normal member.
      * @param userId
      */
     const removeContextAdmin = async (userId : number) => {
         try {
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins/" + userId , {
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/admins/" + userId , {
                 method: "DELETE",
-                headers
             });
             if (res.ok) await getContextMembers();
             else throw new Error("Could not find members");
@@ -152,9 +138,9 @@ export default function GetContextById(): React.JSX.Element {
      */
     const addContextMember = async (email:string) => {
         try {
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members", {
                 method: "POST",
-                headers,
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({email}),
             });
             if (res.ok) setOk(prev => `${prev}\nMember ${email} added.`);
@@ -170,14 +156,36 @@ export default function GetContextById(): React.JSX.Element {
 
     const removeContextMember = async (userId : number) => {
         try {
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members/" + userId , {
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id + "/members/" + userId , {
                 method: "DELETE",
-                headers
             });
             if (res.ok) await getContextMembers();
             else throw new Error("Server Error");
         } catch (err) {
             console.log(err);
+        }
+    }
+
+    /**
+     * @brief Delete this context (soft delete on backend)
+     */
+    const deleteContextById = async () => {
+        if (!confirm("Are you sure you want to delete this context? This action can only be performed by an admin.")) return;
+        try {
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts/" + id, {
+                method: "DELETE",
+            });
+            if (res.ok) {
+                setOk(prev => `${prev}\nContext deleted.`);
+                // navigate back to contexts list
+                router.push('/admin/contexts');
+            } else {
+                let msg = '';
+                try { const data = await res.json(); msg = data?.message ?? res.statusText; } catch { msg = res.statusText }
+                setError(prev => `${prev}\nCould not delete context: ${msg}`);
+            }
+        } catch (err) {
+            setError(prev => `${prev}\nCould not delete context: ${String(err)}`);
         }
     }
 
@@ -193,6 +201,14 @@ export default function GetContextById(): React.JSX.Element {
             <ErrorBanner text={error}/>
             <OkBanner text={ok}/>
             <h1 className="text-4xl text-[#5E50A4]">{context?.name}</h1>
+            <div className="flex justify-end mt-2">
+                <button
+                    onClick={deleteContextById}
+                    className="flex-none h-[56px] px-6 rounded-[24px] bg-red-600 text-white hover:bg-red-700 transition-colors"
+                >
+                    Delete Context
+                </button>
+            </div>
             <div className="p-4">
                 <h2 className="text-1xl text-[#625B71]">Type: {context?.type}</h2>
                 <p>{context?.description}</p>
@@ -207,12 +223,12 @@ export default function GetContextById(): React.JSX.Element {
                 {members?.map((member: Member)  : false | React.JSX.Element => (
                     member.contextAdmin &&
                     <div key={member.userId} className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
-                        <p> {member.username}</p>
+                        <p> {member.email}</p>
                         <div className="ml-auto">
                             <button className="drop-shadow-xl lg:w-auto p-4 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                             onClick={() => removeContextAdmin(member.userId)}
                             >
-                                ⬇ Set Member ⬇
+                                ⬇ Revoke Context Admin ⬇
                             </button>
                         </div>
                     </div>
@@ -236,7 +252,7 @@ export default function GetContextById(): React.JSX.Element {
                                 value={selectedEmails}
                                 suggestions={filteredEmails}
                                 completeMethod={search}
-                                onChange={(e) => setSelectedEmails(e.value)}
+                                onChange={(e: any) => setSelectedEmails(e.value)}
                                 panelClassName="rounded-[24px] p-4 bg-white text-black shadow-lg"
                                 style={{
 
@@ -267,18 +283,18 @@ export default function GetContextById(): React.JSX.Element {
                 </div>
                 {members?.every((member) => member.contextAdmin) && (
                     <div className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
-                        <p>There is currently no regular member!</p>
+                        <p>There are currently no regular members!</p>
                     </div>
                 )}
                 {members?.map((member: Member)  : false | React.JSX.Element => (
                     !member.contextAdmin &&
                     <div key={member.userId} className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
-                        <p> {member.username}</p>
+                        <p> {member.email}</p>
                         <div className="ml-auto">
                             <button className="drop-shadow-xl lg:w-auto p-4 mr-3 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                                     onClick={() => addContextAdmin(member.userId)}
                             >
-                                ⬆ Set Local Admin ⬆
+                                ⬆ Set Context Admin ⬆
                             </button>
                             <button className="drop-shadow-xl lg:w-auto p-4 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
                             onClick={() => removeContextMember(member.userId)}

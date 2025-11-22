@@ -4,6 +4,7 @@ import React, {useEffect, useState} from "react";
 import Background from "@/components/background"
 import Link from "next/link";
 import ErrorBanner from "@/components/ui/errorBanner"
+import fetcher from "@/src/lib/fetcher"
 
 export default function Contexts(): React.JSX.Element {
     type ContextType = {
@@ -19,12 +20,7 @@ export default function Contexts(): React.JSX.Element {
 
     const getExistingContexts = async () => {
         try {
-            const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts", {
-                method: "GET",
-                headers: {
-                    "X-User-Id": "1",
-                },
-            });
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts");
             if (res.ok) setContextList(JSON.parse(await res.text()));
             else throw new Error("Could not find context");
         } catch (err) {
@@ -88,14 +84,11 @@ export default function Contexts(): React.JSX.Element {
         async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
             e.preventDefault();
             try {
-                const res = await fetch(
+                const res = await fetcher(
                     process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts",
                     {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-User-Id": "1",
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(formData),
                     }
                 );
