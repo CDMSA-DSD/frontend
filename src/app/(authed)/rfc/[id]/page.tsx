@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 
+import {Comment} from '@/lib/types'
+import CommentZone from "@/components/ui/Comment";
+
 interface BackendAlternative {
   id: number
   title: string
@@ -18,14 +21,6 @@ interface BackendAlternative {
   no: number
 }
 
-interface BackendComment {
-  id: number
-  content: string
-  authorId: number
-  author: string
-  createdAt: string
-  updatedAt: string | null
-}
 
 interface BackendRFC {
   id: number
@@ -39,7 +34,7 @@ interface BackendRFC {
   createdAt: string
   updatedAt: string
   alternatives: BackendAlternative[]
-  comments: BackendComment[]
+  comments: Comment[]
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
@@ -58,14 +53,6 @@ interface Alternative {
   pros: string[]
   cons: string[]
   attachments?: string[]
-}
-
-interface Comment {
-  id: number
-  author: string
-  date: string
-  content: string
-  replies?: Comment[]
 }
 
 interface AlternativeForm {
@@ -109,17 +96,6 @@ const mapAlternative = (backendAlt: BackendAlternative): Alternative => ({
   attachments: backendAlt.id === 1 ? ['document1.pdf', 'diagram.png'] : []
 })
 
-
-// Function to map backend comment to client comment
-const mapComment = (backendComment: BackendComment): Comment => ({
-  id: backendComment.id,
-  author: backendComment.author,
-  date: formatDate(backendComment.createdAt),
-  content: backendComment.content,
-  replies: [] // Backend doesn't provide replies, keep empty for now
-});
-
-
 export default function RFCDetailPage() {
   const params = useParams()
   const rfcId = params.id
@@ -149,12 +125,7 @@ export default function RFCDetailPage() {
   const [isPostingComment, setIsPostingComment] = useState(false)
 
   const alternatives: Alternative[] = rfcData ? rfcData.alternatives.map(mapAlternative) : []
-  const comments: Comment[] = rfcData ? rfcData.comments.map(mapComment) : []
 
-  const clientComments: Comment[] = comments.length > 0 ? [
-    { ...comments[0], replies: comments.slice(1).length > 0 ? [{ ...comments[1], replies: [] }] : [] }, // Simulating a reply chain
-    ...comments.slice(2)
-  ] : []
 
   const [userVotes, setUserVotes] = useState<Record<number, boolean | null>>({})
   const isReviewer = true
@@ -278,12 +249,15 @@ export default function RFCDetailPage() {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
   }
 
-  const handlePostComment = async () => {
+  const handlePostComment = async (content:string, parentId : number | null = null) => {
     if (isPostingComment) return
     if (!rfcId) return
-    if (!newCommentContent || newCommentContent.trim().length === 0) return
+    if (!content || content.trim().length === 0) return
 
-    const payload = { content: newCommentContent.trim() }
+    const payload = {
+        content: content.trim(),
+        parentId
+    }
 
     setIsPostingComment(true)
     try {
@@ -732,22 +706,6 @@ export default function RFCDetailPage() {
     </div>
   )
 
-  const renderComment = (comment: Comment, isReply: boolean = false) => (
-    <div key={comment.id} className={`${isReply ? 'ml-12 mt-4' : 'mb-6 mt-4'}`}>
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-semibold text-gray-900">{comment.author}</span>
-          <span className="text-sm text-gray-500">{comment.date}</span>
-        </div>
-        <p className="text-gray-700 mb-3">{comment.content}</p>
-        <div className="flex items-center gap-4">
-          <button className="text-sm text-gray-600 hover:text-gray-900">Reply</button>
-        </div>
-      </div>
-      {comment.replies?.map((reply) => renderComment(reply, false))}
-    </div>
-  )
-
   const renderDiscussion = () => (
     <div className="space-y-6">
       {/* New Comment */}
@@ -762,7 +720,7 @@ export default function RFCDetailPage() {
         />
         <div className="flex justify-end mt-2">
           <button
-            onClick={handlePostComment}
+            onClick={() => handlePostComment(newCommentContent)}
             className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
             disabled={isPostingComment || !newCommentContent.trim()}
           >
@@ -773,11 +731,11 @@ export default function RFCDetailPage() {
 
       {/* Comments */}
       <div>
-        {clientComments.length > 0 ? (
-          clientComments.map((comment) => renderComment(comment))
+        {rfcData.comments.length > 0 ? (
+          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
         ) : (
           <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
-        )}
+        )}7
       </div>
     </div>
   )
@@ -943,7 +901,7 @@ export default function RFCDetailPage() {
               }`}
           >
             <MessageSquare className="w-5 h-5" />
-            <span className="font-medium">Discussion ({comments.length})</span>
+            <span className="font-medium">Discussion ({rfcData.comments.length})</span>
           </button>
         </div>
       </div>
