@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
 
-import {Comment} from '@/lib/types'
+import { Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
 
 interface BackendAlternative {
@@ -21,7 +21,6 @@ interface BackendAlternative {
   yes: number
   no: number
 }
-
 
 interface BackendRFC {
   id: number
@@ -450,6 +449,13 @@ export default function RFCDetailPage() {
     )
   }
 
+  // Count comments including nested replies (recursively)
+  const countCommentWithReplies = (c: Comment): number => {
+    return 1 + (c.replies?.reduce((sum, r) => sum + countCommentWithReplies(r), 0) ?? 0)
+  }
+
+  const totalCommentsCount = rfcData.comments.reduce((sum, c) => sum + countCommentWithReplies(c), 0)
+
   const renderPresentation = () => {
     const { context: contextText, problem: problemText } = parseDescription(rfcData.description)
 
@@ -730,7 +736,7 @@ export default function RFCDetailPage() {
           rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
         ) : (
           <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
-        )}7
+        )}
       </div>
     </div>
   )
@@ -896,7 +902,7 @@ export default function RFCDetailPage() {
               }`}
           >
             <MessageSquare className="w-5 h-5" />
-            <span className="font-medium">Discussion ({rfcData.comments.length})</span>
+            <span className="font-medium">Discussion ({totalCommentsCount})</span>
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
-import React, {useState} from "react";
-import {Comment} from "@/lib/types";
-import {ParamValue} from "next/dist/server/request/params";
+import React, { useState } from "react";
+import { Comment } from "@/lib/types";
+import { ParamValue } from "next/dist/server/request/params";
 
 interface CommentZoneProps {
     comment: Comment;
@@ -17,7 +17,7 @@ export default function CommentZone({comment, handleSubmit ,isReply = false} : C
             <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-gray-900">{comment.author}</span>
-                    <span className="text-sm text-gray-500">{comment.createdAt}</span>
+                    <span className="text-sm text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
                 </div>
                 <p className="text-gray-700 mb-3">{comment.content}</p>
                 <div className="flex items-center gap-4">
