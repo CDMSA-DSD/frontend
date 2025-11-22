@@ -21,7 +21,7 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
 
   // When we implement admin roles, we can conditionally render this section
   const adminNavigation = [
-    { name: 'Manage users', href: `/admin/users`, icon: Users },
+    { name: 'Manage Users', href: `/admin/users`, icon: Users },
     { name: 'Manage Organization', href: `/admin/organization`, icon: Building2 },
     { name: 'Manage Contexts', href: `/admin/contexts`, icon: FolderTree },
   ]
