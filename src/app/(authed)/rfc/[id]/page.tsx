@@ -709,12 +709,12 @@ export default function RFCDetailPage() {
   const renderDiscussion = () => (
     <div className="space-y-6">
       {/* New Comment */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
         <textarea
           placeholder="Add a comment..."
           value={newCommentContent}
           onChange={(e) => setNewCommentContent(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+          className="w-full text-black px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
           rows={3}
           disabled={isPostingComment}
         />
