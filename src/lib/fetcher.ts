@@ -14,14 +14,17 @@ const getAuthHeader = (): { Authorization: string } | null | undefined => {
   }
 }
 
-export async function authFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
+export async function authFetch(
+  input: RequestInfo,
+  init?: RequestInit
+): Promise<Response> {
   const auth = getAuthHeader()
   const mergedInit: RequestInit = { ...(init ?? {}) }
 
   const initialHeaders = mergedInit.headers ?? {}
   const headers = new Headers(initialHeaders as HeadersInit)
   if (auth && auth.Authorization) {
-    headers.set('Authorization', auth.Authorization)
+    headers.set("Authorization", auth.Authorization)
   }
   mergedInit.headers = headers
 
