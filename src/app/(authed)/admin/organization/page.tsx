@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import fetcher from "@/src/lib/fetcher"
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080"
-const API_BASE = `${BACKEND_URL}/org_details`
+const API_BASE = `${BACKEND_URL}/orgs`
 
 type Repo = {
   name: string
@@ -47,7 +48,7 @@ export default function OrganizationSettings() {
   useEffect(() => {
     const fetchOrg = async () => {
       try {
-        const res = await fetch(API_BASE)
+        const res = await fetcher(API_BASE)
         if (!res.ok) {
           const text = await res.text()
           throw new Error(`GET ${res.status} ${res.statusText} — ${text}`)
@@ -77,7 +78,7 @@ export default function OrganizationSettings() {
     setMessage("")
 
     try {
-      const res = await fetch(API_BASE, {
+      const res = await fetcher(API_BASE, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,7 +115,7 @@ export default function OrganizationSettings() {
     setMessage("")
 
     try {
-      const res = await fetch(`${API_BASE}/github`, {
+      const res = await fetcher(`${API_BASE}/github`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -142,7 +143,7 @@ export default function OrganizationSettings() {
     setLoadingRepos(true)
     setMessage("")
     try {
-      const res = await fetch(`${API_BASE}/github/repos`)
+      const res = await fetcher(`${API_BASE}/github/repos`)
       if (!res.ok) {
         const text = await res.text()
         throw new Error(`GET ${res.status} ${res.statusText} — ${text}`)
@@ -161,7 +162,7 @@ export default function OrganizationSettings() {
     setLoadingBranches(true)
     setMessage("")
     try {
-      const res = await fetch(
+      const res = await fetcher(
         `${API_BASE}/github/${encodeURIComponent(owner)}/${encodeURIComponent(
           repoName,
         )}/branches`,
@@ -202,7 +203,7 @@ export default function OrganizationSettings() {
     setMessage("")
 
     try {
-      const res = await fetch(`${API_BASE}/github/selection`, {
+      const res = await fetcher(`${API_BASE}/github/selection`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -3,7 +3,6 @@
 import Background from "../components/background"
 import React, {FormEvent, useState} from "react";
 import {useRouter} from "next/navigation";
-import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export default function Home(): React.JSX.Element {
     const [showNewOrganizationModal, setShowNewOrganizationModal] = useState(false);
@@ -66,31 +65,34 @@ export default function Home(): React.JSX.Element {
 
     function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => void; })
         : React.JSX.Element | null {
-        const router: AppRouterInstance = useRouter();
+        // On successful registration we close this modal and open the login modal.
 
         type NewOrganizationFormData = {
             orgName: string,
             orgDomain: string,
             orgDescription: string,
 
-            adminName: string,
-            adminUsername: string,
+            adminFirstName: string,
+            adminLastName: string,
             adminEmail: string,
             adminPassword: string,
+            adminPasswordConfirm: string,
         };
 
         const [step, setStep] = useState<1 | 2>(1);
         const [submitting, setSubmitting] = useState(false);
+        const [error, setError] = useState<string | null>(null);
         const [formData, setFormData] = useState<NewOrganizationFormData>(
             {
                 orgName: '',
                 orgDomain: '',
                 orgDescription: '',
 
-                adminName: '',
-                adminUsername: '',
+                adminFirstName: '',
+                adminLastName: '',
                 adminEmail: '',
                 adminPassword: '',
+                adminPasswordConfirm: '',
             }
         );
 
@@ -105,16 +107,37 @@ export default function Home(): React.JSX.Element {
             e.preventDefault(); // Prevent reloading
             try {
                 setSubmitting(true);
-                console.log(process.env.NEXT_PUBLIC_BACKEND_URL + "/orgs")
-                const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/orgs", {
+                // Validate passwords match
+                if (formData.adminPassword !== formData.adminPasswordConfirm) {
+                    setError("Passwords do not match");
+                    return;
+                }
+
+                const payload = {
+                    org: {
+                        companyName: formData.orgName,
+                        domain: formData.orgDomain,
+                        description: formData.orgDescription,
+                    },
+                    admin: {
+                        firstname: formData.adminFirstName,
+                        lastname: formData.adminLastName,
+                        email: formData.adminEmail,
+                        password: formData.adminPassword,
+                    },
+                };
+
+                const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/register-org", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify(formData),
+                    body: JSON.stringify(payload),
                 });
-                if (!res.ok) throw new Error("Erreur serveur");
-                console.log("✅ Données envoyées :", formData);
+                if (!res.ok) throw new Error("Server Error");
 
-                router.push("/dashboard");
+                // Close the create-organization modal and open the login modal
+                onClose();
+                setShowLoginModal(true);
+                setStep(1);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -133,7 +156,7 @@ export default function Home(): React.JSX.Element {
                     }}
                 >
                     <div
-                        className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
+                        className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-10"
                         onClick={(e) => e.stopPropagation() /* Because parent div close the modal */}
                     >
                         <h2 className="text-3xl font-bold text-center text-black">
@@ -160,30 +183,34 @@ export default function Home(): React.JSX.Element {
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         <div className="flex-1">
                                             <label className="block text-sm font-semibold text-black mb-1">
-                                                Name
+                                                First name
                                             </label>
                                             <input
                                                 type="text" required
-                                                value={formData.adminName}
+                                                value={formData.adminFirstName}
                                                 onChange={(e) => {
-                                                    setFormData({...formData, adminName: e.currentTarget.value})
+                                                    setError(null);
+                                                    setFormData({...formData, adminFirstName: e.currentTarget.value})
                                                 }}
                                                 className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
                                                 placeholder="John"
                                             />
                                         </div>
-                                        {/* <div className="flex-1">
+                                        <div className="flex-1">
                                             <label className="block text-sm font-semibold text-black mb-1">
                                                 Surname
                                             </label>
                                             <input
-                                                type="text"
-                                                value={formData.adminName}
-                                                onChange={(e) => setAdmin({ surname: e.target.value })}
+                                                type="text" required
+                                                value={formData.adminLastName}
+                                                onChange={(e) => {
+                                                    setError(null);
+                                                    setFormData({...formData, adminLastName: e.currentTarget.value})
+                                                }}
                                                 className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
                                                 placeholder="Doe"
                                             />
-                                        </div> */}
+                                        </div>
                                     </div>
 
                                     <div>
@@ -194,10 +221,10 @@ export default function Home(): React.JSX.Element {
                                             type="email" required
                                             value={formData.adminEmail}
                                             onChange={(e) => {
+                                                setError(null);
                                                 setFormData({
                                                     ...formData,
                                                     adminEmail: e.currentTarget.value,
-                                                    adminUsername: e.currentTarget.value
                                                 });
                                             }}
                                             className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
@@ -220,6 +247,26 @@ export default function Home(): React.JSX.Element {
                                             placeholder="********"
                                         />
                                     </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-black mb-1">
+                                            Confirm Password
+                                        </label>
+                                        <input
+                                            type="password" required
+                                            value={formData.adminPasswordConfirm}
+                                            onChange={(e) => setFormData({
+                                                ...formData,
+                                                adminPasswordConfirm: e.currentTarget.value
+                                            })}
+                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            placeholder="********"
+                                        />
+                                    </div>
+
+                                    {error && (
+                                        <p className="text-sm text-red-600">{error}</p>
+                                    )}
 
                                     <button
                                         type="submit"
@@ -313,7 +360,6 @@ export default function Home(): React.JSX.Element {
         : React.JSX.Element | null {
         const router = useRouter();
         type LoginFormData = {
-            // email: string; // is not used yet.
             username: string
             password: string;
             remember: boolean;
@@ -329,13 +375,33 @@ export default function Home(): React.JSX.Element {
         async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
             e.preventDefault(); // Prevent reloading
             try {
-                const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/users/login", {
+                // backend expects { email, password }
+                const payload = { email: formData.username, password: formData.password };
+
+                const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/login", {
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify(formData),
+                    body: JSON.stringify(payload),
                 });
-                if (!res.ok) throw new Error("Erreur serveur");
-                console.log("✅ Données envoyées :", formData);
+
+                if (!res.ok) {
+                    const text = await res.text().catch(() => "");
+                    throw new Error(text || "Server error");
+                }
+
+                const data = await res.json();
+
+                // Persist auth info (token + user + roles) for other parts of the app
+                try {
+                    localStorage.setItem("auth", JSON.stringify({
+                        token: data.token,
+                        user: data.user,
+                        isAdmin: data.isAdmin,
+                        contextIsAdmin: data.contextIsAdmin ?? [],
+                    }));
+                } catch (e) {
+                    console.warn("Could not persist auth to localStorage", e);
+                }
 
                 router.push("/dashboard");
             } catch (err) {
@@ -364,7 +430,7 @@ export default function Home(): React.JSX.Element {
                         >
                             <div>
                                 <label className="block text-sm font-semibold text-black mb-1">
-                                    Username {/* TODO FIX FROM BACKEND IT SHOULD BE EMAIL !*/}
+                                        Email
                                 </label>
                                 <input
                                     type="text" required

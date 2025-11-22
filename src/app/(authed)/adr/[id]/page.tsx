@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Check, Pencil, AlertTriangle, X } from "lucide-react"
+import fetcher from "@/src/lib/fetcher"
 
 type DetailedADR = {
   id: number
   rfcId: number
+  author: boolean
   title: string
   context: string
   decision: string
@@ -236,7 +238,7 @@ function ADRSidebar({ adr, rfc, onEdit, onApprove }: {
               </div>
 
               <div className="mt-4 flex flex-col items-start gap-3">
-                {isUnderReview && (
+                {(isUnderReview && adr.author) && (
                   <>
                     <button 
                       className="flex size-10 items-center justify-center rounded-full bg-purple-600 text-white shadow hover:bg-purple-700"
@@ -299,7 +301,7 @@ export default function AdrDetailPage() {
         setError(null)
         setRfc(null)
         
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adrId}`, { signal: ctrl.signal })
+        const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adrId}`, { signal: ctrl.signal })
         if (!res.ok) {
           const t = await res.text()
           throw new Error(`GET /adrs/${adrId} ${res.status} — ${t}`)
@@ -325,7 +327,7 @@ export default function AdrDetailPage() {
     const ctrl = new AbortController()
     ;(async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${adr.rfcId}`, { signal: ctrl.signal })
+            const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${adr.rfcId}`, { signal: ctrl.signal })
             if (!res.ok) {
                 const t = await res.text()
                 throw new Error(`GET /rfcs/${adr.rfcId} ${res.status} — ${t}`)
@@ -345,7 +347,7 @@ export default function AdrDetailPage() {
     if (!adr) return
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adr.id}`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adr.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -369,7 +371,7 @@ export default function AdrDetailPage() {
       
       // After successful approval, call publish endpoint with the adrId
       try {
-        const publishRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/publish`, {
+        const publishRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/publish`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -398,7 +400,7 @@ export default function AdrDetailPage() {
     if (!adr) return
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adr.id}`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adr.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
