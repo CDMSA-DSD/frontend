@@ -178,9 +178,9 @@ export default function UsersPage() {
   const isInviteDisabled = isSubmittingInvite
 
   return (
-    <div className="min-h-screen bg-background px-8 py-10">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="mb-8 text-4xl font-bold text-foreground">
+    <div className="min-h-screen p-8 items-center justify-between mb-4 text-black">
+      <div className="mb-4">
+        <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">
           Manage the organization&apos;s users here
         </h1>
 

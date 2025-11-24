@@ -36,7 +36,7 @@ export default function Contexts(): React.JSX.Element {
         <div className="min-h-screen p-8 items-center justify-between mb-4 text-black">
             <Background/>
             <div className="mb-4">
-                <h1 className="text-4xl text-[#5E50A4]">List of the contexts</h1>
+                <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">Manage the organization's contexts here</h1>
             </div>
             <div className="display flex flex-col gap-4 max-w-2/3">
                 {contextList?.sort((a, b) => a.id - b.id).map((item: ContextType) => (

@@ -157,14 +157,14 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
 
         {/* Settings + Logout */}
         <div className="p-4 mt-auto space-y-3">
-          <button
+          {/* <button
             className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#D4CBEB] rounded-lg transition-colors w-full cursor-pointer focus:outline-none"
             onClick={onClose}
             aria-label="Open settings"
           >
             <Settings className="h-5 w-5" strokeWidth={2} />
             <span className="ml-3">Settings</span>
-          </button>
+          </button> */}
 
           <button
             className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#F8D7DA] rounded-lg transition-colors w-full cursor-pointer focus:outline-none"

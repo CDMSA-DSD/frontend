@@ -281,7 +281,7 @@ export default function RFCPage() {
               </div>
 
               {/* Add Attachments Button */}
-              <div className="flex justify-end">
+              {/* <div className="flex justify-end">
                 <button 
                   className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
                   disabled={isSubmitting}
@@ -289,7 +289,7 @@ export default function RFCPage() {
                   <Paperclip className="w-5 h-5" />
                   <span className="font-medium">Add Attachments</span>
                 </button>
-              </div>
+              </div> */}
             </div>
 
             {/* Modal Footer */}

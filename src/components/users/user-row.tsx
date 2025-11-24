@@ -18,7 +18,7 @@ export function UserRow({ email, role, joinedOn, onDelete }: UserRowProps) {
       <button
         type="button"
         onClick={onDelete}
-        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:bg-muted transition"
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:bg-red-500 transition"
       >
         <X className="h-4 w-4" />
       </button>

@@ -549,7 +549,7 @@ export default function RFCDetailPage() {
             {isExpanded ? alt.fullText : alt.description}
           </p>
 
-          {isExpanded && alt.attachments && alt.attachments.length > 0 && (
+          {/* {isExpanded && alt.attachments && alt.attachments.length > 0 && (
             <div className="mt-4">
               <h4 className="font-semibold text-gray-900 mb-2">Attachments</h4>
               <div className="space-y-2">
@@ -561,7 +561,7 @@ export default function RFCDetailPage() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Voting */}
           <div className="flex items-center gap-4 mt-4">
@@ -1013,7 +1013,8 @@ export default function RFCDetailPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              {/* add attachments */}
+              {/* <div className="flex justify-end">
                 <button
                   className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
                   disabled={isSubmittingAlternative}
@@ -1021,7 +1022,7 @@ export default function RFCDetailPage() {
                   <Paperclip className="w-5 h-5" />
                   <span className="font-medium">Add Attachments</span>
                 </button>
-              </div>
+              </div> */}
             </div>
 
             <div className="p-6 flex items-center justify-between">
