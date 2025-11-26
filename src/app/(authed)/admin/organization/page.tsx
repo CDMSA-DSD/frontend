@@ -5,6 +5,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import fetcher from "@/src/lib/fetcher"
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080"
+const API_BASE = `${BACKEND_URL}/orgs`
+
+type Repo = {
+  name: string
+  owner: string
+}
+
+type Branch = {
+  name: string
+}
 
 export default function OrganizationSettings() {
   const [companyName, setCompanyName] = useState("")
@@ -20,7 +34,7 @@ export default function OrganizationSettings() {
   useEffect(() => {
     const fetchOrg = async () => {
       try {
-        const res = await fetch(API_BASE)
+        const res = await fetcher(API_BASE)
         if (!res.ok) {
           const text = await res.text()
           throw new Error(`GET ${res.status} ${res.statusText} — ${text}`)
@@ -46,7 +60,7 @@ export default function OrganizationSettings() {
     setMessage("")
 
     try {
-      const res = await fetch(API_BASE, {
+      const res = await fetcher(API_BASE, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,13 +81,138 @@ export default function OrganizationSettings() {
       setCompanyName(updated.name ?? updated.companyName ?? "")
       setDomain(updated.domain ?? "")
       setDescription(updated.description ?? "")
-      setGithubToken(updated.githubToken ?? "")
-      setMessage("Changes saved successfully!")
+      setRepoOwner(updated.repoOwner ?? null)
+      setSelectedRepoName(updated.selectedRepoName ?? null)
+      setSelectedBranchName(updated.selectedBranchName ?? null)
+
+      setMessage("Organization details saved successfully.")
+    } catch (err) {
+      console.error(err)
+      setMessage("Error while saving organization details.")
+    } finally {
+      setSavingOrg(false)
+    }
+  }
+
+  const handleConnectGitHubWithToken = async () => {
+    setConnecting(true)
+    setMessage("")
+
+    try {
+      const res = await fetcher(`${API_BASE}/github`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pat: githubToken.trim(),              
+        }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`POST ${res.status} ${res.statusText} — ${text}`)
+      }
+
+      const data = await res.json()
+      setMessage("GitHub connected with token.")
+    } catch (err) {
+      console.error(err)
+      setMessage("Failed to connect GitHub with token.")
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+
+  const loadRepos = async () => {
+    setLoadingRepos(true)
+    setMessage("")
+    try {
+      const res = await fetcher(`${API_BASE}/github/repos`)
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`GET ${res.status} ${res.statusText} — ${text}`)
+      }
+      const data: Repo[] = await res.json()
+      setRepos(data)
     } catch (err) {
       console.error(err)
       setMessage("Error while saving changes.")
     } finally {
-      setSaving(false)
+      setLoadingRepos(false)
+    }
+  }
+
+  const loadBranches = async (owner: string, repoName: string) => {
+    setLoadingBranches(true)
+    setMessage("")
+    try {
+      const res = await fetcher(
+        `${API_BASE}/github/${encodeURIComponent(owner)}/${encodeURIComponent(
+          repoName,
+        )}/branches`,
+      )
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`GET ${res.status} ${res.statusText} — ${text}`)
+      }
+      const data: Branch[] = await res.json()
+      setBranches(data)
+    } catch (err) {
+      console.error(err)
+      setMessage("Failed to load branches.")
+    } finally {
+      setLoadingBranches(false)
+    }
+  }
+
+  const handleRepoChange = async (value: string) => {
+    setSelectedRepoName(value || null)
+    setSelectedBranchName(null)
+    setBranches([])
+
+    const repo = repos.find((r) => r.name === value)
+    const owner = repo?.owner ?? repoOwner
+    if (owner && value) {
+      await loadBranches(owner, value)
+    }
+  }
+
+  const handleSaveSelection = async () => {
+    if (!repoOwner || !selectedRepoName || !selectedBranchName) {
+      setMessage("Please select both repository and branch.")
+      return
+    }
+
+    setSavingSelection(true)
+    setMessage("")
+
+    try {
+      const res = await fetcher(`${API_BASE}/github/selection`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          owner: repoOwner,
+          repoName: selectedRepoName,
+          branchName: selectedBranchName,
+        }),
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`PUT ${res.status} ${res.statusText} — ${text}`)
+      }
+
+      const data = await res.json()
+      setRepoOwner(data.repoOwner ?? repoOwner)
+      setSelectedRepoName(data.selectedRepoName ?? selectedRepoName)
+      setSelectedBranchName(data.selectedBranchName ?? selectedBranchName)
+
+      setMessage("Repository and branch selection saved.")
+    } catch (err) {
+      console.error(err)
+      setMessage("Failed to save repository/branch selection.")
+    } finally {
+      setSavingSelection(false)
     }
   }
 

@@ -19,3 +19,13 @@ export interface AdrResponse {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface Comment {
+    id: number
+    content: string
+    authorId: number
+    author: string
+    createdAt: string
+    updatedAt: string | null
+    replies: Comment[]
+}

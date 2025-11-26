@@ -3,6 +3,10 @@ import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLe
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
+import fetcher from '@/src/lib/fetcher'
+
+import { Comment } from '@/lib/types'
+import CommentZone from "@/components/ui/Comment";
 
 interface BackendAlternative {
   id: number
@@ -14,15 +18,8 @@ interface BackendAlternative {
   authorName: string
   createdAt: string
   updatedAt: string | null
-}
-
-interface BackendComment {
-  id: number
-  content: string
-  authorId: number
-  author: string
-  createdAt: string
-  updatedAt: string | null
+  yes: number
+  no: number
 }
 
 interface BackendRFC {
@@ -36,8 +33,9 @@ interface BackendRFC {
   status: string
   createdAt: string
   updatedAt: string
+  isAuthor: boolean
   alternatives: BackendAlternative[]
-  comments: BackendComment[]
+  comments: Comment[]
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
@@ -54,14 +52,6 @@ interface Alternative {
   pros: string[]
   cons: string[]
   attachments?: string[]
-}
-
-interface Comment {
-  id: number
-  author: string
-  date: string
-  content: string
-  replies?: Comment[]
 }
 
 interface AlternativeForm {
@@ -96,25 +86,14 @@ const mapAlternative = (backendAlt: BackendAlternative): Alternative => ({
   title: backendAlt.title,
   author: backendAlt.authorName,
   publishedDate: formatDate(backendAlt.createdAt),
-  description: backendAlt.description.substring(0, 150) + '...', // Truncate for card view
-  fullText: backendAlt.description, // Use full description as fullText
-  upvotes: Math.floor(Math.random() * 10), // Mocking upvotes until we have real data
-  downvotes: Math.floor(Math.random() * 5), // Mocking downvotes until we have real data
-  // Splitting the comma-separated strings into arrays for the UI
-  pros: backendAlt.pros.split(';').map(s => s.trim()).filter(s => s.length > 0),
-  cons: backendAlt.cons.split(';').map(s => s.trim()).filter(s => s.length > 0),
-  attachments: backendAlt.id === 1 ? ['document1.pdf', 'diagram.png'] : [] // Mocking attachments only for the first one
-});
-
-// Function to map backend comment to client comment
-const mapComment = (backendComment: BackendComment): Comment => ({
-    id: backendComment.id,
-    author: backendComment.author,
-    date: formatDate(backendComment.createdAt),
-    content: backendComment.content,
-    replies: [] // Backend doesn't provide replies, keep empty for now
-});
-
+  description: backendAlt.description.substring(0, 150) + '...',
+  fullText: backendAlt.description,
+  upvotes: backendAlt.yes ?? 0,
+  downvotes: backendAlt.no ?? 0,
+  pros: backendAlt.pros.split(';').map(s => s.trim()).filter(Boolean),
+  cons: backendAlt.cons.split(';').map(s => s.trim()).filter(Boolean),
+  attachments: backendAlt.id === 1 ? ['document1.pdf', 'diagram.png'] : []
+})
 
 export default function RFCDetailPage() {
   const params = useParams()
@@ -130,6 +109,7 @@ export default function RFCDetailPage() {
   const [showAdrModal, setShowAdrModal] = useState(false)
   const [winningAlternative, setWinningAlternative] = useState<Alternative | null>(null)
   const [isSubmittingAdr, setIsSubmittingAdr] = useState(false)
+  const [isGeneratingAdr, setIsGeneratingAdr] = useState(false)
   const [adrFormData, setAdrFormData] = useState<AdrFormData>({
     title: '',
     context: '',
@@ -144,12 +124,10 @@ export default function RFCDetailPage() {
   const [isPostingComment, setIsPostingComment] = useState(false)
 
   const alternatives: Alternative[] = rfcData ? rfcData.alternatives.map(mapAlternative) : []
-  const comments: Comment[] = rfcData ? rfcData.comments.map(mapComment) : []
 
-  const clientComments: Comment[] = comments.length > 0 ? [
-    { ...comments[0], replies: comments.slice(1).length > 0 ? [{...comments[1], replies: []}] : [] }, // Simulating a reply chain
-    ...comments.slice(2)
-  ] : []
+
+  const [userVotes, setUserVotes] = useState<Record<number, boolean | null>>({})
+  const isReviewer = true
 
   useEffect(() => {
     if (!rfcId) return;
@@ -162,7 +140,7 @@ export default function RFCDetailPage() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
 
       if (!response.ok) {
         throw new Error(`Failed to fetch RFC (Status: ${response.status})`)
@@ -175,6 +153,31 @@ export default function RFCDetailPage() {
       setError(e instanceof Error ? e.message : 'An unknown error occurred')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleVoteForAlternative = async (altId: number, outcome: boolean) => {
+    if (!isReviewer) return
+    if (rfcData?.status !== 'UNDER_REVIEW') return
+
+    setUserVotes(prev => {
+      const current = prev[altId] ?? null
+      const next = current === outcome ? null : outcome
+      return { ...prev, [altId]: next }
+    })
+
+    try {
+      await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ outcome })
+      })
+
+      await fetchRfcData()
+    } catch (e) {
+      console.error('Vote failed', e)
     }
   }
 
@@ -191,18 +194,17 @@ export default function RFCDetailPage() {
 
     setIsSubmittingAlternative(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       })
 
       if (!res.ok) throw new Error(`Failed to create alternative (status ${res.status})`)
 
-      const refreshed = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
+      const refreshed = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
       if (refreshed.ok) {
         const data: BackendRFC = await refreshed.json()
         setRfcData(data)
@@ -244,20 +246,22 @@ export default function RFCDetailPage() {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
   }
 
-  const handlePostComment = async () => {
+  const handlePostComment = async (content:string, parentId : number | null = null) => {
     if (isPostingComment) return
     if (!rfcId) return
-    if (!newCommentContent || newCommentContent.trim().length === 0) return
+    if (!content || content.trim().length === 0) return
 
-    const payload = { content: newCommentContent.trim() }
+    const payload = {
+        content: content.trim(),
+        parentId
+    }
 
     setIsPostingComment(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/comments`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       })
@@ -285,11 +289,10 @@ const handleCloseNoDecision = async () => {
 
     setIsClosing(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify({
           "alternativeId": null
@@ -308,7 +311,7 @@ const handleCloseNoDecision = async () => {
     }
   };
 
-  const handleSelectAsDecision = (alt: Alternative) => {
+  const handleSelectAsDecision = async (alt: Alternative) => {
     if (!rfcData) return;
     
     setWinningAlternative(alt);
@@ -316,14 +319,62 @@ const handleCloseNoDecision = async () => {
     const { context: rfcContext } = parseDescription(rfcData.description);
     
     setAdrFormData({
-      title: `ADR: ${alt.title}`,
-      context: rfcContext || `Context from RFC #${rfcId}: ${rfcData.title}`,
-      decision: `We have decided to implement the "${alt.title}" alternative.\n\nDetails:\n${alt.fullText}`,
-      consequences: ''
+      title: 'Generating title...',
+      context: 'Generating context...',
+      decision: 'Generating decision...',
+      consequences: 'Generating consequences...'
     });
     
     setShowAdrModal(true);
+
+    // Attempt to fill from backend LLM endpoint.
+    try {
+      await fetchGeneratedAdr(alt.id)
+    } catch (e) {
+      console.log(`Failed to fetch generated ADR:`, e)
+
+      // Fill with default values if backend generation fails
+      setAdrFormData({
+        title: `ADR: ${alt.title}`,
+        context: rfcContext || `Context from RFC #${rfcId}: ${rfcData.title}`,
+        decision: `We have decided to implement the "${alt.title}" alternative.\n\nDetails:\n${alt.fullText}`,
+        consequences: ''
+      });
+    }
   };
+
+  const fetchGeneratedAdr = async (altId: number) => {
+    if (!rfcId) return
+    setIsGeneratingAdr(true)
+    try {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/generateadr`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ alternativeId: altId })
+      })
+
+      if (!res.ok) {
+        throw new Error(`Generate ADR failed (status ${res.status})`)
+      }
+
+      const data = await res.json()
+
+      if (data) {
+        setAdrFormData({
+          title: data.title,
+          context: data.context,
+          decision: data.decision,
+          consequences: data.consequences
+        })
+      }
+    } catch (e) {
+      console.error('Failed to generate ADR from backend:', e)
+    } finally {
+      setIsGeneratingAdr(false)
+    }
+  }
 
   const handleSubmitAdr = async () => {
     if (isSubmittingAdr || !winningAlternative || !rfcId) return;
@@ -342,11 +393,10 @@ const handleCloseNoDecision = async () => {
 
     setIsSubmittingAdr(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`, {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1'
         },
         body: JSON.stringify(payload)
       });
@@ -356,11 +406,10 @@ const handleCloseNoDecision = async () => {
       }
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
+        const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/close`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-User-Id': '1'
           },
           body: JSON.stringify({
             "alternativeId": winningAlternative.id
@@ -400,6 +449,13 @@ const handleCloseNoDecision = async () => {
     )
   }
 
+  // Count comments including nested replies (recursively)
+  const countCommentWithReplies = (c: Comment): number => {
+    return 1 + (c.replies?.reduce((sum, r) => sum + countCommentWithReplies(r), 0) ?? 0)
+  }
+
+  const totalCommentsCount = rfcData.comments.reduce((sum, c) => sum + countCommentWithReplies(c), 0)
+
   const renderPresentation = () => {
     const { context: contextText, problem: problemText } = parseDescription(rfcData.description)
 
@@ -424,8 +480,8 @@ const handleCloseNoDecision = async () => {
             )}
           </div>
         </section>
-        
-        {rfcData.status === 'UNDER_REVIEW' && (
+
+        {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
             onClick={handleCloseNoDecision}
             disabled={isClosing}
@@ -493,7 +549,7 @@ const handleCloseNoDecision = async () => {
             {isExpanded ? alt.fullText : alt.description}
           </p>
 
-          {isExpanded && alt.attachments && alt.attachments.length > 0 && (
+          {/* {isExpanded && alt.attachments && alt.attachments.length > 0 && (
             <div className="mt-4">
               <h4 className="font-semibold text-gray-900 mb-2">Attachments</h4>
               <div className="space-y-2">
@@ -505,21 +561,54 @@ const handleCloseNoDecision = async () => {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
-          {/* Voting, disabled for now */}
-          {/* <div className="flex items-center gap-4 mt-4">
-            <button className="flex items-center gap-2 text-violet-600 hover:text-violet-700">
-              <ThumbsUp className="w-5 h-5" />
-              <span className="font-medium">{alt.upvotes}</span>
+          {/* Voting */}
+          <div className="flex items-center gap-4 mt-4">
+            {/* Thumbs up */}
+            <button
+              type="button"
+              onClick={() => handleVoteForAlternative(alt.id, true)}
+              disabled={!isReviewer || rfcData.status !== 'UNDER_REVIEW'}
+              className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ThumbsUp
+                className={`w-5 h-5 ${userVotes[alt.id] === true
+                    ? 'text-violet-600'
+                    : 'text-gray-400 hover:text-violet-600'
+                  }`}
+              />
+              <span className="text-sm text-gray-700">
+                {alt.upvotes}
+              </span>
             </button>
-            <button className="flex items-center gap-2 text-red-500 hover:text-red-600">
-              <ThumbsDown className="w-5 h-5" />
-              <span className="font-medium">{alt.downvotes}</span>
-            </button>
-          </div> */}
 
-          {rfcData.status === 'UNDER_REVIEW' && !isExpanded && (
+            {/* Thumbs down */}
+            <button
+              type="button"
+              onClick={() => handleVoteForAlternative(alt.id, false)}
+              disabled={!isReviewer || rfcData.status !== 'UNDER_REVIEW'}
+              className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ThumbsDown
+                className={`w-5 h-5 ${userVotes[alt.id] === false
+                    ? 'text-violet-600'
+                    : 'text-gray-400 hover:text-violet-600'
+                  }`}
+              />
+              <span className="text-sm text-gray-700">
+                {alt.downvotes}
+              </span>
+            </button>
+
+            {(!isReviewer || rfcData.status !== 'UNDER_REVIEW') && (
+              <span className="text-xs text-gray-500 ml-2">
+                Voting disabled
+              </span>
+            )}
+          </div>
+
+          {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && !isExpanded && (
             <div className="mt-4">
               <button
                 onClick={() => handleSelectAsDecision(alt)}
@@ -530,7 +619,7 @@ const handleCloseNoDecision = async () => {
             </div>
           )}
 
-          {rfcData.status === 'UNDER_REVIEW' && isExpanded && (
+          {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && isExpanded && (
             <div className="mt-6 border-t pt-4">
               <button
                 onClick={() => handleSelectAsDecision(alt)}
@@ -595,13 +684,15 @@ const handleCloseNoDecision = async () => {
         <>
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold text-gray-900">Alternatives ({alternatives.length})</h3>
-            { rfcData.status === 'UNDER_REVIEW' ? (<button
-              onClick={() => setShowNewAlternativeModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-            >
-              <Plus className="w-5 h-5" />
-              Add Alternative
-            </button>) : null}
+            {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor ? (
+              <button
+                onClick={() => setShowNewAlternativeModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+              >
+                <Plus className="w-5 h-5" />
+                Add Alternative
+              </button>
+            ) : null}
           </div>
           
           {alternatives.length > 0 ? (
@@ -616,37 +707,21 @@ const handleCloseNoDecision = async () => {
     </div>
   )
 
-  const renderComment = (comment: Comment, isReply: boolean = false) => (
-    <div key={comment.id} className={`${isReply ? 'ml-12 mt-4' : 'mb-6 mt-4'}`}>
-      <div className="bg-gray-50 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-semibold text-gray-900">{comment.author}</span>
-          <span className="text-sm text-gray-500">{comment.date}</span>
-        </div>
-        <p className="text-gray-700 mb-3">{comment.content}</p>
-        <div className="flex items-center gap-4">
-          <button className="text-sm text-gray-600 hover:text-gray-900">Reply</button>
-        </div>
-      </div>
-      {comment.replies?.map((reply) => renderComment(reply, false))}
-    </div>
-  )
-
   const renderDiscussion = () => (
     <div className="space-y-6">
       {/* New Comment */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
         <textarea
           placeholder="Add a comment..."
           value={newCommentContent}
           onChange={(e) => setNewCommentContent(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+          className="w-full text-black px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
           rows={3}
           disabled={isPostingComment}
         />
         <div className="flex justify-end mt-2">
           <button
-            onClick={handlePostComment}
+            onClick={() => handlePostComment(newCommentContent)}
             className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
             disabled={isPostingComment || !newCommentContent.trim()}
           >
@@ -657,8 +732,8 @@ const handleCloseNoDecision = async () => {
 
       {/* Comments */}
       <div>
-        {clientComments.length > 0 ? (
-            clientComments.map((comment) => renderComment(comment))
+        {rfcData.comments.length > 0 ? (
+          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
         ) : (
             <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
         )}
@@ -757,13 +832,24 @@ const renderCreateAdrModal = () => {
 
           {/* Modal Footer */}
           <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
-            <button
-              onClick={() => setShowAdrModal(false)}
-              className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
-              disabled={isSubmittingAdr}
-            >
-              Cancel
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAdrModal(false)}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                disabled={isSubmittingAdr}
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={() => { if (winningAlternative) fetchGeneratedAdr(winningAlternative.id) }}
+                className="px-4 py-2 bg-sky-600 text-white border border-gray-300 rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                disabled={isGeneratingAdr || isSubmittingAdr}
+              >
+                {isGeneratingAdr ? 'Regenerating...' : 'Regenerate from LLM'}
+              </button>
+            </div>
+
             <button
               onClick={handleSubmitAdr}
               className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400"
@@ -819,7 +905,7 @@ const renderCreateAdrModal = () => {
             }`}
           >
             <MessageSquare className="w-5 h-5" />
-            <span className="font-medium">Discussion ({comments.length})</span>
+            <span className="font-medium">Discussion ({totalCommentsCount})</span>
           </button>
         </div>
       </div>
@@ -930,7 +1016,8 @@ const renderCreateAdrModal = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              {/* add attachments */}
+              {/* <div className="flex justify-end">
                 <button
                   className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
                   disabled={isSubmittingAlternative}
@@ -938,7 +1025,7 @@ const renderCreateAdrModal = () => {
                   <Paperclip className="w-5 h-5" />
                   <span className="font-medium">Add Attachments</span>
                 </button>
-              </div>
+              </div> */}
             </div>
 
             <div className="p-6 flex items-center justify-between">

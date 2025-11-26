@@ -3,6 +3,7 @@ import { MessageCircle, Plus, X, Paperclip, Send } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { parseDescription } from '@/lib/utils'
 import Link from 'next/link'
+import fetcher from '@/src/lib/fetcher'
 
 interface BackendRFC {
   id: number;
@@ -11,7 +12,7 @@ interface BackendRFC {
   authorName: string;
   status: 'CLOSED_DECIDED' | 'CLOSED_NON_DECIDED' | 'UNDER_REVIEW';
   createdAt: string;
-  comments: any[];
+  commentCount: number;
 }
 
 export default function RFCPage() {
@@ -46,7 +47,7 @@ export default function RFCPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`);
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -74,17 +75,15 @@ export default function RFCPage() {
     const postBody = {
       title: formData.title,
       description: description,
-      templateId: 1, // Default value as per requirements for MVP presentation
-      orgId: 1 // Default value as per requirements for MVP presentation
+      templateId: 1, // Default value, only working with one template
     };
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`, {
+      const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': '1' // Required header as per requirements for MVP presentation
         },
         body: JSON.stringify(postBody)
       });
@@ -202,15 +201,15 @@ export default function RFCPage() {
                 </p>
               </div>
 
-              {/* Status and Comments. Comments are commented for now as the backend does not return it in this endpoint */}
+              {/* Status and Comments */}
               <div className="flex flex-col items-end gap-3 flex-shrink-0">
                 <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${getStatusColor(rfc.status)}`}>
                   {formatStatus(rfc.status)}
                 </span>
-                {/* <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-gray-600">
                   <MessageCircle className="w-5 h-5" />
-                  <span className="text-lg font-medium">{rfc.comments?.length || 0}</span>
-                </div> */}
+                  <span className="text-lg font-medium">{rfc.commentCount || 0}</span>
+                </div>
               </div>
               </div>
           </Link>
@@ -282,7 +281,7 @@ export default function RFCPage() {
               </div>
 
               {/* Add Attachments Button */}
-              <div className="flex justify-end">
+              {/* <div className="flex justify-end">
                 <button 
                   className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
                   disabled={isSubmitting}
@@ -290,7 +289,7 @@ export default function RFCPage() {
                   <Paperclip className="w-5 h-5" />
                   <span className="font-medium">Add Attachments</span>
                 </button>
-              </div>
+              </div> */}
             </div>
 
             {/* Modal Footer */}
