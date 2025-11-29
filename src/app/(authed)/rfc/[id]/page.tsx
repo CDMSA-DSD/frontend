@@ -123,7 +123,8 @@ export default function RFCDetailPage() {
   const [rfcData, setRfcData] = useState<BackendRFC | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [ok, setOk] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [okMessage, setOkMessage] = useState<string | null>(null)
   const [newCommentContent, setNewCommentContent] = useState('')
   const [isPostingComment, setIsPostingComment] = useState(false)
 
@@ -260,13 +261,13 @@ export default function RFCDetailPage() {
           })
           if(res.ok) {
               setRfcData((prev: BackendRFC | null): BackendRFC => ({...prev!, isWatching: true}))
-              setError(null)
-              setOk("You have successfully subscribed to " + rfcData?.title)
+              setErrorMessage(null)
+              setOkMessage("You have successfully subscribed to " + rfcData?.title)
           }
           else {
               const data : {message:string} = await res.json()
-              setOk(null)
-              setError(data.message)
+              setOkMessage(null)
+              setOkMessage(data.message)
           }
       }
       catch(e){
@@ -894,8 +895,8 @@ export default function RFCDetailPage() {
 
   return (
     <div className="min-h-screen bg-white p-8">
-      <ErrorBanner text={error}/>
-      <OkBanner text={ok}/>
+      <ErrorBanner text={errorMessage}/>
+      <OkBanner text={okMessage}/>
       {/* Header */}
       <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">{rfcData.title}</h1>
       <p className="text-lg text-center text-gray-500 mb-8">
