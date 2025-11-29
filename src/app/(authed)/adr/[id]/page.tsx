@@ -368,28 +368,28 @@ export default function AdrDetailPage() {
     }
 
     const ctrl = new AbortController()
-    ;(async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        setRfc(null)
+      ; (async () => {
+        try {
+          setLoading(true)
+          setError(null)
+          setRfc(null)
 
-        const res = await fetcher(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adrId}`,
-          { signal: ctrl.signal },
-        )
-        if (!res.ok) {
-          const t = await res.text()
-          throw new Error(`GET /adrs/${adrId} ${res.status} — ${t}`)
+          const res = await fetcher(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adrId}`,
+            { signal: ctrl.signal },
+          )
+          if (!res.ok) {
+            const t = await res.text()
+            throw new Error(`GET /adrs/${adrId} ${res.status} — ${t}`)
+          }
+
+          const json = (await res.json()) as DetailedADR
+          setAdr({ ...json, id: json.id ?? adrId, title: json.title ?? json.name })
+        } catch (e: any) {
+          if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch ADR")
+          setLoading(false)
         }
-
-        const json = (await res.json()) as DetailedADR
-        setAdr({ ...json, id: json.id ?? adrId, title: json.title ?? json.name })
-      } catch (e: any) {
-        if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch ADR")
-        setLoading(false)
-      }
-    })()
+      })()
     return () => ctrl.abort()
   }, [adrId, idStr])
 
@@ -400,24 +400,24 @@ export default function AdrDetailPage() {
     }
 
     const ctrl = new AbortController()
-    ;(async () => {
-      try {
-        const res = await fetcher(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${adr.rfcId}`,
-          { signal: ctrl.signal },
-        )
-        if (!res.ok) {
-          const t = await res.text()
-          throw new Error(`GET /rfcs/${adr.rfcId} ${res.status} — ${t}`)
+      ; (async () => {
+        try {
+          const res = await fetcher(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${adr.rfcId}`,
+            { signal: ctrl.signal },
+          )
+          if (!res.ok) {
+            const t = await res.text()
+            throw new Error(`GET /rfcs/${adr.rfcId} ${res.status} — ${t}`)
+          }
+          const json = (await res.json()) as Rfc
+          setRfc(json)
+        } catch (e: any) {
+          if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch RFC")
+        } finally {
+          setLoading(false)
         }
-        const json = (await res.json()) as Rfc
-        setRfc(json)
-      } catch (e: any) {
-        if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch RFC")
-      } finally {
-        setLoading(false)
-      }
-    })()
+      })()
     return () => ctrl.abort()
   }, [adr])
 
@@ -516,9 +516,12 @@ export default function AdrDetailPage() {
     try {
       setIsCancelling(true)
 
-      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adr.id}`, {
-        method: "DELETE",
-      })
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adr.id}`,
+        {
+          method: "DELETE",
+        },
+      )
 
       if (res.status === 403) {
         alert("You are not allowed to cancel this ADR.")
@@ -540,8 +543,6 @@ export default function AdrDetailPage() {
         throw new Error(`DELETE /adrs/${adr.id} ${res.status} — ${t}`)
       }
 
-      alert("ADR draft cancelled. RFC is now Under Review.")
-
       if (adr.rfcId) {
         router.push(`/rfc/${adr.rfcId}`)
       } else {
@@ -554,6 +555,7 @@ export default function AdrDetailPage() {
       setIsCancelModalOpen(false)
     }
   }
+
 
   if (loading) return <div className="p-8">Loading…</div>
   if (error) return <div className="p-8 text-red-600">{error}</div>

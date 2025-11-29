@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, useEffect as ReactUseEffect } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import type { AdrResponse, RfcResponse } from "@/lib/types";
@@ -27,7 +27,7 @@ function formatRelative(iso?: string) {
 
   if (isYesterday) return "Yesterday";
 
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString("en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -40,35 +40,17 @@ function pickTimestamp<T extends { createdAt?: string; updatedAt?: string }>(
   return x.createdAt ?? x.updatedAt ?? "";
 }
 
-function getRfcAuthor(rfc: RfcResponse): string | undefined {
-  const anyRfc = rfc as any;
-  return (
-    anyRfc.authorName ??
-    anyRfc.author ??
-    anyRfc.createdBy ??
-    anyRfc.owner ??
-    undefined
-  );
-}
-
-function getAdrAuthor(adr: AdrResponse): string | undefined {
-  const anyAdr = adr as any;
-  return (
-    anyAdr.authorName ??
-    anyAdr.author ??
-    anyAdr.createdBy ??
-    anyAdr.owner ??
-    undefined
-  );
-}
-
-type SearchItem = {
+type SearchResult = {
   id: number;
   type: "RFC" | "ADR";
   title: string;
   author?: string;
   createdAt?: string;
-  href: string;
+};
+
+type UserOption = {
+  id: string; // we use string, backend converts it to Long
+  name: string;
 };
 
 export default function DashboardPage() {
@@ -79,14 +61,28 @@ export default function DashboardPage() {
   const [loadingRfcs, setLoadingRfcs] = useState(true);
   const [loadingAdrs, setLoadingAdrs] = useState(true);
 
-  // US-28 search state
+  // US-28 search state (backend /search)
   const [searchQuery, setSearchQuery] = useState("");
   const [authorFilter, setAuthorFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [sort, setSort] = useState<"relevance" | "date_desc" | "date_asc">(
+    "relevance",
+  );
 
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  // live suggestions
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Recent RFCs / ADRs
   useEffect(() => {
-    // Fetch RFCs
     (async () => {
       setLoadingRfcs(true);
       try {
@@ -110,7 +106,6 @@ export default function DashboardPage() {
       }
     })();
 
-    // Fetch ADRs
     (async () => {
       setLoadingAdrs(true);
       try {
@@ -123,7 +118,7 @@ export default function DashboardPage() {
           setAdrs([]);
         } else {
           const json = await res.json();
-          setAdrs((json?.content as AdrResponse[]) ?? []); 
+          setAdrs((json?.content as AdrResponse[]) ?? []);
           setAdrsErr(null);
         }
       } catch (err: any) {
@@ -135,113 +130,313 @@ export default function DashboardPage() {
     })();
   }, []);
 
-  const searchItems: SearchItem[] = useMemo(() => {
-    const rfcItems: SearchItem[] = rfcs.map((rfc) => ({
-      id: rfc.id as number,
-      type: "RFC",
-      title: (rfc as any).title ?? "",
-      author: getRfcAuthor(rfc),
-      createdAt: pickTimestamp(rfc),
-      href: `/rfc/${rfc.id}`,
-    }));
-
-    const adrItems: SearchItem[] = adrs.map((adr) => ({
-      id: adr.id as number,
-      type: "ADR",
-      title: (adr as any).title ?? "",
-      author: getAdrAuthor(adr),
-      createdAt: pickTimestamp(adr),
-      href: `/adr/${adr.id}`,
-    }));
-
-    return [...rfcItems, ...adrItems];
-  }, [rfcs, adrs]);
-
-  const authorOptions = useMemo(() => {
-    const set = new Set<string>();
-    searchItems.forEach((item) => {
-      if (item.author) {
-        set.add(item.author);
-      }
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [searchItems]);
-
-  const filteredResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-
-    return searchItems.filter((item) => {
-      if (q && !item.title.toLowerCase().includes(q)) {
-        return false;
-      }
-
-      if (authorFilter && item.author !== authorFilter) {
-        return false;
-      }
-
-      if (item.createdAt) {
-        const created = new Date(item.createdAt);
-        if (fromDate && created < fromDate) {
-          return false;
+  // /users HATEOAS: _embedded.users[]
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await authFetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/users`,
+        );
+        if (!res.ok) {
+          console.error("Failed to load users:", res.status);
+          return;
         }
-        if (toDate) {
-          const toInclusive = new Date(toDate);
-          toInclusive.setHours(23, 59, 59, 999);
-          if (created > toInclusive) {
-            return false;
-          }
+        const json = await res.json();
+
+        let raw: any[] = [];
+        if (json?._embedded?.users && Array.isArray(json._embedded.users)) {
+          raw = json._embedded.users;
+        } else if (Array.isArray(json)) {
+          raw = json;
         }
+
+        const mapped: UserOption[] = raw.map((wrapper: any) => {
+          // PagedModel<EntityModel<UserResponse>> => each element in _embedded.users is { id, firstname, lastName, email, joinedAt, _links... }
+          const u = wrapper; // no extra .content
+          const fullName = [u.firstname, u.lastName].filter(Boolean).join(" ");
+          const name = fullName || u.email || `User #${u.id ?? "?"}`;
+          return {
+            id: String(u.id),
+            name,
+          };
+        });
+
+        setUsers(mapped);
+      } catch (e) {
+        console.error("Error loading users for author dropdown:", e);
+      }
+    })();
+  }, []);
+
+  // helper: map backend SearchResult DTO -> frontend type
+  function mapSearchResultItem(item: any): SearchResult {
+    const typeRaw = (item.type ?? "").toString().toUpperCase();
+    const type: "RFC" | "ADR" = typeRaw === "ADR" ? "ADR" : "RFC";
+
+    return {
+      id: item.id,
+      type,
+      title: item.title ?? "(untitled)",
+      author: item.authorName ?? undefined,
+      createdAt: item.date ?? undefined,
+    };
+  }
+
+  // main search (on "Search" click)
+  const runSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchError("Please enter a keyword to search.");
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      setSearchError(null);
+      setHasSearched(true);
+
+      const params = new URLSearchParams();
+      params.set("q", q);
+      params.set("sort", sort); // still send sort to backend
+      if (authorFilter) params.set("authorId", authorFilter);
+      if (dateFrom) params.set("dateFrom", dateFrom);
+      if (dateTo) params.set("dateTo", dateTo);
+
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/search?${params.toString()}`;
+      console.log("SEARCH URL:", url);
+
+      const res = await authFetch(url);
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Search failed: ${res.status} ${txt}`);
       }
 
-      return true;
-    });
-  }, [searchItems, searchQuery, authorFilter, dateFrom, dateTo]);
+      const json = await res.json();
+      const raw: any[] = Array.isArray(json) ? json : json ?? [];
 
-  const hasActiveSearch =
-    searchQuery.trim() !== "" || authorFilter || dateFrom || dateTo;
+      // 1) map backend -> SearchResult
+      let mapped: SearchResult[] = raw.map(mapSearchResultItem);
+
+      // 2) local date filter
+      if (dateFrom || dateTo) {
+        const from =
+          dateFrom && !Number.isNaN(Date.parse(dateFrom))
+            ? new Date(`${dateFrom}T00:00:00`)
+            : null;
+        const to =
+          dateTo && !Number.isNaN(Date.parse(dateTo))
+            ? new Date(`${dateTo}T23:59:59`)
+            : null;
+
+        mapped = mapped.filter((item) => {
+          if (!item.createdAt) return true; // keep entries without a date
+          const createdTime = Date.parse(item.createdAt);
+          if (Number.isNaN(createdTime)) return true;
+
+          if (from && createdTime < from.getTime()) return false;
+          if (to && createdTime > to.getTime()) return false;
+          return true;
+        });
+      }
+
+      // 3) local date sorting (relevance = keep backend order)
+      if (sort === "date_desc" || sort === "date_asc") {
+        mapped = [...mapped].sort((a, b) => {
+          const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+          const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+          if (Number.isNaN(ta) || Number.isNaN(tb)) return 0;
+
+          return sort === "date_desc" ? tb - ta : ta - tb;
+        });
+      }
+
+      setSearchResults(mapped);
+    } catch (e: any) {
+      setSearchError(e?.message ?? "Search failed");
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // auto-refresh search when filters / sort change, if query already exists
+  useEffect(() => {
+    if (!hasSearched) return;
+    if (!searchQuery.trim()) return;
+    runSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authorFilter, dateFrom, dateTo, sort]);
+
+  const handleClear = () => {
+    setSearchQuery("");
+    setAuthorFilter("");
+    setDateFrom("");
+    setDateTo("");
+    setSort("relevance");
+    setSearchResults([]);
+    setSearchError(null);
+    setHasSearched(false);
+    setSuggestions([]);
+  };
+
+  // live suggestions (debounced) – uses the same /search endpoint, but only q + sort=relevance
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const handle = setTimeout(async () => {
+      try {
+        setSuggestionsLoading(true);
+
+        const params = new URLSearchParams();
+        params.set("q", q);
+        params.set("sort", "relevance");
+        if (authorFilter) params.set("authorId", authorFilter);
+        if (dateFrom) params.set("dateFrom", dateFrom);
+        if (dateTo) params.set("dateTo", dateTo);
+
+        const res = await authFetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/search?${params.toString()}`,
+          { signal: controller.signal },
+        );
+
+        if (!res.ok) {
+          setSuggestions([]);
+          return;
+        }
+
+        const json = await res.json();
+        const raw: any[] = Array.isArray(json) ? json : json ?? [];
+        const mapped: SearchResult[] = raw.map(mapSearchResultItem);
+        setSuggestions(mapped);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(handle);
+      controller.abort();
+    };
+  }, [searchQuery, authorFilter, dateFrom, dateTo]);
 
   return (
     <main className="min-h-screen p-8 bg-background">
       <h1 className="text-4xl font-bold mb-8 text-gray-900">Welcome</h1>
 
-      {/* US-28: Search + filters */}
+      {/* Search + filters */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4">
           Search RFCs and ADRs
         </h2>
 
-        {/* search bar */}
+        {/* search bar + buttons */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center mb-4">
-          <input
-            type="text"
-            placeholder="Search by title…"
-            className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-gray-400"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search by keyword…"
+              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-gray-400"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(true);
+                setSearchError(null);
+              }}
+              onFocus={() => {
+                if (suggestions.length > 0) setShowSuggestions(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  runSearch();
+                  setShowSuggestions(false);
+                }
+              }}
+              onBlur={() => {
+                setTimeout(() => setShowSuggestions(false), 150);
+              }}
+            />
 
-          <button
-            type="button"
-            className="px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-700 bg-white shadow-sm hover:bg-gray-50 transition-all duration-150"
-            onClick={() => {
-              setSearchQuery("");
-              setAuthorFilter("");
-              setDateFrom("");
-              setDateTo("");
-            }}
-          >
-            Clear
-          </button>
+            {showSuggestions && (searchQuery.trim() || suggestionsLoading) && (
+              <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-72 overflow-y-auto">
+                {suggestionsLoading && (
+                  <div className="px-4 py-2 text-xs text-gray-500">
+                    Searching…
+                  </div>
+                )}
+
+                {!suggestionsLoading && suggestions.length === 0 && (
+                  <div className="px-4 py-2 text-xs text-gray-500">
+                    No suggestions.
+                  </div>
+                )}
+
+                {!suggestionsLoading &&
+                  suggestions.slice(0, 8).map((item) => (
+                    <Link
+                      key={`suggest-${item.type}-${item.id}`}
+                      href={item.type === "ADR" ? `/adr/${item.id}` : `/rfc/${item.id}`}
+                      className="flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                      onClick={() => setShowSuggestions(false)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-900">
+                          {item.title}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {item.type}
+                          {item.author ? ` • ${item.author}` : ""}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {formatRelative(item.createdAt)}
+                      </span>
+                    </Link>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="px-4 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-700 bg-white shadow-sm hover:bg-gray-50 transition-all duration-150"
+              onClick={() => {
+                handleClear();
+                setShowSuggestions(false);
+              }}
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2.5 rounded-xl bg-purple-600 text-sm text-white shadow-sm hover:bg-purple-700 transition-all duration-150 disabled:bg-purple-300 disabled:cursor-not-allowed"
+              onClick={() => {
+                runSearch();
+                setShowSuggestions(false);
+              }}
+              disabled={searchLoading}
+            >
+              {searchLoading ? "Searching…" : "Search"}
+            </button>
+          </div>
         </div>
 
-        {/* filters: author + date range */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {/* Author filter */}
+        {/* filters */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          {/* Author */}
           <div className="flex flex-col text-sm">
             <label className="mb-1 text-gray-600">Author</label>
-
             <div className="relative group">
               <select
                 className="
@@ -263,14 +458,12 @@ export default function DashboardPage() {
                 onChange={(e) => setAuthorFilter(e.target.value)}
               >
                 <option value="">All authors</option>
-                {authorOptions.map((author) => (
-                  <option key={author} value={author}>
-                    {author}
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
                   </option>
                 ))}
               </select>
-
-              {/* Arrow */}
               <div
                 className="
                   pointer-events-none
@@ -281,12 +474,7 @@ export default function DashboardPage() {
                   group-hover:text-gray-700
                 "
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                >
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M5 7L10 12L15 7"
                     stroke="currentColor"
@@ -299,73 +487,132 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Date from */}
+          {/* From date */}
           <div className="flex flex-col text-sm">
             <label className="mb-1 text-gray-600">From date</label>
             <div className="relative group">
               <input
-                type="date"
+                type="text" // input as free text: YYYY-MM-DD
+                placeholder="YYYY-MM-DD"
                 className="
-                  w-full
-                  px-4 py-2.5
-                  bg-white
-                  border
-                  border-gray-300
-                  rounded-xl
-                  text-sm
-                  shadow-sm
-                  transition-all duration-150
-                  focus:outline-none
-                  focus:ring-2 focus:ring-purple-500
-                  focus:border-purple-500
-                  group-hover:border-gray-400
-                "
+        w-full
+        px-4 py-2.5
+        bg-white
+        border
+        border-gray-300
+        rounded-xl
+        text-sm
+        shadow-sm
+        transition-all duration-150
+        focus:outline-none
+        focus:ring-2 focus:ring-purple-500
+        focus:border-purple-500
+        group-hover:border-gray-400
+      "
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Date to */}
+          {/* To date */}
           <div className="flex flex-col text-sm">
             <label className="mb-1 text-gray-600">To date</label>
             <div className="relative group">
               <input
-                type="date"
+                type="text" // input as free text: YYYY-MM-DD
+                placeholder="YYYY-MM-DD"
                 className="
-                  w-full
-                  px-4 py-2.5
-                  bg-white
-                  border
-                  border-gray-300
-                  rounded-xl
-                  text-sm
-                  shadow-sm
-                  transition-all duration-150
-                  focus:outline-none
-                  focus:ring-2 focus:ring-purple-500
-                  focus:border-purple-500
-                  group-hover:border-gray-400
-                "
+        w-full
+        px-4 py-2.5
+        bg-white
+        border
+        border-gray-300
+        rounded-xl
+        text-sm
+        shadow-sm
+        transition-all duration-150
+        focus:outline-none
+        focus:ring-2 focus:ring-purple-500
+        focus:border-purple-500
+        group-hover:border-gray-400
+      "
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
               />
             </div>
           </div>
+
+          {/* Order by */}
+          <div className="flex flex-col text-sm">
+            <label className="mb-1 text-gray-600">Order by</label>
+            <div className="relative group">
+              <select
+                className="
+        w-full appearance-none
+        px-4 py-2.5
+        bg-white
+        border
+        border-gray-300
+        rounded-xl
+        text-sm
+        shadow-sm
+        transition-all duration-150
+        focus:outline-none
+        focus:ring-2 focus:ring-purple-500
+        focus:border-purple-500
+        group-hover:border-gray-400
+      "
+                value={sort}
+                onChange={(e) =>
+                  setSort(e.target.value as "relevance" | "date_desc" | "date_asc")
+                }
+              >
+                <option value="relevance">Relevance</option>
+                <option value="date_desc">Newest first</option>
+                <option value="date_asc">Oldest first</option>
+              </select>
+
+              <div
+                className="
+        pointer-events-none
+        absolute inset-y-0 right-3
+        flex items-center
+        text-gray-500
+        transition-opacity duration-200
+        group-hover:text-gray-700
+      "
+              >
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M5 7L10 12L15 7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* results list */}
-        {hasActiveSearch && (
+        {hasSearched && (
           <Card className="border border-gray-200 divide-y divide-gray-200 px-4 shadow-sm rounded-xl">
-            {filteredResults.length === 0 ? (
+            {searchLoading ? (
+              <div className="py-3 text-sm text-gray-500">Searching…</div>
+            ) : searchError ? (
+              <div className="py-3 text-sm text-red-500">{searchError}</div>
+            ) : searchResults.length === 0 ? (
               <div className="py-3 text-sm text-gray-500">
                 No matching RFCs or ADRs.
               </div>
             ) : (
-              filteredResults.map((item) => (
+              searchResults.map((item) => (
                 <Link
                   key={`${item.type}-${item.id}`}
-                  href={item.href}
+                  href={item.type === "ADR" ? `/adr/${item.id}` : `/rfc/${item.id}`}
                   className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
                 >
                   <div className="flex flex-col">
@@ -433,7 +680,7 @@ export default function DashboardPage() {
 
       {/* Recent ADRs */}
       <section>
-        <div className="flex items-center justify_between mb-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-semibold">Recent ADRs</h2>
           <Link
             href="/adr"
