@@ -29,3 +29,12 @@ export interface Comment {
     updatedAt: string | null
     replies: Comment[]
 }
+
+export interface Notification {
+  id: number;
+  message: string;
+  createdAt: string;   
+  read: boolean;
+  targetUrl: string;   
+}
+
