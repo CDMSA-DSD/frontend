@@ -6,10 +6,11 @@ import {Mention, MentionsInput} from "react-mentions";
 interface CommentZoneProps {
     comment: Comment;
     handleSubmit : (comment:string, mentions:{id:string}[], parentId: number | null) => void;
+    members:{id:number, firstname:string, lastName:string}[]
     isReply?: boolean;
 }
 
-export default function CommentZone({comment, handleSubmit ,isReply = false} : CommentZoneProps): React.JSX.Element{
+export default function CommentZone({comment, handleSubmit, members ,isReply = false} : CommentZoneProps): React.JSX.Element{
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [replyText, setReplyText] = useState<string>("");
     const [mentions, setMentions] = useState<{id:string}[]>([]);
@@ -46,16 +47,10 @@ export default function CommentZone({comment, handleSubmit ,isReply = false} : C
                             <Mention
                                 className="mention"
                                 trigger="@"
-                                data={[
-                                    {
-                                        id: '1',
-                                        display: 'John Doe',
-                                    },
-                                    {
-                                        id: '2',
-                                        display: 'Jane Smith',
-                                    },
-                                ]}
+                                data={members.map(m => ({
+                                    id: m.id,
+                                    display: `${m.firstname} ${m.lastName}`,
+                                }))}
                                 displayTransform={(_: string, display: string) => `@${display}`}
                                 markup="@[__display__](__id__)"
                                 appendSpaceOnAdd
@@ -72,7 +67,7 @@ export default function CommentZone({comment, handleSubmit ,isReply = false} : C
                     )
                 }
             </div>
-            {comment.replies?.map((reply) => <CommentZone key={reply.id} handleSubmit={handleSubmit} comment={reply} isReply={true}/>)}
+            {comment.replies?.map((reply) => <CommentZone key={reply.id} handleSubmit={handleSubmit} members={members} comment={reply} isReply={true}/>)}
         </div>
     )
 }

@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
 
-import { Comment } from '@/lib/types'
+import {Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
 import { MentionsInput, Mention } from "react-mentions";
 
@@ -38,6 +38,15 @@ interface BackendRFC {
   alternatives: BackendAlternative[]
   comments: Comment[]
 }
+
+type Member = {
+    "id": number,
+    "firstname": string,
+    "lastName": string,
+    "email": string,
+    "contextAdmin":boolean
+}
+
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
 
@@ -118,6 +127,25 @@ export default function RFCDetailPage() {
     consequences: ''
   })
 
+    /**
+     * @brief Get all the user from user organization
+     */
+    const getContextMembers = async () : Promise<void> => {
+        try {
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users");
+            if (res.ok) {
+                const data = await res.json();
+                setMembers(data._embedded?.users);
+                console.log(data._embedded?.users)
+            }
+            else throw new Error("Could not find members");
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+  const [members, setMembers] = useState<Member[]>([])
+
   const [rfcData, setRfcData] = useState<BackendRFC | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -144,6 +172,7 @@ export default function RFCDetailPage() {
     if (!rfcId) return;
     // fetchRfcData is defined outside the effect so it can be reused (e.g. after posting a comment)
     fetchRfcData()
+    getContextMembers()
   }, [rfcId])
 
   const fetchRfcData = async () => {
@@ -732,16 +761,10 @@ export default function RFCDetailPage() {
               <Mention
                   className="mention"
                   trigger="@"
-                  data={[
-                      {
-                          id: '1',
-                          display: 'John Doe',
-                      },
-                      {
-                          id: '2',
-                          display: 'Jane Smith',
-                      },
-                  ]}
+                  data={members.map(m => ({
+                      id: m.id,
+                      display: `${m.firstname} ${m.lastName}`,
+                  }))}
                   displayTransform={(_: string, display: string) => `@${display}`}
                   markup="@[__display__](__id__)"
                   appendSpaceOnAdd
@@ -761,7 +784,7 @@ export default function RFCDetailPage() {
       {/* Comments */}
       <div>
         {rfcData.comments.length > 0 ? (
-          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
+          rfcData.comments.map((comment) => <CommentZone key={comment.id} members={members.map(m => m)} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
         ) : (
           <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
         )}
