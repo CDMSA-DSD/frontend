@@ -1,12 +1,13 @@
 "use client"
 import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLeft, Paperclip } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
 
 import { Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
+import { MentionsInput, Mention } from "react-mentions";
 
 interface BackendAlternative {
   id: number
@@ -121,7 +122,17 @@ export default function RFCDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newCommentContent, setNewCommentContent] = useState('')
+  const [mentions, setMentions] = useState<{id:string}[]>([])
   const [isPostingComment, setIsPostingComment] = useState(false)
+
+    useEffect(() => {
+        const regex = /@\[(.*?)\]\((.*?)\)/g;
+        const matches = [...newCommentContent.matchAll(regex)];
+        const newMentions = matches.map((match) => ({
+            id: match[2].toString(), // ID de la mention
+        }));
+        (() => setMentions(newMentions))();
+    }, [newCommentContent]);
 
   const alternatives: Alternative[] = rfcData ? rfcData.alternatives.map(mapAlternative) : []
 
@@ -246,14 +257,15 @@ export default function RFCDetailPage() {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
   }
 
-  const handlePostComment = async (content:string, parentId : number | null = null) => {
+  const handlePostComment = async (content:string, mentions:{id:string}[], parentId : number | null = null) => {
     if (isPostingComment) return
     if (!rfcId) return
     if (!content || content.trim().length === 0) return
 
     const payload = {
         content: content.trim(),
-        parentId
+        parentId,
+        mentions
     }
 
     setIsPostingComment(true)
@@ -711,17 +723,33 @@ export default function RFCDetailPage() {
     <div className="space-y-6">
       {/* New Comment */}
       <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
-        <textarea
-          placeholder="Add a comment..."
-          value={newCommentContent}
-          onChange={(e) => setNewCommentContent(e.target.value)}
-          className="w-full text-black px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-          rows={3}
-          disabled={isPostingComment}
-        />
+          <MentionsInput
+              className="mentions"
+              value={newCommentContent}
+              onChange={(e) => setNewCommentContent(e.target.value)}
+              placeholder="What's on your mind?"
+          >
+              <Mention
+                  className="mention"
+                  trigger="@"
+                  data={[
+                      {
+                          id: '1',
+                          display: 'John Doe',
+                      },
+                      {
+                          id: '2',
+                          display: 'Jane Smith',
+                      },
+                  ]}
+                  displayTransform={(_: string, display: string) => `@${display}`}
+                  markup="@[__display__](__id__)"
+                  appendSpaceOnAdd
+              />
+          </MentionsInput>
         <div className="flex justify-end mt-2">
           <button
-            onClick={() => handlePostComment(newCommentContent)}
+            onClick={() => handlePostComment(newCommentContent, mentions)}
             className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
             disabled={isPostingComment || !newCommentContent.trim()}
           >

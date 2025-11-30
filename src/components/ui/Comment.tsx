@@ -1,16 +1,27 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { Comment } from "@/lib/types";
 import { ParamValue } from "next/dist/server/request/params";
+import {Mention, MentionsInput} from "react-mentions";
 
 interface CommentZoneProps {
     comment: Comment;
-    handleSubmit : (comment:string, parentId: number | null) => void;
+    handleSubmit : (comment:string, mentions:{id:string}[], parentId: number | null) => void;
     isReply?: boolean;
 }
 
 export default function CommentZone({comment, handleSubmit ,isReply = false} : CommentZoneProps): React.JSX.Element{
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [replyText, setReplyText] = useState<string>("");
+    const [mentions, setMentions] = useState<{id:string}[]>([]);
+
+    useEffect(() => {
+        const regex = /@\[(.*?)\]\((.*?)\)/g;
+        const matches = [...replyText.matchAll(regex)];
+        const newMentions = matches.map((match) => ({
+            id: match[2].toString(), // ID de la mention
+        }));
+        (() => setMentions(newMentions))();
+    }, [replyText]);
 
     return (
         <div key={comment.id} className={`${isReply ? 'ml-12 mt-4' : 'mb-6 mt-4'}`}>
@@ -26,15 +37,32 @@ export default function CommentZone({comment, handleSubmit ,isReply = false} : C
                 {/* Reply Form */}
                 {showReplyForm && (
                     <div className="mt-4 text-black">
-                    <textarea
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        rows={3}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-violet-500 resize-none"
-                        placeholder="Write your reply..."
-                    />
+                        <MentionsInput
+                            className="mentions"
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="What's on your mind?"
+                        >
+                            <Mention
+                                className="mention"
+                                trigger="@"
+                                data={[
+                                    {
+                                        id: '1',
+                                        display: 'John Doe',
+                                    },
+                                    {
+                                        id: '2',
+                                        display: 'Jane Smith',
+                                    },
+                                ]}
+                                displayTransform={(_: string, display: string) => `@${display}`}
+                                markup="@[__display__](__id__)"
+                                appendSpaceOnAdd
+                            />
+                        </MentionsInput>
                     <button
-                        onClick={() => handleSubmit(replyText, comment.id)}
+                        onClick={() => handleSubmit(replyText, mentions, comment.id)}
                         className="px-4 py-1 text-white rounded-lg bg-violet-600 hover:bg-violet-700"
                     >
                         Reply
