@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useEffect as ReactUseEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import type { AdrResponse, RfcResponse } from "@/lib/types";
@@ -152,7 +152,7 @@ export default function DashboardPage() {
 
         const mapped: UserOption[] = raw.map((wrapper: any) => {
           // PagedModel<EntityModel<UserResponse>> => each element in _embedded.users is { id, firstname, lastName, email, joinedAt, _links... }
-          const u = wrapper; // no extra .content
+          const u = wrapper;
           const fullName = [u.firstname, u.lastName].filter(Boolean).join(" ");
           const name = fullName || u.email || `User #${u.id ?? "?"}`;
           return {
@@ -199,10 +199,10 @@ export default function DashboardPage() {
 
       const params = new URLSearchParams();
       params.set("q", q);
-      params.set("sort", sort); // still send sort to backend
+      params.set("sort", sort); // matches backend: relevance | date_desc | date_asc
       if (authorFilter) params.set("authorId", authorFilter);
-      if (dateFrom) params.set("dateFrom", dateFrom);
-      if (dateTo) params.set("dateTo", dateTo);
+      if (dateFrom) params.set("dateFrom", dateFrom); // YYYY-MM-DD
+      if (dateTo) params.set("dateTo", dateTo);       // YYYY-MM-DD
 
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/search?${params.toString()}`;
       console.log("SEARCH URL:", url);
@@ -216,43 +216,9 @@ export default function DashboardPage() {
 
       const json = await res.json();
       const raw: any[] = Array.isArray(json) ? json : json ?? [];
+      const mapped: SearchResult[] = raw.map(mapSearchResultItem);
 
-      // 1) map backend -> SearchResult
-      let mapped: SearchResult[] = raw.map(mapSearchResultItem);
-
-      // 2) local date filter
-      if (dateFrom || dateTo) {
-        const from =
-          dateFrom && !Number.isNaN(Date.parse(dateFrom))
-            ? new Date(`${dateFrom}T00:00:00`)
-            : null;
-        const to =
-          dateTo && !Number.isNaN(Date.parse(dateTo))
-            ? new Date(`${dateTo}T23:59:59`)
-            : null;
-
-        mapped = mapped.filter((item) => {
-          if (!item.createdAt) return true; // keep entries without a date
-          const createdTime = Date.parse(item.createdAt);
-          if (Number.isNaN(createdTime)) return true;
-
-          if (from && createdTime < from.getTime()) return false;
-          if (to && createdTime > to.getTime()) return false;
-          return true;
-        });
-      }
-
-      // 3) local date sorting (relevance = keep backend order)
-      if (sort === "date_desc" || sort === "date_asc") {
-        mapped = [...mapped].sort((a, b) => {
-          const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
-          const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
-          if (Number.isNaN(ta) || Number.isNaN(tb)) return 0;
-
-          return sort === "date_desc" ? tb - ta : ta - tb;
-        });
-      }
-
+      // No extra local date/sort logic – backend handles it
       setSearchResults(mapped);
     } catch (e: any) {
       setSearchError(e?.message ?? "Search failed");
@@ -282,7 +248,7 @@ export default function DashboardPage() {
     setSuggestions([]);
   };
 
-  // live suggestions (debounced) – uses the same /search endpoint, but only q + sort=relevance
+  // live suggestions (debounced) – uses the same /search endpoint
   useEffect(() => {
     const q = searchQuery.trim();
     if (!q) {
@@ -298,7 +264,7 @@ export default function DashboardPage() {
 
         const params = new URLSearchParams();
         params.set("q", q);
-        params.set("sort", "relevance");
+        params.set("sort", sort); 
         if (authorFilter) params.set("authorId", authorFilter);
         if (dateFrom) params.set("dateFrom", dateFrom);
         if (dateTo) params.set("dateTo", dateTo);
@@ -328,7 +294,7 @@ export default function DashboardPage() {
       clearTimeout(handle);
       controller.abort();
     };
-  }, [searchQuery, authorFilter, dateFrom, dateTo]);
+  }, [searchQuery, authorFilter, dateFrom, dateTo, sort]);
 
   return (
     <main className="min-h-screen p-8 bg-background">
@@ -492,8 +458,7 @@ export default function DashboardPage() {
             <label className="mb-1 text-gray-600">From date</label>
             <div className="relative group">
               <input
-                type="text" // input as free text: YYYY-MM-DD
-                placeholder="YYYY-MM-DD"
+                type="date"
                 className="
         w-full
         px-4 py-2.5
@@ -520,8 +485,7 @@ export default function DashboardPage() {
             <label className="mb-1 text-gray-600">To date</label>
             <div className="relative group">
               <input
-                type="text" // input as free text: YYYY-MM-DD
-                placeholder="YYYY-MM-DD"
+                type="date"
                 className="
         w-full
         px-4 py-2.5
