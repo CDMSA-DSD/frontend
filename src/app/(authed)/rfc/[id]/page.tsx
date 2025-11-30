@@ -36,6 +36,8 @@ interface BackendRFC {
   isAuthor: boolean
   alternatives: BackendAlternative[]
   comments: Comment[]
+  xml: string | null
+  attachments: Attachment[]
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
@@ -68,6 +70,14 @@ interface AdrFormData {
   context: string
   decision: string
   consequences: string
+}
+
+interface Attachment {
+  id: number;
+  fileName: string;
+  contentType: string;
+  size: number;
+  downloadUrl: string;
 }
 
 const formatDate = (isoString: string): string => {
@@ -129,6 +139,17 @@ export default function RFCDetailPage() {
   const [userVotes, setUserVotes] = useState<Record<number, boolean | null>>({})
   const isReviewer = true
 
+  const [uploadingRfcAttachments, setUploadingRfcAttachments] = useState(false);
+  const [newRfcAttachments, setNewRfcAttachments] = useState<File[]>([]);
+
+  const [altAttachments, setAltAttachments] =
+    useState<Record<number, Attachment[]>>({});
+  const [altNewFiles, setAltNewFiles] =
+    useState<Record<number, File[]>>({});
+  const [altUploading, setAltUploading] =
+    useState<Record<number, boolean>>({});
+
+
   useEffect(() => {
     if (!rfcId) return;
     // fetchRfcData is defined outside the effect so it can be reused (e.g. after posting a comment)
@@ -148,6 +169,14 @@ export default function RFCDetailPage() {
 
       const data: BackendRFC = await response.json()
       setRfcData(data)
+
+      if (data.alternatives && data.alternatives.length > 0) {
+        await Promise.all(
+          data.alternatives.map((alt) =>
+            fetchAlternativeAttachments(alt.id, false) // false = no alert en caso de fallo
+          )
+        );
+      }
     } catch (e) {
       console.error("Fetching RFC failed:", e)
       setError(e instanceof Error ? e.message : 'An unknown error occurred')
@@ -155,6 +184,168 @@ export default function RFCDetailPage() {
       setLoading(false)
     }
   }
+
+  const fetchAlternativeAttachments = async (altId: number, showAlert = true) => {
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          `Failed to load alternative ${altId} (status ${res.status})`
+        );
+      }
+
+      const data = await res.json();
+      setAltAttachments((prev) => ({
+        ...prev,
+        [altId]: data.attachments || [],
+      }));
+    } catch (e) {
+      console.error("Failed to fetch alternative attachments:", e);
+      if (showAlert) {
+        alert("Could not load alternative attachments.");
+      }
+    }
+  };
+
+  const handleAltFilesChange = (altId: number, files: FileList | null) => {
+    if (!files) return;
+    setAltNewFiles((prev) => ({
+      ...prev,
+      [altId]: Array.from(files),
+    }));
+  };
+
+  const uploadAlternativeAttachments = async (altId: number) => {
+    const files = altNewFiles[altId];
+    if (!files || files.length === 0) return;
+
+    setAltUploading((prev) => ({ ...prev, [altId]: true }));
+
+    try {
+      const fd = new FormData();
+      files.forEach((f) => fd.append("files", f));
+
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/attachments`,
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          `Upload alternative attachments failed (status ${res.status})`
+        );
+      }
+
+      // refrescamos la lista de adjuntos de esa alternativa
+      await fetchAlternativeAttachments(altId);
+
+      setAltNewFiles((prev) => ({ ...prev, [altId]: [] }));
+    } catch (e) {
+      console.error("Upload alt attachments error:", e);
+      alert("Could not upload attachments for this alternative.");
+    } finally {
+      setAltUploading((prev) => ({ ...prev, [altId]: false }));
+    }
+  };
+
+  const handleDownloadAltAttachment = async (att: Attachment) => {
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/attachments/${att.id}/download`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Download failed (status ${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = att.fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Alternative attachment download failed:", e);
+      alert("Could not download alternative attachment.");
+    }
+  };
+
+
+  const handleUploadRfcAttachments = async () => {
+    if (!rfcId || newRfcAttachments.length === 0) return;
+
+    setUploadingRfcAttachments(true);
+    try {
+      const fd = new FormData();
+      newRfcAttachments.forEach((file) => {
+        fd.append("files", file);
+      });
+
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/attachments`,
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Upload failed (status ${res.status})`);
+      }
+
+      await fetchRfcData();
+      setNewRfcAttachments([]);
+    } catch (e) {
+      console.error("Upload RFC attachments failed:", e);
+      alert("Failed to upload attachments.");
+    } finally {
+      setUploadingRfcAttachments(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (att: Attachment) => {
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/attachments/${att.id}/download`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Download failed (status ${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = att.fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Attachment download failed:", e);
+      alert("Could not download attachment.");
+    }
+  };
+
 
   const handleVoteForAlternative = async (altId: number, outcome: boolean) => {
     if (!isReviewer) return
@@ -189,17 +380,21 @@ export default function RFCDetailPage() {
       title: alternativeForm.title,
       description: alternativeForm.description,
       pros: alternativeForm.pros.join(';'),
-      cons: alternativeForm.cons.join(';')
+      cons: alternativeForm.cons.join(';'),
+      xml: null
     }
+
+    const multipart = new FormData();
+    multipart.append(
+      "data",
+      new Blob([JSON.stringify(payload)], { type: "application/json" })
+    );
 
     setIsSubmittingAlternative(true)
     try {
       const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        body: multipart
       })
 
       if (!res.ok) throw new Error(`Failed to create alternative (status ${res.status})`)
@@ -246,14 +441,14 @@ export default function RFCDetailPage() {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
   }
 
-  const handlePostComment = async (content:string, parentId : number | null = null) => {
+  const handlePostComment = async (content: string, parentId: number | null = null) => {
     if (isPostingComment) return
     if (!rfcId) return
     if (!content || content.trim().length === 0) return
 
     const payload = {
-        content: content.trim(),
-        parentId
+      content: content.trim(),
+      parentId
     }
 
     setIsPostingComment(true)
@@ -481,6 +676,79 @@ export default function RFCDetailPage() {
           </div>
         </section>
 
+        {/* RFC Attachments */}
+        <section>
+          <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+            Attachments
+          </h2>
+
+          {rfcData.attachments && rfcData.attachments.length > 0 ? (
+            <ul className="space-y-2">
+              {rfcData.attachments.map((att) => (
+                <li key={att.id} className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4 text-violet-600" />
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadAttachment(att)}
+                    className="text-violet-700 hover:underline text-sm"
+                  >
+                    {att.fileName}
+                  </button>
+                  <span className="text-xs text-gray-500">
+                    ({Math.round(att.size / 1024)} KB)
+                  </span>
+                </li>
+
+
+
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-sm">
+              No attachments yet.
+            </p>
+          )
+
+          }
+
+          { }
+          {rfcData.isAuthor && (
+            <div className="mt-4 space-y-2">
+              <input
+                id="rfc-more-attachments"
+                type="file"
+                multiple
+                className="block w-full text-sm text-gray-700
+                   file:mr-4 file:py-2 file:px-4
+                   file:rounded-lg file:border-0
+                   file:text-sm file:font-semibold
+                   file:bg-violet-50 file:text-violet-700
+                   hover:file:bg-violet-100"
+                onChange={(e) => {
+                  if (!e.target.files) return;
+                  setNewRfcAttachments(Array.from(e.target.files));
+                }}
+                disabled={uploadingRfcAttachments}
+              />
+              {newRfcAttachments.length > 0 && (
+                <p className="text-xs text-gray-500">
+                  {newRfcAttachments.length} file(s) ready to upload
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={handleUploadRfcAttachments}
+                disabled={uploadingRfcAttachments || newRfcAttachments.length === 0}
+                className="px-3 py-1.5 text-sm bg-violet-600 text-white rounded-lg
+                   hover:bg-violet-700 disabled:opacity-50"
+              >
+                {uploadingRfcAttachments ? 'Uploading...' : 'Upload attachments'}
+              </button>
+            </div>
+          )}
+
+        </section>
+
         {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
             onClick={handleCloseNoDecision}
@@ -574,8 +842,8 @@ export default function RFCDetailPage() {
             >
               <ThumbsUp
                 className={`w-5 h-5 ${userVotes[alt.id] === true
-                    ? 'text-violet-600'
-                    : 'text-gray-400 hover:text-violet-600'
+                  ? 'text-violet-600'
+                  : 'text-gray-400 hover:text-violet-600'
                   }`}
               />
               <span className="text-sm text-gray-700">
@@ -592,8 +860,8 @@ export default function RFCDetailPage() {
             >
               <ThumbsDown
                 className={`w-5 h-5 ${userVotes[alt.id] === false
-                    ? 'text-violet-600'
-                    : 'text-gray-400 hover:text-violet-600'
+                  ? 'text-violet-600'
+                  : 'text-gray-400 hover:text-violet-600'
                   }`}
               />
               <span className="text-sm text-gray-700">
@@ -662,6 +930,90 @@ export default function RFCDetailPage() {
               ))}
             </ul>
           </div>
+
+          <section className="mt-4 border-t border-gray-100 pt-3">
+            <h3 className="text-sm font-semibold text-violet-700 mb-2">
+              Attachments
+            </h3>
+
+            {/* Attachment list */}
+            {altAttachments[alt.id] && altAttachments[alt.id].length > 0 ? (
+              <ul className="space-y-1">
+                {altAttachments[alt.id].map((att) => (
+                  <li key={att.id} className="flex items-center gap-2">
+                    <Paperclip className="w-3 h-3 text-violet-600" />
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadAltAttachment(att)}
+                      className="text-violet-700 hover:underline text-xs"
+                    >
+                      {att.fileName}
+                    </button>
+                    <span className="text-[10px] text-gray-500">
+                      ({Math.round(att.size / 1024)} KB)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-500">
+                No attachments loaded.
+              </p>
+            )}
+
+
+
+            {/* Add attachments */}
+            {rfcData.isAuthor && (
+              <div className="mt-2 flex flex-col items-start gap-1">
+
+                <input
+                  id={`alt-${alt.id}-attachments`}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleAltFilesChange(alt.id, e.target.files)}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById(`alt-${alt.id}-attachments`)
+                      ?.click()
+                  }
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full
+                   bg-violet-50 text-violet-800 text-xs font-medium
+                   border border-violet-200 shadow-sm
+                   hover:bg-violet-100 transition-colors"
+                  disabled={altUploading[alt.id]}
+                >
+                  <Paperclip className="w-3 h-3" />
+                  Add Attachments
+                </button>
+
+                {altNewFiles[alt.id] && altNewFiles[alt.id].length > 0 && (
+                  <p className="text-[11px] text-gray-500">
+                    {altNewFiles[alt.id].map((f) => f.name).join(", ")}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => uploadAlternativeAttachments(alt.id)}
+                  disabled={
+                    altUploading[alt.id] ||
+                    !altNewFiles[alt.id] ||
+                    altNewFiles[alt.id].length === 0
+                  }
+                  className="mt-1 px-3 py-1 text-[11px] bg-violet-600 text-white rounded-lg
+                   hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {altUploading[alt.id] ? "Uploading..." : "Upload"}
+                </button>
+              </div>
+            )}
+          </section>
+
         </div>
       </div>
     </div>
@@ -733,7 +1085,7 @@ export default function RFCDetailPage() {
       {/* Comments */}
       <div>
         {rfcData.comments.length > 0 ? (
-          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
+          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false} />)
         ) : (
           <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
         )}
@@ -840,7 +1192,7 @@ export default function RFCDetailPage() {
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={() => { if (winningAlternative) fetchGeneratedAdr(winningAlternative.id) }}
                 className="px-4 py-2 bg-sky-600 text-white border border-gray-300 rounded-lg hover:bg-sky-700 disabled:opacity-50"

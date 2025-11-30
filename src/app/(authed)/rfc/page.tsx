@@ -1,6 +1,6 @@
 "use client"
 import { MessageCircle, Plus, X, Paperclip, Send } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { parseDescription } from '@/lib/utils'
 import Link from 'next/link'
 import fetcher from '@/src/lib/fetcher'
@@ -26,6 +26,11 @@ export default function RFCPage() {
     context: '', // Not used in POST body, but kept for user input
     problemStatement: '' // Not used in POST body, but kept for user input
   });
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [attachments, setAttachments] = useState<File[]>([]);
+
 
   const getStatusColor = (status: BackendRFC['status']) => {
     switch (status) {
@@ -76,16 +81,24 @@ export default function RFCPage() {
       title: formData.title,
       description: description,
       templateId: 1, // Default value, only working with one template
+      xml: null, // draw.io XML
     };
+
+    const multipart = new FormData();
+    multipart.append(
+      "data",
+      new Blob([JSON.stringify(postBody)], { type: "application/json" })
+    );
+
+    attachments.forEach((file) => {
+      multipart.append("files", file);
+    });
 
     setIsSubmitting(true);
     try {
       const response = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postBody)
+        body: multipart
       });
 
       if (!response.ok) {
@@ -94,10 +107,12 @@ export default function RFCPage() {
 
       await fetchRFCs();
       handleCancel(); // Resets form and closes modal
+      setAttachments([]);
+
     } catch (e) {
       console.error('Failed to create RFC:', e);
       // You might want a toast/notification here for the user
-      alert('Failed to submit new RFC. Check console for details.'); 
+      alert('Failed to submit new RFC. Check console for details.');
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +138,7 @@ export default function RFCPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold text-gray-900">Requests for Comments</h1>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
         >
@@ -136,83 +151,83 @@ export default function RFCPage() {
       <div className="space-y-4">
         {isLoading && <p className="text-gray-600">Loading RFCs...</p>}
         {error && <p className="text-red-500 font-medium">{error}</p>}
-        
+
         {!isLoading && rfcs.length === 0 && !error && (
-            <p className="text-gray-600">No RFCs found. Be the first to create one!</p>
+          <p className="text-gray-600">No RFCs found. Be the first to create one!</p>
         )}
 
         {rfcs.map((rfc) => {
           const { context, problem } = parseDescription(rfc.description)
           return (
-          <Link
-            key={rfc.id}
-            href={`/rfc/${rfc.id}`}
-            className="block bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer"
-          >
-            <div className="flex gap-4">
-              {/* Icon */}
-              <div className="flex-shrink-0">
-                <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <Link
+              key={rfc.id}
+              href={`/rfc/${rfc.id}`}
+              className="block bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer"
+            >
+              <div className="flex gap-4">
+                {/* Icon */}
+                <div className="flex-shrink-0">
+                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <g opacity="0.6">
                         <line y1="-1.50402" x2="26.6757" y2="-1.50402"
-                              transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
-                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                          transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
+                          strokeOpacity="0.47" strokeWidth="3.00805" />
                         <line y1="-1.50402" x2="46.9282" y2="-1.50402"
-                              transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
-                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                          transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
+                          strokeOpacity="0.47" strokeWidth="3.00805" />
                         <line y1="-1.50402" x2="46.6837" y2="-1.50402"
-                              transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
-                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                          transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
+                          strokeOpacity="0.47" strokeWidth="3.00805" />
                         <line y1="-1.50402" x2="38.7414" y2="-1.50402"
-                              transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
-                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                          transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
+                          strokeOpacity="0.47" strokeWidth="3.00805" />
                         <line y1="-1.50402" x2="41.2294" y2="-1.50402"
-                              transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
-                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                          transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
+                          strokeOpacity="0.47" strokeWidth="3.00805" />
                         <line y1="-1.50402" x2="40.2477" y2="-1.50402"
-                              transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
-                              strokeOpacity="0.47" strokeWidth="3.00805"/>
-                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8"/>
-                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF"/>
-                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4"/>
-                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF"/>
-                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF"/>
-                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA"/>
-                    </g>
-                  </svg>
+                          transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
+                          strokeOpacity="0.47" strokeWidth="3.00805" />
+                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8" />
+                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF" />
+                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4" />
+                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF" />
+                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF" />
+                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA" />
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-1">
+                    {rfc.title}
+                  </h2>
+                  <p className="text-sm text-gray-500 mb-3">
+                    {/* Using standard JS date format for simplicity */}
+                    {new Date(rfc.createdAt).toLocaleDateString()}, by {rfc.authorName}
+                  </p>
+                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
+                    {context}
+                  </p>
+                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
+                    {problem}
+                  </p>
+                </div>
+
+                {/* Status and Comments */}
+                <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${getStatusColor(rfc.status)}`}>
+                    {formatStatus(rfc.status)}
+                  </span>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <MessageCircle className="w-5 h-5" />
+                    <span className="text-lg font-medium">{rfc.commentCount || 0}</span>
+                  </div>
                 </div>
               </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-semibold text-gray-900 mb-1">
-                  {rfc.title}
-                </h2>
-                <p className="text-sm text-gray-500 mb-3">
-                  {/* Using standard JS date format for simplicity */}
-                  {new Date(rfc.createdAt).toLocaleDateString()}, by {rfc.authorName}
-                </p>
-                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
-                  {context}
-                </p>
-                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
-                  {problem}
-                </p>
-              </div>
-
-              {/* Status and Comments */}
-              <div className="flex flex-col items-end gap-3 flex-shrink-0">
-                <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${getStatusColor(rfc.status)}`}>
-                  {formatStatus(rfc.status)}
-                </span>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="text-lg font-medium">{rfc.commentCount || 0}</span>
-                </div>
-              </div>
-              </div>
-          </Link>
+            </Link>
           )
         })}
       </div>
@@ -280,16 +295,43 @@ export default function RFCPage() {
                 />
               </div>
 
-              {/* Add Attachments Button */}
-              {/* <div className="flex justify-end">
-                <button 
-                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
-                  disabled={isSubmitting}
+              {/* Attachments */}
+              <div className="mt-4 flex flex-col items-end gap-2">
+                {}
+                <input
+                  ref={fileInputRef}
+                  id="rfc-attachments"
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (!e.target.files) return;
+                    setAttachments(Array.from(e.target.files));
+                  }}
+                />
+
+                {/* Attachment Button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+               bg-violet-50 text-violet-800 text-sm font-medium
+               border border-violet-200 shadow-sm
+               hover:bg-violet-100 transition-colors"
                 >
-                  <Paperclip className="w-5 h-5" />
-                  <span className="font-medium">Add Attachments</span>
+                  <Paperclip className="w-4 h-4" />
+                  Add Attachments
                 </button>
-              </div> */}
+
+                {/* Selected Files */}
+                {attachments.length > 0 && (
+                  <p className="text-xs text-gray-500">
+                    {attachments.map((f) => f.name).join(", ")}
+                  </p>
+                )}
+              </div>
+
+
             </div>
 
             {/* Modal Footer */}
