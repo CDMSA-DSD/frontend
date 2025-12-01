@@ -49,13 +49,24 @@ export default function UsersPage() {
         const rawUsers: any[] =
           (data && data._embedded && data._embedded.users) || data || []
 
-        const mapped: OrgUser[] = rawUsers.map((u: any) => ({
-          id: u.id,
-          email: u.email,
-          role: "Employee", // temporary until backend sends roles
-          status: "ACTIVE", // temporary status
-          joinedAt: u.joinedAt,
-        }))
+        console.log("RAW /users RESPONSE:", rawUsers)
+
+        const mapped: OrgUser[] = rawUsers.map((u: any) => {
+          const backendRole =
+            u.role ??
+            u.organizationRole ??
+            u.orgRole ??
+            u.roleInOrganization ??
+            u.memberRole
+
+          return {
+            id: u.id,
+            email: u.email,
+            role: u.jobTitle || "Member",
+            status: u.status ?? "ACTIVE",
+            joinedAt: u.joinedAt,
+          }
+        })
 
         setUsers(mapped)
       } catch (err) {
@@ -80,7 +91,7 @@ export default function UsersPage() {
       if (!res.ok) {
         const text = await res.text()
         throw new Error(
-          `DELETE /users/${id} ${res.status} ${res.statusText} — ${text}`
+          `DELETE /users/${id} ${res.status} ${res.statusText} — ${text}`,
         )
       }
 
@@ -145,7 +156,7 @@ export default function UsersPage() {
       if (!res.ok) {
         const text = await res.text()
         throw new Error(
-          `POST /invitations ${res.status} ${res.statusText} — ${text}`
+          `POST /invitations ${res.status} ${res.statusText} — ${text}`,
         )
       }
 
@@ -184,7 +195,7 @@ export default function UsersPage() {
           Manage the organization&apos;s users here
         </h1>
 
-      {/* Search + button row */}
+        {/* Search + button row */}
         <div className="mb-8 flex items-center gap-4">
           <div className="flex-1">
             <div className="flex h-14 items-center rounded-full bg-[#f2f2f2] px-6 shadow-sm">
