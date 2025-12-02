@@ -6,6 +6,13 @@ import Link from "next/link"
 import { Check, Pencil, AlertTriangle, X } from "lucide-react"
 import fetcher from "@/src/lib/fetcher"
 
+type ParticipatingUser = {
+  userId: number
+  fullName: string
+  role: string
+  jobTitle: string
+}
+
 type DetailedADR = {
   id: number
   rfcId: number
@@ -18,6 +25,8 @@ type DetailedADR = {
   createdAt: string
   updatedAt: string
   name?: string
+  reviewers?: ParticipatingUser[]
+  observers?: ParticipatingUser[]
 }
 
 type Rfc = {
@@ -90,7 +99,9 @@ function EditADRModal({
         className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-8 border-2 border-violet-600"
       >
         <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold text-center text-gray-900">Edit ADR</h2>
+          <h2 className="text-2xl font-bold text-center text-gray-900">
+            Edit ADR
+          </h2>
         </div>
 
         <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
@@ -145,7 +156,9 @@ function EditADRModal({
             <textarea
               id="consequences"
               value={formData.consequences}
-              onChange={(e) => setFormData({ ...formData, consequences: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, consequences: e.target.value })
+              }
               placeholder="Describe the consequences"
               rows={3}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
@@ -206,13 +219,16 @@ function CancelADRModal({
         className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto my-8 border-2 border-red-500"
       >
         <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold text-center text-gray-900">Cancel ADR draft?</h2>
+          <h2 className="text-2xl font-bold text-center text-gray-900">
+            Cancel ADR draft?
+          </h2>
         </div>
 
         <div className="p-6 space-y-4">
           <p className="text-gray-800 leading-relaxed">
             This will delete the ADR draft and revert the linked RFC back to{" "}
-            <span className="font-semibold">Under Review</span>. This action cannot be undone.
+            <span className="font-semibold">Under Review</span>. This action
+            cannot be undone.
           </p>
         </div>
 
@@ -258,7 +274,9 @@ function ADRSidebar({
     <aside className="w-80 shrink-0 bg-background p-6">
       <div className="space-y-8">
         <section>
-          <h3 className="mb-3 text-lg font-semibold text-purple-600">Decision</h3>
+          <h3 className="mb-3 text-lg font-semibold text-purple-600">
+            Decision
+          </h3>
           <div className="flex items-center gap-2 text-sm">
             {adr.status === "APPROVED" ? (
               <>
@@ -266,7 +284,8 @@ function ADRSidebar({
                   <Check className="size-3 text-white" />
                 </div>
                 <span className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
-                  Approved on {new Date(adr.updatedAt).toLocaleDateString()}
+                  Approved on{" "}
+                  {new Date(adr.updatedAt).toLocaleDateString()}
                 </span>
               </>
             ) : (
@@ -283,7 +302,9 @@ function ADRSidebar({
         </section>
 
         <section>
-          <h3 className="mb-3 text-lg font-semibold text-purple-600">Source RFC</h3>
+          <h3 className="mb-3 text-lg font-semibold text-purple-600">
+            Source RFC
+          </h3>
           {rfc ? (
             <>
               <div className="flex items-center gap-2 text-sm">
@@ -368,28 +389,28 @@ export default function AdrDetailPage() {
     }
 
     const ctrl = new AbortController()
-      ; (async () => {
-        try {
-          setLoading(true)
-          setError(null)
-          setRfc(null)
+    ;(async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        setRfc(null)
 
-          const res = await fetcher(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adrId}`,
-            { signal: ctrl.signal },
-          )
-          if (!res.ok) {
-            const t = await res.text()
-            throw new Error(`GET /adrs/${adrId} ${res.status} — ${t}`)
-          }
-
-          const json = (await res.json()) as DetailedADR
-          setAdr({ ...json, id: json.id ?? adrId, title: json.title ?? json.name })
-        } catch (e: any) {
-          if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch ADR")
-          setLoading(false)
+        const res = await fetcher(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adrId}`,
+          { signal: ctrl.signal },
+        )
+        if (!res.ok) {
+          const t = await res.text()
+          throw new Error(`GET /adrs/${adrId} ${res.status} — ${t}`)
         }
-      })()
+
+        const json = (await res.json()) as DetailedADR
+        setAdr({ ...json, id: json.id ?? adrId, title: json.title ?? json.name })
+      } catch (e: any) {
+        if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch ADR")
+        setLoading(false)
+      }
+    })()
     return () => ctrl.abort()
   }, [adrId, idStr])
 
@@ -400,24 +421,24 @@ export default function AdrDetailPage() {
     }
 
     const ctrl = new AbortController()
-      ; (async () => {
-        try {
-          const res = await fetcher(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${adr.rfcId}`,
-            { signal: ctrl.signal },
-          )
-          if (!res.ok) {
-            const t = await res.text()
-            throw new Error(`GET /rfcs/${adr.rfcId} ${res.status} — ${t}`)
-          }
-          const json = (await res.json()) as Rfc
-          setRfc(json)
-        } catch (e: any) {
-          if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch RFC")
-        } finally {
-          setLoading(false)
+    ;(async () => {
+      try {
+        const res = await fetcher(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${adr.rfcId}`,
+          { signal: ctrl.signal },
+        )
+        if (!res.ok) {
+          const t = await res.text()
+          throw new Error(`GET /rfcs/${adr.rfcId} ${res.status} — ${t}`)
         }
-      })()
+        const json = (await res.json()) as Rfc
+        setRfc(json)
+      } catch (e: any) {
+        if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch RFC")
+      } finally {
+        setLoading(false)
+      }
+    })()
     return () => ctrl.abort()
   }, [adr])
 
@@ -556,7 +577,6 @@ export default function AdrDetailPage() {
     }
   }
 
-
   if (loading) return <div className="p-8">Loading…</div>
   if (error) return <div className="p-8 text-red-600">{error}</div>
   if (!adr) return <div className="p-8">ADR Not found.</div>
@@ -565,29 +585,117 @@ export default function AdrDetailPage() {
 
   return (
     <div className="min-h-screen bg-white p-8">
-      <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">{title}</h1>
+      <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">
+        {title}
+      </h1>
 
       <div className="mx-auto flex max-w-6xl">
         <main className="flex-1 p-8">
           <div className="space-y-10">
             <section>
-              <h2 className="text-2xl font-semibold text-violet-700 mb-4">Context</h2>
+              <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+                Context
+              </h2>
               <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
-                {adr.context ? adr.context.split("\n").map((p, i) => <p key={i}>{p}</p>) : "—"}
+                {adr.context
+                  ? adr.context
+                      .split("\n")
+                      .map((p, i) => <p key={i}>{p}</p>)
+                  : "—"}
               </div>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-violet-700 mb-4">Decision</h2>
+              <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+                Decision
+              </h2>
               <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
-                {adr.decision ? adr.decision.split("\n").map((p, i) => <p key={i}>{p}</p>) : "—"}
+                {adr.decision
+                  ? adr.decision
+                      .split("\n")
+                      .map((p, i) => <p key={i}>{p}</p>)
+                  : "—"}
               </div>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-violet-700 mb-4">Consequences</h2>
+              <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+                Consequences
+              </h2>
               <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
-                {adr.consequences ? adr.consequences.split("\n").map((p, i) => <p key={i}>{p}</p>) : "—"}
+                {adr.consequences
+                  ? adr.consequences
+                      .split("\n")
+                      .map((p, i) => <p key={i}>{p}</p>)
+                  : "—"}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-4 text-2xl font-semibold text-violet-700">
+                Participating users
+              </h2>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                    Reviewers
+                  </h3>
+                  {adr.reviewers && adr.reviewers.length > 0 ? (
+                    <ul className="space-y-2">
+                      {adr.reviewers.map((user) => (
+                        <li
+                          key={user.userId}
+                          className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {user.fullName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {user.jobTitle || "—"}
+                              {user.role ? ` • ${user.role}` : ""}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No reviewers defined for this ADR.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                    Observers
+                  </h3>
+                  {adr.observers && adr.observers.length > 0 ? (
+                    <ul className="space-y-2">
+                      {adr.observers.map((user) => (
+                        <li
+                          key={user.userId}
+                          className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {user.fullName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {user.jobTitle || "—"}
+                              {user.role ? ` • ${user.role}` : ""}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No observers defined for this ADR.
+                    </p>
+                  )}
+                </div>
               </div>
             </section>
           </div>
