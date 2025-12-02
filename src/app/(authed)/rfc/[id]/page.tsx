@@ -7,6 +7,7 @@ import fetcher from '@/src/lib/fetcher'
 
 import { Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
+import DiagramViewer from '@/src/components/ui/diagramViewer'
 
 interface BackendAlternative {
   id: number
@@ -149,6 +150,17 @@ export default function RFCDetailPage() {
   const [altUploading, setAltUploading] =
     useState<Record<number, boolean>>({});
 
+  const [isEditingDiagram, setIsEditingDiagram] = useState(false)
+  const [diagramXml, setDiagramXml] = useState<string>('')
+  const [isSavingDiagram, setIsSavingDiagram] = useState(false)
+
+  const [altDiagramXml, setAltDiagramXml] =
+    useState<Record<number, string>>({})
+  const [altEditingDiagram, setAltEditingDiagram] =
+    useState<Record<number, boolean>>({})
+  const [altSavingDiagram, setAltSavingDiagram] =
+    useState<Record<number, boolean>>({})
+
 
   useEffect(() => {
     if (!rfcId) return;
@@ -169,6 +181,8 @@ export default function RFCDetailPage() {
 
       const data: BackendRFC = await response.json()
       setRfcData(data)
+      setDiagramXml(data.xml ?? '')
+
 
       if (data.alternatives && data.alternatives.length > 0) {
         await Promise.all(
@@ -203,6 +217,13 @@ export default function RFCDetailPage() {
         ...prev,
         [altId]: data.attachments || [],
       }));
+
+      setAltDiagramXml(prev => ({
+        ...prev,
+        [altId]: data.xml || '',
+      }))
+
+
     } catch (e) {
       console.error("Failed to fetch alternative attachments:", e);
       if (showAlert) {
@@ -345,6 +366,94 @@ export default function RFCDetailPage() {
       alert("Could not download attachment.");
     }
   };
+
+
+  const handleSaveDiagram = async () => {
+    if (!rfcId) return
+    if (!rfcData) return
+
+    setIsSavingDiagram(true)
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/diagram`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            xmlContent: diagramXml, // UpdateCreateDiagramRequest.xmlContent
+          }),
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error(`Failed to save diagram (status ${res.status})`)
+      }
+
+      const updated: BackendRFC = await res.json()
+      setRfcData(updated)
+      setDiagramXml(updated.xml ?? "")
+      setIsEditingDiagram(false)
+    } catch (e) {
+      console.error("Saving diagram failed:", e)
+      alert("Could not save diagram.")
+    } finally {
+      setIsSavingDiagram(false)
+    }
+  }
+
+  const startEditingAlternativeDiagram = (altId: number) => {
+    setAltEditingDiagram((prev) => ({ ...prev, [altId]: true }))
+  }
+
+  const cancelEditingAlternativeDiagram = (altId: number) => {
+    setAltEditingDiagram((prev) => ({ ...prev, [altId]: false }))
+
+  }
+
+  const handleAltDiagramChange = (altId: number, value: string) => {
+    setAltDiagramXml((prev) => ({ ...prev, [altId]: value }))
+  }
+
+  const handleSaveAlternativeDiagram = async (altId: number) => {
+    const xml = altDiagramXml[altId] ?? ""
+
+    setAltSavingDiagram((prev) => ({ ...prev, [altId]: true }))
+
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/diagram`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ xmlContent: xml }), // UpdateCreateDiagramRequest
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error(
+          `Failed to save alternative diagram (status ${res.status})`
+        )
+      }
+
+      const updated = await res.json() // AlternativeSpecificResponse
+
+      setAltDiagramXml((prev) => ({
+        ...prev,
+        [altId]: updated.xml || "",
+      }))
+      setAltEditingDiagram((prev) => ({ ...prev, [altId]: false }))
+    } catch (e) {
+      console.error("Saving alternative diagram failed:", e)
+      alert("Could not save alternative diagram.")
+    } finally {
+      setAltSavingDiagram((prev) => ({ ...prev, [altId]: false }))
+    }
+  }
+
 
 
   const handleVoteForAlternative = async (altId: number, outcome: boolean) => {
@@ -749,6 +858,92 @@ export default function RFCDetailPage() {
 
         </section>
 
+        <section>
+          <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+            Diagram
+          </h2>
+
+          {!isEditingDiagram ? (
+            <div className="space-y-3">
+              {rfcData.xml ? (
+                <>
+                  <p className="text-sm text-gray-600">
+                    This RFC already has a saved diagram (XML).
+                  </p>
+                  <DiagramViewer xml={rfcData.xml} height={500} />
+
+                  {rfcData.isAuthor && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDiagram(true)}
+                      className="inline-flex items-center px-4 py-2 text-sm rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                    >
+                      Edit diagram
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500">
+                    No diagram has been created for this RFC yet.
+                  </p>
+                  {rfcData.isAuthor && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDiagram(true)}
+                      className="inline-flex items-center px-4 py-2 text-sm rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                    >
+                      Create diagram
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <textarea
+                value={diagramXml}
+                onChange={(e) => setDiagramXml(e.target.value)}
+                rows={10}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono
+                   focus:outline-none focus:ring-2 focus:ring-violet-500"
+                placeholder="Paste here the draw.io XML..."
+              />
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveDiagram}
+                  disabled={isSavingDiagram}
+                  className="px-4 py-2 text-sm rounded-lg bg-violet-600 text-white
+                     hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {isSavingDiagram ? "Saving..." : "Save diagram"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingDiagram(false)
+                    setDiagramXml(rfcData.xml ?? "")
+                  }}
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700
+                     hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-500">
+                For now this is a raw XML editor. Later we can replace it with an embedded
+                draw.io editor that reads/writes this XML.
+              </p>
+            </div>
+          )}
+        </section>
+
+
         {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
             onClick={handleCloseNoDecision}
@@ -758,7 +953,10 @@ export default function RFCDetailPage() {
             {isClosing ? 'Closing...' : 'Close RFC (No Decision)'}
           </button>
         )}
+
       </div>
+
+
     )
   }
 
@@ -1013,6 +1211,94 @@ export default function RFCDetailPage() {
               </div>
             )}
           </section>
+
+
+          {/* Diagram section */}
+          <section className="mt-4 border-t border-gray-100 pt-3">
+            <h3 className="text-sm font-semibold text-violet-700 mb-2">
+              Diagram
+            </h3>
+
+            {!altEditingDiagram[alt.id] ? (
+              <div className="space-y-2">
+                {altDiagramXml[alt.id] && altDiagramXml[alt.id].length > 0 ? (
+                  <>
+                    <p className="text-xs text-gray-600">
+                      This alternative already has a saved diagram (XML).
+                    </p>
+                    <DiagramViewer xml={altDiagramXml[alt.id]} height={350} />
+
+                    {rfcData.isAuthor && (
+                      <button
+                        type="button"
+                        onClick={() => startEditingAlternativeDiagram(alt.id)}
+                        className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                      >
+                        Edit diagram
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500">
+                      No diagram has been created for this alternative yet.
+                    </p>
+                    {rfcData.isAuthor && (
+                      <button
+                        type="button"
+                        onClick={() => startEditingAlternativeDiagram(alt.id)}
+                        className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                      >
+                        Create diagram
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <textarea
+                  value={altDiagramXml[alt.id] ?? ""}
+                  onChange={(e) =>
+                    handleAltDiagramChange(alt.id, e.target.value)
+                  }
+                  rows={8}
+                  className="w-full border border-gray-300 rounded-lg p-2 text-xs font-mono
+                   focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="Paste here the draw.io XML for this alternative..."
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSaveAlternativeDiagram(alt.id)}
+                    disabled={altSavingDiagram[alt.id]}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white
+                     hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {altSavingDiagram[alt.id] ? "Saving..." : "Save diagram"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cancelEditingAlternativeDiagram(alt.id)}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-300
+                     text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-gray-500">
+                  For now this is a raw XML editor. Later we can replace it with an
+                  embedded draw.io editor that reads/writes this XML.
+                </p>
+              </div>
+            )}
+
+          </section>
+
 
         </div>
       </div>

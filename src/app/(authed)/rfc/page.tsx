@@ -30,6 +30,8 @@ export default function RFCPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [diagramXml, setDiagramXml] = useState<string>('')
+
 
 
   const getStatusColor = (status: BackendRFC['status']) => {
@@ -81,7 +83,7 @@ export default function RFCPage() {
       title: formData.title,
       description: description,
       templateId: 1, // Default value, only working with one template
-      xml: null, // draw.io XML
+      xml: diagramXml || null, // draw.io XML
     };
 
     const multipart = new FormData();
@@ -297,7 +299,7 @@ export default function RFCPage() {
 
               {/* Attachments */}
               <div className="mt-4 flex flex-col items-end gap-2">
-                {}
+                { }
                 <input
                   ref={fileInputRef}
                   id="rfc-attachments"
@@ -330,6 +332,21 @@ export default function RFCPage() {
                   </p>
                 )}
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Diagram XML (optional)
+                </label>
+                <textarea
+                  value={diagramXml}
+                  onChange={(e) => setDiagramXml(e.target.value)}
+                  rows={6}
+                  className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono
+               focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="Paste draw.io XML if you already have it..."
+                />
+              </div>
+
 
 
             </div>
