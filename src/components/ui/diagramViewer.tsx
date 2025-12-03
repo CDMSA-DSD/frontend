@@ -61,10 +61,18 @@ export default function DiagramViewer({ xml, height = 400 }: DiagramViewerProps)
   }
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: "100%", height }}
-      className="rounded-lg bg-white"
-    />
-  );
+  <div
+    ref={containerRef}
+    style={{
+      width: "100%",
+      height,
+      overflow: "auto",       
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      padding: "8px",
+      backgroundColor: "white",
+    }}
+  />
+);
+
 }
