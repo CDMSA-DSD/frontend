@@ -1,6 +1,6 @@
 "use client"
 import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLeft, Paperclip } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
@@ -143,6 +143,13 @@ export default function RFCDetailPage() {
   const [uploadingRfcAttachments, setUploadingRfcAttachments] = useState(false);
   const [newRfcAttachments, setNewRfcAttachments] = useState<File[]>([]);
 
+  const [newAlternativeFiles, setNewAlternativeFiles] = useState<File[]>([]);
+  const [newAlternativeDiagramXml, setNewAlternativeDiagramXml] = useState<string>("");
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const newAltFileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [altAttachments, setAltAttachments] =
     useState<Record<number, Attachment[]>>({});
   const [altNewFiles, setAltNewFiles] =
@@ -187,7 +194,7 @@ export default function RFCDetailPage() {
       if (data.alternatives && data.alternatives.length > 0) {
         await Promise.all(
           data.alternatives.map((alt) =>
-            fetchAlternativeAttachments(alt.id, false) // false = no alert en caso de fallo
+            fetchAlternativeAttachments(alt.id, false)
           )
         );
       }
@@ -264,7 +271,7 @@ export default function RFCDetailPage() {
         );
       }
 
-      // refrescamos la lista de adjuntos de esa alternativa
+
       await fetchAlternativeAttachments(altId);
 
       setAltNewFiles((prev) => ({ ...prev, [altId]: [] }));
@@ -490,7 +497,8 @@ export default function RFCDetailPage() {
       description: alternativeForm.description,
       pros: alternativeForm.pros.join(';'),
       cons: alternativeForm.cons.join(';'),
-      xml: null
+      // usamos el XML que el usuario haya pegado (o null)
+      xml: newAlternativeDiagramXml || null,
     }
 
     const multipart = new FormData();
@@ -498,6 +506,11 @@ export default function RFCDetailPage() {
       "data",
       new Blob([JSON.stringify(payload)], { type: "application/json" })
     );
+
+    // añadimos los ficheros seleccionados para la nueva alternativa
+    newAlternativeFiles.forEach((file) => {
+      multipart.append("files", file);
+    });
 
     setIsSubmittingAlternative(true)
     try {
@@ -516,6 +529,8 @@ export default function RFCDetailPage() {
 
       setShowNewAlternativeModal(false)
       setAlternativeForm({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
+      setNewAlternativeFiles([])
+      setNewAlternativeDiagramXml("")
     } catch (e) {
       console.error('Create alternative failed:', e)
       alert('Failed to create alternative. See console for details.')
@@ -524,11 +539,15 @@ export default function RFCDetailPage() {
     }
   }
 
+
   const handleCancelAlternative = () => {
     if (isSubmittingAlternative) return
     setShowNewAlternativeModal(false)
     setAlternativeForm({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
+    setNewAlternativeFiles([])
+    setNewAlternativeDiagramXml("")
   }
+
 
   const addProsItem = () => {
     const val = alternativeForm.prosInput.trim()
@@ -807,56 +826,66 @@ export default function RFCDetailPage() {
                     ({Math.round(att.size / 1024)} KB)
                   </span>
                 </li>
-
-
-
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-sm">
-              No attachments yet.
-            </p>
-          )
+            <p className="text-gray-500 text-sm">No attachments.</p>
+          )}
 
-          }
 
-          { }
-          {rfcData.isAuthor && (
+          {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
             <div className="mt-4 space-y-2">
+
               <input
+                ref={fileInputRef}
                 id="rfc-more-attachments"
                 type="file"
                 multiple
-                className="block w-full text-sm text-gray-700
-                   file:mr-4 file:py-2 file:px-4
-                   file:rounded-lg file:border-0
-                   file:text-sm file:font-semibold
-                   file:bg-violet-50 file:text-violet-700
-                   hover:file:bg-violet-100"
+                className="hidden"
                 onChange={(e) => {
                   if (!e.target.files) return;
                   setNewRfcAttachments(Array.from(e.target.files));
                 }}
                 disabled={uploadingRfcAttachments}
               />
-              {newRfcAttachments.length > 0 && (
-                <p className="text-xs text-gray-500">
-                  {newRfcAttachments.length} file(s) ready to upload
-                </p>
-              )}
+
+              {/* button */}
               <button
                 type="button"
-                onClick={handleUploadRfcAttachments}
-                disabled={uploadingRfcAttachments || newRfcAttachments.length === 0}
-                className="px-3 py-1.5 text-sm bg-violet-600 text-white rounded-lg
-                   hover:bg-violet-700 disabled:opacity-50"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                   bg-violet-50 text-violet-800 text-sm font-medium
+                   border border-violet-200 shadow-sm
+                   hover:bg-violet-100 transition-colors"
+                disabled={uploadingRfcAttachments}
               >
-                {uploadingRfcAttachments ? 'Uploading...' : 'Upload attachments'}
+                <Paperclip className="w-4 h-4" />
+                Add attachments
               </button>
+
+              {newRfcAttachments.length > 0 && (
+                <>
+                  <p className="text-xs text-gray-500">
+                    {newRfcAttachments.length} file(s) ready to upload
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleUploadRfcAttachments}
+                    disabled={uploadingRfcAttachments}
+                    className="px-4 py-2 text-sm rounded-full
+        bg-violet-600 text-white font-medium
+        hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {uploadingRfcAttachments ? "Uploading..." : "Upload attachments"}
+                  </button>
+                </>
+              )}
+
             </div>
           )}
-
         </section>
+
 
         <section>
           <h2 className="text-2xl font-semibold text-violet-700 mb-4">
@@ -870,9 +899,9 @@ export default function RFCDetailPage() {
                   <p className="text-sm text-gray-600">
                     This RFC already has a saved diagram (XML).
                   </p>
-                  <DiagramViewer xml={rfcData.xml} height={500} />
+                  <DiagramViewer xml={rfcData.xml} />
 
-                  {rfcData.isAuthor && (
+                  {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
                     <button
                       type="button"
                       onClick={() => setIsEditingDiagram(true)}
@@ -886,16 +915,16 @@ export default function RFCDetailPage() {
               ) : (
                 <>
                   <p className="text-sm text-gray-500">
-                    No diagram has been created for this RFC yet.
+                    No diagram has been added for this RFC.
                   </p>
-                  {rfcData.isAuthor && (
+                  {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
                     <button
                       type="button"
                       onClick={() => setIsEditingDiagram(true)}
                       className="inline-flex items-center px-4 py-2 text-sm rounded-lg
                          bg-violet-600 text-white hover:bg-violet-700"
                     >
-                      Create diagram
+                      Add diagram
                     </button>
                   )}
                 </>
@@ -935,10 +964,6 @@ export default function RFCDetailPage() {
                 </button>
               </div>
 
-              <p className="text-xs text-gray-500">
-                For now this is a raw XML editor. Later we can replace it with an embedded
-                draw.io editor that reads/writes this XML.
-              </p>
             </div>
           )}
         </section>
@@ -1097,6 +1122,88 @@ export default function RFCDetailPage() {
           )}
         </div>
 
+        <section>
+            <h3 className="text-sm font-semibold text-violet-700 mb-2">
+              Attachments
+            </h3>
+
+            {/* Attachment list */}
+            {altAttachments[alt.id] && altAttachments[alt.id].length > 0 ? (
+              <ul className="space-y-1">
+                {altAttachments[alt.id].map((att) => (
+                  <li key={att.id} className="flex items-center gap-2">
+                    <Paperclip className="w-3 h-3 text-violet-600" />
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadAltAttachment(att)}
+                      className="text-violet-700 hover:underline text-xs"
+                    >
+                      {att.fileName}
+                    </button>
+                    <span className="text-[10px] text-gray-500">
+                      ({Math.round(att.size / 1024)} KB)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-500">
+                No attachments loaded.
+              </p>
+            )}
+
+            {/* Add attachments only UNDER_REVIEW */}
+            {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
+              <div className="mt-2 flex flex-col items-start gap-1">
+                <input
+                  id={`alt-${alt.id}-attachments`}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) =>
+                    handleAltFilesChange(alt.id, e.target.files)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById(`alt-${alt.id}-attachments`)
+                      ?.click()
+                  }
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                   bg-violet-50 text-violet-800 text-sm font-medium
+                   border border-violet-200 shadow-sm
+                   hover:bg-violet-100 transition-colors"
+                  disabled={altUploading[alt.id]}
+                >
+                  <Paperclip className="w-3 h-3" />
+                  Add Attachments
+                </button>
+
+                {altNewFiles[alt.id] && altNewFiles[alt.id].length > 0 && (
+                  <>
+                    <p className="text-[11px] text-gray-500">
+                      {altNewFiles[alt.id].length} file(s) ready to upload
+                    </p>
+
+                    {/* Upload */}
+                    <button
+                      type="button"
+                      onClick={() => uploadAlternativeAttachments(alt.id)}
+                      disabled={altUploading[alt.id]}
+                      className="px-4 py-2 text-xs rounded-full
+                       bg-violet-600 text-white font-medium
+                       hover:bg-violet-700 disabled:opacity-50"
+                    >
+                      {altUploading[alt.id] ? "Uploading..." : "Upload attachments"}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </section>
+
         {/* Pros/Cons */}
         <div className="flex gap-4 flex-shrink-0">
           {/* Pros */}
@@ -1129,91 +1236,10 @@ export default function RFCDetailPage() {
             </ul>
           </div>
 
-          <section className="mt-4 border-t border-gray-100 pt-3">
-            <h3 className="text-sm font-semibold text-violet-700 mb-2">
-              Attachments
-            </h3>
+        </div>
+      </div>
 
-            {/* Attachment list */}
-            {altAttachments[alt.id] && altAttachments[alt.id].length > 0 ? (
-              <ul className="space-y-1">
-                {altAttachments[alt.id].map((att) => (
-                  <li key={att.id} className="flex items-center gap-2">
-                    <Paperclip className="w-3 h-3 text-violet-600" />
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadAltAttachment(att)}
-                      className="text-violet-700 hover:underline text-xs"
-                    >
-                      {att.fileName}
-                    </button>
-                    <span className="text-[10px] text-gray-500">
-                      ({Math.round(att.size / 1024)} KB)
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-gray-500">
-                No attachments loaded.
-              </p>
-            )}
-
-
-
-            {/* Add attachments */}
-            {rfcData.isAuthor && (
-              <div className="mt-2 flex flex-col items-start gap-1">
-
-                <input
-                  id={`alt-${alt.id}-attachments`}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleAltFilesChange(alt.id, e.target.files)}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    document
-                      .getElementById(`alt-${alt.id}-attachments`)
-                      ?.click()
-                  }
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full
-                   bg-violet-50 text-violet-800 text-xs font-medium
-                   border border-violet-200 shadow-sm
-                   hover:bg-violet-100 transition-colors"
-                  disabled={altUploading[alt.id]}
-                >
-                  <Paperclip className="w-3 h-3" />
-                  Add Attachments
-                </button>
-
-                {altNewFiles[alt.id] && altNewFiles[alt.id].length > 0 && (
-                  <p className="text-[11px] text-gray-500">
-                    {altNewFiles[alt.id].map((f) => f.name).join(", ")}
-                  </p>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => uploadAlternativeAttachments(alt.id)}
-                  disabled={
-                    altUploading[alt.id] ||
-                    !altNewFiles[alt.id] ||
-                    altNewFiles[alt.id].length === 0
-                  }
-                  className="mt-1 px-3 py-1 text-[11px] bg-violet-600 text-white rounded-lg
-                   hover:bg-violet-700 disabled:opacity-50"
-                >
-                  {altUploading[alt.id] ? "Uploading..." : "Upload"}
-                </button>
-              </div>
-            )}
-          </section>
-
-
-          {/* Diagram section */}
+      {/* Diagram section */}
           <section className="mt-4 border-t border-gray-100 pt-3">
             <h3 className="text-sm font-semibold text-violet-700 mb-2">
               Diagram
@@ -1226,9 +1252,9 @@ export default function RFCDetailPage() {
                     <p className="text-xs text-gray-600">
                       This alternative already has a saved diagram (XML).
                     </p>
-                    <DiagramViewer xml={altDiagramXml[alt.id]} height={350} />
+                    <DiagramViewer xml={altDiagramXml[alt.id]} />
 
-                    {rfcData.isAuthor && (
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
                       <button
                         type="button"
                         onClick={() => startEditingAlternativeDiagram(alt.id)}
@@ -1242,16 +1268,16 @@ export default function RFCDetailPage() {
                 ) : (
                   <>
                     <p className="text-xs text-gray-500">
-                      No diagram has been created for this alternative yet.
+                      No diagram has been added for this alternative.
                     </p>
-                    {rfcData.isAuthor && (
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
                       <button
                         type="button"
                         onClick={() => startEditingAlternativeDiagram(alt.id)}
                         className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
                          bg-violet-600 text-white hover:bg-violet-700"
                       >
-                        Create diagram
+                        Add diagram
                       </button>
                     )}
                   </>
@@ -1290,18 +1316,10 @@ export default function RFCDetailPage() {
                   </button>
                 </div>
 
-                <p className="text-[11px] text-gray-500">
-                  For now this is a raw XML editor. Later we can replace it with an
-                  embedded draw.io editor that reads/writes this XML.
-                </p>
               </div>
             )}
 
           </section>
-
-
-        </div>
-      </div>
     </div>
   )
 
@@ -1651,16 +1669,60 @@ export default function RFCDetailPage() {
                 </div>
               </div>
 
-              {/* add attachments */}
-              {/* <div className="flex justify-end">
-                <button
-                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
+              {/* Attachments for the NEW alternative */}
+              <div>
+
+                <div className="flex flex-col items-end gap-2">
+                  <input
+                    ref={newAltFileInputRef}
+                    id="new-alt-attachments"
+                    type="file"
+                    multiple
+                    className="hidden"
+                    disabled={isSubmittingAlternative}
+                    onChange={(e) => {
+                      if (!e.target.files) return;
+                      setNewAlternativeFiles(Array.from(e.target.files));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => newAltFileInputRef.current?.click()}
+                    disabled={isSubmittingAlternative}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                   bg-violet-50 text-violet-800 text-sm font-medium
+                   border border-violet-200 shadow-sm
+                   hover:bg-violet-100 transition-colors"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Add attachments
+                  </button>
+
+                  {newAlternativeFiles.length > 0 && (
+                    <p className="text-xs text-gray-500">
+                      {newAlternativeFiles.map((f) => f.name).join(", ")}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Diagram XML for the NEW alternative */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Diagram XML
+                </label>
+                <textarea
+                  value={newAlternativeDiagramXml}
+                  onChange={(e) => setNewAlternativeDiagramXml(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg
+                             focus:outline-none focus:ring-2 focus:ring-violet-500
+                             text-sm font-mono resize-none"
                   disabled={isSubmittingAlternative}
-                >
-                  <Paperclip className="w-5 h-5" />
-                  <span className="font-medium">Add Attachments</span>
-                </button>
-              </div> */}
+                  placeholder="Paste here the draw.io XML for this alternative (optional)..."
+                />
+              </div>
+
             </div>
 
             <div className="p-6 flex items-center justify-between">
