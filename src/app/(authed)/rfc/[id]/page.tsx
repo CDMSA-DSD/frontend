@@ -1407,7 +1407,9 @@ export default function RFCDetailPage() {
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-8 border-2 border-violet-600"
+         className="bg-white w-full max-w-3xl rounded-lg shadow-lg 
+           overflow-hidden max-h-[90vh] flex flex-col"
+
         >
           {/* Modal Header */}
           <div className="p-6 border-b relative">
@@ -1578,13 +1580,14 @@ export default function RFCDetailPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-violet-600"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-violet-600 overflow-hidden max-h-[90vh] flex flex-col"
           >
             <div className="p-8 border-b">
               <h2 className="text-3xl font-bold text-center text-gray-900">Add New Alternative</h2>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 overflow-y-auto">
+
               <div>
                 <label htmlFor="alt-title" className="block text-sm font-semibold text-gray-900 mb-2">
                   Title <span className="text-red-500">*</span>
