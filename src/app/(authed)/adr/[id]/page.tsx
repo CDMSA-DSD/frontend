@@ -8,7 +8,7 @@ import fetcher from "@/src/lib/fetcher"
 
 type ParticipatingUser = {
   userId: number
-  fullName: string
+  name: string
   role: string
   jobTitle: string
 }
@@ -405,7 +405,11 @@ export default function AdrDetailPage() {
         }
 
         const json = (await res.json()) as DetailedADR
-        setAdr({ ...json, id: json.id ?? adrId, title: json.title ?? json.name })
+        setAdr({
+          ...json,
+          id: json.id ?? adrId,
+          title: json.title ?? json.name,
+        })
       } catch (e: any) {
         if (e?.name !== "AbortError") setError(e?.message ?? "Failed to fetch ADR")
         setLoading(false)
@@ -650,7 +654,7 @@ export default function AdrDetailPage() {
                         >
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              {user.fullName}
+                              {user.name}
                             </p>
                             <p className="text-xs text-gray-500">
                               {user.jobTitle || "—"}
@@ -680,7 +684,7 @@ export default function AdrDetailPage() {
                         >
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              {user.fullName}
+                              {user.name}
                             </p>
                             <p className="text-xs text-gray-500">
                               {user.jobTitle || "—"}
