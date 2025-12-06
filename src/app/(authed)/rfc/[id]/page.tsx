@@ -1,4 +1,5 @@
 "use client"
+import Select, { MultiValue } from "react-select";
 import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLeft, Paperclip } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
@@ -12,8 +13,8 @@ interface BackendAlternative {
   id: number
   title: string
   description: string
-  pros: string // Pros come as a single string
-  cons: string // Cons come as a single string
+  pros: string
+  cons: string
   authorId: number
   authorName: string
   createdAt: string
@@ -36,6 +37,22 @@ interface BackendRFC {
   isAuthor: boolean
   alternatives: BackendAlternative[]
   comments: Comment[]
+  userReviewers?: Array<User>
+  contextReviewers?: Array<Context>
+}
+
+interface User {
+  id: number
+  firstname: string
+  lastname: string
+  email: string
+}
+
+interface Context {
+  id: number
+  name: string
+  type: string
+  description: string
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
@@ -123,15 +140,21 @@ export default function RFCDetailPage() {
   const [newCommentContent, setNewCommentContent] = useState('')
   const [isPostingComment, setIsPostingComment] = useState(false)
 
-  const alternatives: Alternative[] = rfcData ? rfcData.alternatives.map(mapAlternative) : []
+  const [showReviewersModal, setShowReviewersModal] = useState(false)
+  const [availableUsers, setAvailableUsers] = useState<User[]>([])
+  const [availableContexts, setAvailableContexts] = useState<Context[]>([])
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
+  const [selectedContextIds, setSelectedContextIds] = useState<number[]>([])
+  const [isLoadingReviewerData, setIsLoadingReviewerData] = useState(false)
+  const [isAssigningReviewers, setIsAssigningReviewers] = useState(false)
 
+  const alternatives: Alternative[] = rfcData ? rfcData.alternatives.map(mapAlternative) : []
 
   const [userVotes, setUserVotes] = useState<Record<number, boolean | null>>({})
   const isReviewer = true
 
   useEffect(() => {
     if (!rfcId) return;
-    // fetchRfcData is defined outside the effect so it can be reused (e.g. after posting a comment)
     fetchRfcData()
   }, [rfcId])
 
@@ -268,9 +291,7 @@ export default function RFCDetailPage() {
 
       if (!res.ok) throw new Error(`Failed to post comment (status ${res.status})`)
 
-      // Refresh RFC data to include the new comment
       await fetchRfcData()
-      // Clear the textarea
       setNewCommentContent('')
     } catch (e) {
       console.error('Posting comment failed:', e)
@@ -327,13 +348,11 @@ export default function RFCDetailPage() {
 
     setShowAdrModal(true);
 
-    // Attempt to fill from backend LLM endpoint.
     try {
       await fetchGeneratedAdr(alt.id)
     } catch (e) {
       console.log(`Failed to fetch generated ADR:`, e)
 
-      // Fill with default values if backend generation fails
       setAdrFormData({
         title: `ADR: ${alt.title}`,
         context: rfcContext || `Context from RFC #${rfcId}: ${rfcData.title}`,
@@ -385,7 +404,6 @@ export default function RFCDetailPage() {
       rfcId: parseInt(rfcId as string, 10)
     };
 
-    // Simple validation
     if (!payload.title || !payload.context || !payload.decision || !payload.consequences) {
       alert('Please fill in all ADR fields (Title, Context, Decision, Consequences).');
       return;
@@ -436,6 +454,70 @@ export default function RFCDetailPage() {
     }
   };
 
+  const handleOpenReviewersModal = async () => {
+    setShowReviewersModal(true)
+    setIsLoadingReviewerData(true)
+    
+    if (rfcData) {
+      setSelectedUserIds(rfcData.userReviewers?.map(r => r.id) || [])
+      setSelectedContextIds(rfcData.contextReviewers?.map(r => r.id) || [])
+    }
+
+    try {
+      const usersRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`)
+      if (usersRes.ok) {
+        const usersData = await usersRes.json()
+        const users = usersData._embedded?.users || []
+        setAvailableUsers(users.map((u: any) => ({
+          id: u.id,
+          firstname: u.firstname,
+          lastname: u.lastName,
+          email: u.email
+        })))
+      }
+
+      const contextsRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts`)
+      if (contextsRes.ok) {
+        const contexts = await contextsRes.json()
+        setAvailableContexts(contexts)
+      }
+    } catch (e) {
+      console.error('Failed to load reviewers data:', e)
+    } finally {
+      setIsLoadingReviewerData(false)
+    }
+  }
+
+  const handleAssignReviewers = async () => {
+    if (isAssigningReviewers || !rfcId) return
+
+    setIsAssigningReviewers(true)
+    try {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/reviewers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userIds: selectedUserIds,
+          contextIds: selectedContextIds
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error(`Failed to assign reviewers (status ${res.status})`)
+      }
+
+      await fetchRfcData()
+      setShowReviewersModal(false)
+    } catch (e) {
+      console.error('Failed to assign reviewers:', e)
+      alert('Failed to assign reviewers. See console for details.')
+    } finally {
+      setIsAssigningReviewers(false)
+    }
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-white p-8 text-center text-xl font-medium">Loading RFC details...</div>
   }
@@ -449,7 +531,6 @@ export default function RFCDetailPage() {
     )
   }
 
-  // Count comments including nested replies (recursively)
   const countCommentWithReplies = (c: Comment): number => {
     return 1 + (c.replies?.reduce((sum, r) => sum + countCommentWithReplies(r), 0) ?? 0)
   }
@@ -481,6 +562,53 @@ export default function RFCDetailPage() {
           </div>
         </section>
 
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold text-violet-700">Reviewers</h2>
+            {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
+              <button
+                onClick={handleOpenReviewersModal}
+                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm font-medium"
+              >
+                Manage Reviewers
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {rfcData.userReviewers && rfcData.userReviewers.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Individual Reviewers</h3>
+                <div className="flex flex-wrap gap-2">
+                  {rfcData.userReviewers.map(reviewer => (
+                    <div key={reviewer.id} className="bg-violet-100 text-violet-800 px-3 py-1.5 rounded-full text-sm font-medium">
+                      {reviewer.firstname} {reviewer.lastname} ({reviewer.email})
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {rfcData.contextReviewers && rfcData.contextReviewers.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Context Groups</h3>
+                <div className="flex flex-wrap gap-2">
+                  {rfcData.contextReviewers.map(context => (
+                    <div key={context.id} className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium">
+                      {context.name} {context.type && `(${context.type})`}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(!rfcData.userReviewers || rfcData.userReviewers.length === 0) && 
+             (!rfcData.contextReviewers || rfcData.contextReviewers.length === 0) && (
+              <p className="text-gray-500 italic">No reviewers assigned yet.</p>
+            )}
+          </div>
+        </section>
+
         {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
             onClick={handleCloseNoDecision}
@@ -500,7 +628,6 @@ export default function RFCDetailPage() {
       className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
     >
       <div className="flex gap-4">
-        {/* Icon */}
         <div className="flex-shrink-0">
           <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
             <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -534,7 +661,6 @@ export default function RFCDetailPage() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1">
           <h3
             className="text-xl font-semibold text-violet-700 mb-2 cursor-pointer hover:text-violet-800"
@@ -549,23 +675,7 @@ export default function RFCDetailPage() {
             {isExpanded ? alt.fullText : alt.description}
           </p>
 
-          {/* {isExpanded && alt.attachments && alt.attachments.length > 0 && (
-            <div className="mt-4">
-              <h4 className="font-semibold text-gray-900 mb-2">Attachments</h4>
-              <div className="space-y-2">
-                {alt.attachments.map((attachment, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-violet-600">
-                    <Paperclip className="w-4 h-4" />
-                    <span className="text-sm">{attachment}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )} */}
-
-          {/* Voting */}
           <div className="flex items-center gap-4 mt-4">
-            {/* Thumbs up */}
             <button
               type="button"
               onClick={() => handleVoteForAlternative(alt.id, true)}
@@ -583,7 +693,6 @@ export default function RFCDetailPage() {
               </span>
             </button>
 
-            {/* Thumbs down */}
             <button
               type="button"
               onClick={() => handleVoteForAlternative(alt.id, false)}
@@ -631,9 +740,7 @@ export default function RFCDetailPage() {
           )}
         </div>
 
-        {/* Pros/Cons */}
         <div className="flex gap-4 flex-shrink-0">
-          {/* Pros */}
           <div className="bg-green-50 rounded-lg p-4 w-48">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
@@ -648,7 +755,6 @@ export default function RFCDetailPage() {
             </ul>
           </div>
 
-          {/* Cons */}
           <div className="bg-red-50 rounded-lg p-4 w-48">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
@@ -709,7 +815,6 @@ export default function RFCDetailPage() {
 
   const renderDiscussion = () => (
     <div className="space-y-6">
-      {/* New Comment */}
       <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
         <textarea
           placeholder="Add a comment..."
@@ -730,7 +835,6 @@ export default function RFCDetailPage() {
         </div>
       </div>
 
-      {/* Comments */}
       <div>
         {rfcData.comments.length > 0 ? (
           rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
@@ -753,7 +857,6 @@ export default function RFCDetailPage() {
           onClick={(e) => e.stopPropagation()}
           className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-8 border-2 border-violet-600"
         >
-          {/* Modal Header */}
           <div className="p-6 border-b relative">
             <h2 className="text-2xl font-bold text-center text-gray-900">Create New ADR from Decision</h2>
             <p className="text-center text-gray-600 mt-1">
@@ -766,9 +869,7 @@ export default function RFCDetailPage() {
             </button>
           </div>
 
-          {/* Modal Body */}
           <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-            {/* Title */}
             <div>
               <label htmlFor="adr-title" className="block text-sm font-semibold text-gray-900 mb-2">
                 Title <span className="text-red-500">*</span>
@@ -783,7 +884,6 @@ export default function RFCDetailPage() {
               />
             </div>
 
-            {/* Context */}
             <div>
               <label htmlFor="adr-context" className="block text-sm font-semibold text-gray-900 mb-2">
                 Context <span className="text-red-500">*</span>
@@ -798,7 +898,6 @@ export default function RFCDetailPage() {
               />
             </div>
 
-            {/* Decision */}
             <div>
               <label htmlFor="adr-decision" className="block text-sm font-semibold text-gray-900 mb-2">
                 Decision <span className="text-red-500">*</span>
@@ -813,7 +912,6 @@ export default function RFCDetailPage() {
               />
             </div>
 
-            {/* Consequences */}
             <div>
               <label htmlFor="adr-consequences" className="block text-sm font-semibold text-gray-900 mb-2">
                 Consequences <span className="text-red-500">*</span>
@@ -830,7 +928,6 @@ export default function RFCDetailPage() {
             </div>
           </div>
 
-          {/* Modal Footer */}
           <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
             <div className="flex items-center gap-2">
               <button
@@ -865,13 +962,11 @@ export default function RFCDetailPage() {
 
   return (
     <div className="min-h-screen bg-white p-8">
-      {/* Header */}
       <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">{rfcData.title}</h1>
       <p className="text-lg text-center text-gray-500 mb-8">
         RFC #{rfcData.id} | Author: {rfcData.authorName} | Status: {rfcData.status.replace(/_/g, ' ')}
       </p>
 
-      {/* Tabs */}
       <div className="border-b border-gray-200 mb-8">
         <div className="flex gap-8">
           <button
@@ -907,14 +1002,12 @@ export default function RFCDetailPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-6xl mx-auto">
         {activeTab === 'presentation' && renderPresentation()}
         {activeTab === 'alternatives' && renderAlternatives()}
         {activeTab === 'discussion' && renderDiscussion()}
       </div>
 
-      {/* New Alternative Modal */}
       {showNewAlternativeModal && (
         <div
           onClick={() => !isSubmittingAlternative && setShowNewAlternativeModal(false)}
@@ -1012,17 +1105,6 @@ export default function RFCDetailPage() {
                   </div>
                 </div>
               </div>
-
-              {/* add attachments */}
-              {/* <div className="flex justify-end">
-                <button
-                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
-                  disabled={isSubmittingAlternative}
-                >
-                  <Paperclip className="w-5 h-5" />
-                  <span className="font-medium">Add Attachments</span>
-                </button>
-              </div> */}
             </div>
 
             <div className="p-6 flex items-center justify-between">
@@ -1047,6 +1129,108 @@ export default function RFCDetailPage() {
         </div>
       )}
       {renderCreateAdrModal()}
+      {showReviewersModal && (
+        <div
+          onClick={() => !isAssigningReviewers && setShowReviewersModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-auto my-8 border-2 border-violet-600"
+          >
+            <div className="p-6 border-b">
+              <h2 className="text-2xl font-bold text-center text-gray-900">Manage Reviewers</h2>
+              <p className="text-center text-gray-600 mt-1">
+                Assign individual reviewers and context groups to this RFC
+              </p>
+            </div>
+
+            <div className="p-6 max-h-[60vh]">
+              {isLoadingReviewerData ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">Loading reviewers...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Individual Reviewers</h3>
+                    <Select
+                      isMulti
+                      isDisabled={isAssigningReviewers}
+                      options={availableUsers.map(user => ({
+                        value: user.id,
+                        label: `${user.firstname} ${user.lastname} (${user.email})`
+                      }))}
+                      value={availableUsers.filter(u => selectedUserIds.includes(u.id)).map(user => ({
+                        value: user.id,
+                        label: `${user.firstname} ${user.lastname} (${user.email})`
+                      }))}
+                      onChange={(selected: MultiValue<{ value: number; label: string }>) => {
+                        setSelectedUserIds(selected.map(opt => opt.value));
+                      }}
+                      placeholder={availableUsers.length > 0 ? "Select reviewers..." : "No users available"}
+                      classNamePrefix="react-select"
+                      styles={{
+                        container: (base) => ({ ...base, minHeight: 0 }),
+                        menu: (base) => ({ ...base, zIndex: 50 }),
+                        valueContainer: (base) => ({ ...base, maxHeight: '160px', overflowY: 'auto' })
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Context Groups</h3>
+                    <Select
+                      isMulti
+                      isDisabled={isAssigningReviewers}
+                      options={availableContexts.map(context => ({
+                        value: context.id,
+                        label: context.name
+                      }))}
+                      value={availableContexts.filter(c => selectedContextIds.includes(c.id)).map(context => ({
+                        value: context.id,
+                        label: context.name
+                      }))}
+                      onChange={(selected: MultiValue<{ value: number; label: string }>) => {
+                        setSelectedContextIds(selected.map(opt => opt.value));
+                      }}
+                      placeholder={availableContexts.length > 0 ? "Select context groups..." : "No context groups available"}
+                      classNamePrefix="react-select"
+                      styles={{
+                        container: (base) => ({ ...base, minHeight: 0 }),
+                        menu: (base) => ({ ...base, zIndex: 50 }),
+                        valueContainer: (base) => ({ ...base, maxHeight: '160px', overflowY: 'auto' })
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={() => setShowReviewersModal(false)}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                disabled={isAssigningReviewers}
+              >
+                Cancel
+              </button>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">
+                  {selectedUserIds.length + selectedContextIds.length} selected
+                </span>
+                <button
+                  onClick={handleAssignReviewers}
+                  className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400"
+                  disabled={isAssigningReviewers || isLoadingReviewerData}
+                >
+                  {isAssigningReviewers ? 'Assigning...' : 'Assign Reviewers'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
