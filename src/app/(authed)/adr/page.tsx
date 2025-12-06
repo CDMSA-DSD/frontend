@@ -37,7 +37,10 @@ export default function ADRPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setAdrs(data.content || []);
+      const items = data.content || [];
+      // Ensure ADRs are ordered newest -> oldest by createdAt
+      items.sort((a: BackendADR, b: BackendADR) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setAdrs(items);
     } catch (e) {
       console.error("Failed to fetch ADRs:", e);
       setError("Failed to load ADRs. Please try again.");

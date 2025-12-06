@@ -59,7 +59,10 @@ export default function RFCPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setRfcs(data.content || []); // Assuming the list is in 'content'
+      const items = data.content || [];
+      // Ensure RFCs are ordered newest -> oldest by createdAt
+      items.sort((a: BackendRFC, b: BackendRFC) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setRfcs(items);
     } catch (e) {
       console.error("Failed to fetch RFCs:", e);
       setError("Failed to load RFCs. Please try again.");

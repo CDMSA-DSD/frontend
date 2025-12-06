@@ -21,6 +21,7 @@ interface BackendAlternative {
   updatedAt: string | null
   yes: number
   no: number
+  addition?: string | null
 }
 
 interface BackendRFC {
@@ -39,6 +40,7 @@ interface BackendRFC {
   comments: Comment[]
   xml: string | null
   attachments: Attachment[]
+  addition?: string | null
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
@@ -55,6 +57,7 @@ interface Alternative {
   pros: string[]
   cons: string[]
   attachments?: string[]
+  addition?: string | null
 }
 
 interface AlternativeForm {
@@ -103,7 +106,8 @@ const mapAlternative = (backendAlt: BackendAlternative): Alternative => ({
   downvotes: backendAlt.no ?? 0,
   pros: backendAlt.pros.split(';').map(s => s.trim()).filter(Boolean),
   cons: backendAlt.cons.split(';').map(s => s.trim()).filter(Boolean),
-  attachments: backendAlt.id === 1 ? ['document1.pdf', 'diagram.png'] : []
+  attachments: backendAlt.id === 1 ? ['document1.pdf', 'diagram.png'] : [],
+  addition: backendAlt.addition ?? null
 })
 
 export default function RFCDetailPage() {
@@ -167,6 +171,15 @@ export default function RFCDetailPage() {
     useState<Record<number, boolean>>({})
   const [altSavingDiagram, setAltSavingDiagram] =
     useState<Record<number, boolean>>({})
+
+  const [rfcAdditionInput, setRfcAdditionInput] = useState('')
+  const [isAddingRfcAddition, setIsAddingRfcAddition] = useState(false)
+
+  const [isEditingRfcAddition, setIsEditingRfcAddition] = useState(false)
+
+  const [altAdditionInputs, setAltAdditionInputs] = useState<Record<number, string>>({})
+  const [altAdding, setAltAdding] = useState<Record<number, boolean>>({})
+  const [altEditingAddition, setAltEditingAddition] = useState<Record<number, boolean>>({})
 
 
   useEffect(() => {
@@ -459,6 +472,82 @@ export default function RFCDetailPage() {
     } finally {
       setAltSavingDiagram((prev) => ({ ...prev, [altId]: false }))
     }
+  }
+
+  // Submit an addition for the RFC (appends a paragraph/annex)
+  const handleSubmitRfcAddition = async () => {
+    if (!rfcId || isAddingRfcAddition) return
+    if (!rfcAdditionInput || rfcAdditionInput.trim().length === 0) return
+
+    setIsAddingRfcAddition(true)
+    try {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: rfcData?.title, description: rfcData?.description, addition: rfcAdditionInput.trim() })
+      })
+
+      if (!res.ok) throw new Error(`Failed to submit addition (status ${res.status})`)
+
+      // refresh
+      await fetchRfcData()
+      setRfcAdditionInput('')
+      setIsEditingRfcAddition(false)
+    } catch (e) {
+      console.error('Submitting RFC addition failed:', e)
+      alert('Failed to submit addition. See console for details.')
+    } finally {
+      setIsAddingRfcAddition(false)
+    }
+  }
+
+  // Submit an addition for a specific alternative
+  const handleSubmitAltAddition = async (altId: number) => {
+    if (!altId) return
+    if (altAdding[altId]) return
+    const text = altAdditionInputs[altId] ?? ''
+    if (!text || text.trim().length === 0) return
+
+    setAltAdding((prev) => ({ ...prev, [altId]: true }))
+    try {
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addition: text.trim() })
+      })
+
+      if (!res.ok) throw new Error(`Failed to submit alternative addition (status ${res.status})`)
+
+      await fetchRfcData()
+      setAltAdditionInputs((prev) => ({ ...prev, [altId]: '' }))
+      setAltEditingAddition((prev) => ({ ...prev, [altId]: false }))
+    } catch (e) {
+      console.error('Submitting alternative addition failed:', e)
+      alert('Failed to submit alternative addition. See console for details.')
+    } finally {
+      setAltAdding((prev) => ({ ...prev, [altId]: false }))
+    }
+  }
+
+  const startEditingRfcAddition = () => {
+    setRfcAdditionInput(rfcData?.addition ?? '')
+    setIsEditingRfcAddition(true)
+  }
+
+  const cancelEditingRfcAddition = () => {
+    setIsEditingRfcAddition(false)
+    setRfcAdditionInput('')
+  }
+
+  const startEditingAltAddition = (altId: number) => {
+    const existing = rfcData?.alternatives.find((a) => a.id === altId)?.addition ?? ''
+    setAltAdditionInputs((prev) => ({ ...prev, [altId]: existing }))
+    setAltEditingAddition((prev) => ({ ...prev, [altId]: true }))
+  }
+
+  const cancelEditingAltAddition = (altId: number) => {
+    setAltEditingAddition((prev) => ({ ...prev, [altId]: false }))
+    setAltAdditionInputs((prev) => ({ ...prev, [altId]: '' }))
   }
 
 
@@ -805,6 +894,9 @@ export default function RFCDetailPage() {
         </section>
 
         {/* RFC Attachments */}
+        {(!rfcData.attachments || rfcData.attachments.length == 0) && !rfcData.isAuthor ? (
+          <></>
+        ) : (
         <section>
           <h2 className="text-2xl font-semibold text-violet-700 mb-4">
             Attachments
@@ -853,10 +945,8 @@ export default function RFCDetailPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full
-                   bg-violet-50 text-violet-800 text-sm font-medium
-                   border border-violet-200 shadow-sm
-                   hover:bg-violet-100 transition-colors"
+                className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
                 disabled={uploadingRfcAttachments}
               >
                 <Paperclip className="w-4 h-4" />
@@ -885,8 +975,11 @@ export default function RFCDetailPage() {
             </div>
           )}
         </section>
+        )}
 
-
+        {!rfcData.xml && !rfcData.isAuthor ? (
+          <></>
+        ) : (
         <section>
           <h2 className="text-2xl font-semibold text-violet-700 mb-4">
             Diagram
@@ -896,9 +989,6 @@ export default function RFCDetailPage() {
             <div className="space-y-3">
               {rfcData.xml ? (
                 <>
-                  <p className="text-sm text-gray-600">
-                    This RFC already has a saved diagram (XML).
-                  </p>
                   <DiagramViewer xml={rfcData.xml} />
 
                   {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
@@ -967,7 +1057,67 @@ export default function RFCDetailPage() {
             </div>
           )}
         </section>
+        )}
 
+        {/* RFC addition (annex) */}
+        {!rfcData.addition && !rfcData.isAuthor ? (
+          <></>
+        ) : (
+          <section>
+            <h2 className="text-2xl font-semibold text-violet-700 mb-4">Additional Content</h2>
+
+            <div className="prose text-gray-700 whitespace-pre-line mb-4">
+              {rfcData.addition ? (
+                <div className="text-gray-700 whitespace-pre-line">{rfcData.addition}</div>
+              ) : (
+                <p className="text-sm text-gray-500">No additional content has been added to this RFC.</p>
+              )}
+            </div>
+
+            {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
+              <div className="mt-2">
+                {!isEditingRfcAddition ? (
+                  <div>
+                    <button
+                      onClick={startEditingRfcAddition}
+                      className="px-4 py-2 text-sm rounded-lg bg-violet-600 text-white
+                      hover:bg-violet-700 disabled:opacity-50"
+                    >
+                      {rfcData.addition ? 'Edit additional content' : 'Add additional content'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-2">
+                    <textarea
+                      placeholder="Append an addition / annex paragraph to this RFC..."
+                      value={rfcAdditionInput}
+                      onChange={(e) => setRfcAdditionInput(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                      rows={4}
+                      disabled={isAddingRfcAddition}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSubmitRfcAddition}
+                        disabled={isAddingRfcAddition || !rfcAdditionInput.trim()}
+                        className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                      >
+                        {isAddingRfcAddition ? 'Saving...' : (rfcData.addition ? 'Save' : 'Add additional content')}
+                      </button>
+                      <button
+                        onClick={cancelEditingRfcAddition}
+                        disabled={isAddingRfcAddition}
+                        className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
         {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
@@ -1122,7 +1272,45 @@ export default function RFCDetailPage() {
           )}
         </div>
 
-        <section>
+        {/* Pros/Cons */}
+        <div className="flex gap-4 flex-shrink-0">
+          {/* Pros */}
+          <div className="bg-green-50 rounded-lg p-4 w-48">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">✓</span>
+              </div>
+              <span className="font-semibold text-gray-900">Pros</span>
+            </div>
+            <ul className="space-y-2">
+              {alt.pros.map((pro, idx) => (
+                <li key={idx} className="text-sm text-gray-700">• {pro}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Cons */}
+          <div className="bg-red-50 rounded-lg p-4 w-48">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm">✗</span>
+              </div>
+              <span className="font-semibold text-gray-900">Cons</span>
+            </div>
+            <ul className="space-y-2">
+              {alt.cons.map((con, idx) => (
+                <li key={idx} className="text-sm text-gray-700">• {con}</li>
+              ))}
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+      {(!altAttachments[alt.id] || altAttachments[alt.id].length == 0) && !rfcData.isAuthor ? (
+        <></>
+      ) : (
+        <section className="mt-4 border-t border-gray-100 pt-3">
             <h3 className="text-sm font-semibold text-violet-700 mb-2">
               Attachments
             </h3>
@@ -1171,10 +1359,8 @@ export default function RFCDetailPage() {
                       .getElementById(`alt-${alt.id}-attachments`)
                       ?.click()
                   }
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full
-                   bg-violet-50 text-violet-800 text-sm font-medium
-                   border border-violet-200 shadow-sm
-                   hover:bg-violet-100 transition-colors"
+                  className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
                   disabled={altUploading[alt.id]}
                 >
                   <Paperclip className="w-3 h-3" />
@@ -1203,43 +1389,12 @@ export default function RFCDetailPage() {
               </div>
             )}
           </section>
-
-        {/* Pros/Cons */}
-        <div className="flex gap-4 flex-shrink-0">
-          {/* Pros */}
-          <div className="bg-green-50 rounded-lg p-4 w-48">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm">✓</span>
-              </div>
-              <span className="font-semibold text-gray-900">Pros</span>
-            </div>
-            <ul className="space-y-2">
-              {alt.pros.map((pro, idx) => (
-                <li key={idx} className="text-sm text-gray-700">• {pro}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Cons */}
-          <div className="bg-red-50 rounded-lg p-4 w-48">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm">✗</span>
-              </div>
-              <span className="font-semibold text-gray-900">Cons</span>
-            </div>
-            <ul className="space-y-2">
-              {alt.cons.map((con, idx) => (
-                <li key={idx} className="text-sm text-gray-700">• {con}</li>
-              ))}
-            </ul>
-          </div>
-
-        </div>
-      </div>
+        )}
 
       {/* Diagram section */}
+      {(!altDiagramXml[alt.id] || altDiagramXml[alt.id].length == 0) && !rfcData.isAuthor ? (
+        <></>
+      ) : (
           <section className="mt-4 border-t border-gray-100 pt-3">
             <h3 className="text-sm font-semibold text-violet-700 mb-2">
               Diagram
@@ -1249,9 +1404,6 @@ export default function RFCDetailPage() {
               <div className="space-y-2">
                 {altDiagramXml[alt.id] && altDiagramXml[alt.id].length > 0 ? (
                   <>
-                    <p className="text-xs text-gray-600">
-                      This alternative already has a saved diagram (XML).
-                    </p>
                     <DiagramViewer xml={altDiagramXml[alt.id]} />
 
                     {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
@@ -1318,8 +1470,68 @@ export default function RFCDetailPage() {
 
               </div>
             )}
-
           </section>
+        )}
+
+      {/* Alternative addition (annex) */}
+      {!alt.addition && !rfcData.isAuthor ? (
+        <></>
+      ) : (
+      <div className="mt-4 border-t border-gray-100 pt-3">
+        <h4 className="text-sm font-semibold text-violet-700 mb-2">Additional content</h4>
+        {alt.addition ? (
+          <div className="text-xs text-gray-700 whitespace-pre-line mb-2">
+            {alt.addition}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500 mb-2">No additional content has been added to this alternative.</p>
+        )}
+
+        {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
+          <div className="mt-1 w-full">
+            {!altEditingAddition[alt.id] ? (
+              <button
+                type="button"
+                onClick={() => startEditingAltAddition(alt.id)}
+                className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+              >
+                {alt.addition ? 'Edit addition' : 'Add addition'}
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <textarea
+                  value={altAdditionInputs[alt.id] ?? ''}
+                  onChange={(e) => setAltAdditionInputs(prev => ({ ...prev, [alt.id]: e.target.value }))}
+                  rows={3}
+                  placeholder="Append an addition to this alternative..."
+                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                  disabled={!!altAdding[alt.id]}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSubmitAltAddition(alt.id)}
+                    disabled={!!altAdding[alt.id] || !(altAdditionInputs[alt.id] ?? '').trim()}
+                    className="px-3 py-1.5 bg-violet-600 text-white text-xs rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {altAdding[alt.id] ? 'Saving...' : (alt.addition ? 'Save additional content' : 'Add Addition')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cancelEditingAltAddition(alt.id)}
+                    disabled={!!altAdding[alt.id]}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      )}
     </div>
   )
 
@@ -1692,10 +1904,8 @@ export default function RFCDetailPage() {
                     type="button"
                     onClick={() => newAltFileInputRef.current?.click()}
                     disabled={isSubmittingAlternative}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full
-                   bg-violet-50 text-violet-800 text-sm font-medium
-                   border border-violet-200 shadow-sm
-                   hover:bg-violet-100 transition-colors"
+                    className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
                   >
                     <Paperclip className="w-4 h-4" />
                     Add attachments
