@@ -1,7 +1,7 @@
 "use client"
 
 import Background from "../../components/background"
-import React, { useState } from "react"
+import React, { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"
 
@@ -10,6 +10,23 @@ const BACKEND_URL =
 
 export default function AcceptInvitation(): React.JSX.Element {
   const router: AppRouterInstance = useRouter()
+
+  return (
+    <div style={{ backgroundColor: "white", height: "100vh" }}>
+      <Background />
+      <div>
+        <div className="flex justify-center items-center h-[100vh] mx-auto backdrop-blur-md">
+          <div className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20 gap-4">
+            <Suspense fallback={<div>Loading...</div>}>
+              <AcceptInvitationForm router={router} />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
 
@@ -92,139 +109,133 @@ export default function AcceptInvitation(): React.JSX.Element {
   }
 
   return (
-    <div style={{ backgroundColor: "white", height: "100vh" }}>
-      <Background />
-      <div>
-        <div className="flex justify-center items-center h-[100vh] mx-auto backdrop-blur-md">
-          <div className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20 gap-4">
-            {errorMessage && (
-              <div
-                role="alert"
-                className="mb-4 flex items-start justify-between rounded-lg border border-red-500 bg-red-50 px-4 py-3 text-red-700"
-              >
-                <p className="text-sm font-medium">{errorMessage}</p>
-              </div>
-            )}
+    <>
+      {errorMessage && (
+        <div
+          role="alert"
+          className="mb-4 flex items-start justify-between rounded-lg border border-red-500 bg-red-50 px-4 py-3 text-red-700"
+        >
+          <p className="text-sm font-medium">{errorMessage}</p>
+        </div>
+      )}
 
-            {!token && (
-              <p className="mb-4 text-sm text-red-700">
-                Invitation token is missing or invalid. Please use a valid
-                invitation link.
-              </p>
-            )}
+      {!token && (
+        <p className="mb-4 text-sm text-red-700">
+          Invitation token is missing or invalid. Please use a valid
+          invitation link.
+        </p>
+      )}
 
-            <h2 className="text-3xl font-bold text-center text-black">
-              Register
-            </h2>
+      <h2 className="text-3xl font-bold text-center text-black">
+        Register
+      </h2>
 
-            <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-semibold text-black mb-1">
-                    First name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstname}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        firstname: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                    placeholder="John"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-semibold text-black mb-1">
-                    Surname
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.lastname}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lastname: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                    placeholder="Doe"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-black mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      email: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                  placeholder="john@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-black mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      password: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                  placeholder="********"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-black mb-1">
-                  Confirm password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={formData.passwordConfirm}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      passwordConfirm: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
-                  placeholder="********"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting || !token}
-                className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors disabled:bg-violet-300 disabled:cursor-not-allowed"
-              >
-                {submitting ? "Registering..." : "Register"}
-              </button>
-            </form>
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-black mb-1">
+              First name
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.firstname}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  firstname: e.target.value,
+                }))
+              }
+              className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+              placeholder="John"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-black mb-1">
+              Surname
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.lastname}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  lastname: e.target.value,
+                }))
+              }
+              className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+              placeholder="Doe"
+            />
           </div>
         </div>
-      </div>
-    </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-black mb-1">
+            Email
+          </label>
+          <input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                email: e.target.value,
+              }))
+            }
+            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+            placeholder="john@example.com"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-black mb-1">
+            Password
+          </label>
+          <input
+            type="password"
+            required
+            value={formData.password}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                password: e.target.value,
+              }))
+            }
+            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+            placeholder="********"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-black mb-1">
+            Confirm password
+          </label>
+          <input
+            type="password"
+            required
+            value={formData.passwordConfirm}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                passwordConfirm: e.target.value,
+              }))
+            }
+            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+            placeholder="********"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting || !token}
+          className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors disabled:bg-violet-300 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Registering..." : "Register"}
+        </button>
+      </form>
+    </>
   )
+}
 }
