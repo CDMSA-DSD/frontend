@@ -51,16 +51,16 @@ export function UsersList({ users, onDeleteUser }: UsersListProps) {
           pb-4
         "
       >
-        <div className="text-base font-medium text-foreground">Email</div>
-        <div className="w-32 text-base font-medium text-foreground">Role</div>
-        <div className="w-32 text-base font-medium text-foreground">
+        <div className="text-base font-medium">Email</div>
+        <div className="w-32 text-base font-medium">Role</div>
+        <div className="w-32 text-base font-medium">
           Joined On
         </div>
         <div className="w-8" />
       </div>
 
       {users.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-700">
           No users found for this organization.
         </p>
       ) : (

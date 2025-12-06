@@ -1031,7 +1031,7 @@ export default function RFCDetailPage() {
                   type="text"
                   value={alternativeForm.title}
                   onChange={(e) => setAlternativeForm({ ...alternativeForm, title: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                   disabled={isSubmittingAlternative}
                 />
               </div>
@@ -1045,7 +1045,7 @@ export default function RFCDetailPage() {
                   value={alternativeForm.description}
                   onChange={(e) => setAlternativeForm({ ...alternativeForm, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
                   disabled={isSubmittingAlternative}
                 />
               </div>
@@ -1056,7 +1056,7 @@ export default function RFCDetailPage() {
                   <div className="flex flex-wrap gap-2 mb-2">
                     {alternativeForm.pros.map((p, idx) => (
                       <span key={idx} className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                        <span>{p}</span>
+                        <span className="text-gray-900">{p}</span>
                         <button type="button" onClick={() => removeProsItem(idx)} className="text-green-600 hover:text-green-800">×</button>
                       </span>
                     ))}
@@ -1068,7 +1068,7 @@ export default function RFCDetailPage() {
                       value={alternativeForm.prosInput}
                       onChange={(e) => setAlternativeForm(prev => ({ ...prev, prosInput: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addProsItem() } }}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="text-gray-900 flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                       disabled={isSubmittingAlternative}
                       placeholder="Pro"
                     />
@@ -1083,7 +1083,7 @@ export default function RFCDetailPage() {
                   <div className="flex flex-wrap gap-2 mb-2">
                     {alternativeForm.cons.map((c, idx) => (
                       <span key={idx} className="inline-flex items-center gap-2 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">
-                        <span>{c}</span>
+                        <span className="text-gray-900">{c}</span>
                         <button type="button" onClick={() => removeConsItem(idx)} className="text-red-600 hover:text-red-800">×</button>
                       </span>
                     ))}
@@ -1095,7 +1095,7 @@ export default function RFCDetailPage() {
                       value={alternativeForm.consInput}
                       onChange={(e) => setAlternativeForm(prev => ({ ...prev, consInput: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addConsItem() } }}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="text-gray-900 flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                       disabled={isSubmittingAlternative}
                       placeholder="Con"
                     />
@@ -1175,6 +1175,7 @@ export default function RFCDetailPage() {
                         menu: (base) => ({ ...base, zIndex: 50 }),
                         valueContainer: (base) => ({ ...base, maxHeight: '160px', overflowY: 'auto' })
                       }}
+                      className="text-gray-900"
                     />
                   </div>
                   <div>
@@ -1200,6 +1201,7 @@ export default function RFCDetailPage() {
                         menu: (base) => ({ ...base, zIndex: 50 }),
                         valueContainer: (base) => ({ ...base, maxHeight: '160px', overflowY: 'auto' })
                       }}
+                      className="text-gray-900"
                     />
                   </div>
                 </div>

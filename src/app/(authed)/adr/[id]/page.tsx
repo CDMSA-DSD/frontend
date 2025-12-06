@@ -106,7 +106,7 @@ function EditADRModal({
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
               disabled={isSubmitting}
             />
           </div>
@@ -122,7 +122,7 @@ function EditADRModal({
               onChange={(e) => setFormData({ ...formData, context: e.target.value })}
               placeholder="Describe the context"
               rows={3}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
               disabled={isSubmitting}
             />
           </div>
@@ -138,7 +138,7 @@ function EditADRModal({
               onChange={(e) => setFormData({ ...formData, decision: e.target.value })}
               placeholder="Describe the decision"
               rows={3}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
               disabled={isSubmitting}
             />
           </div>
@@ -154,7 +154,7 @@ function EditADRModal({
               onChange={(e) => setFormData({ ...formData, consequences: e.target.value })}
               placeholder="Describe the consequences"
               rows={3}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
               disabled={isSubmitting}
             />
           </div>
@@ -193,7 +193,7 @@ function ADRSidebar({ adr, rfc, onEdit, onApprove }: {
   const isUnderReview = adr?.status === 'DRAFT'
 
   return (
-    <aside className="w-80 shrink-0 bg-background p-6">
+    <aside className="w-80 shrink-0 p-6">
       <div className="space-y-8">
         <section>
           <h3 className="mb-3 text-lg font-semibold text-purple-600">Decision</h3>
@@ -203,18 +203,18 @@ function ADRSidebar({ adr, rfc, onEdit, onApprove }: {
                 <div className="flex size-5 items-center justify-center rounded bg-green-500">
                   <Check className="size-3 text-white" />
                 </div>
-                <span className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
+                <p className="space-y-4 leading-relaxed text-gray-700 whitespace-pre-line">
                   Approved on {new Date(adr.updatedAt).toLocaleDateString()}
-                </span>
+                </p>
               </>
             ) : (
               <>
                 <div className="flex size-5 items-center justify-center rounded bg-gray-200">
                   <Pencil className="size-3 text-gray-700" />
                 </div>
-                <span className="text-muted-foreground">
+                <p className="text-gray-700">
                   Drafted on {new Date(adr.updatedAt).toLocaleDateString()}
-                </span>
+                </p>
               </>
             )}
           </div>
@@ -259,7 +259,7 @@ function ADRSidebar({ adr, rfc, onEdit, onApprove }: {
               </div>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Loading RFC info...</p>
+            <p className="text-sm">Loading RFC info...</p>
           )}
         </section>
       </div>
@@ -427,7 +427,7 @@ export default function AdrDetailPage() {
     }
   }
 
-  if (loading) return <div className="p-8">Loading…</div>
+  if (loading) return <div className="p-8 text-gray-700">Loading…</div>
   if (error) return <div className="p-8 text-red-600">{error}</div>
   if (!adr) return <div className="p-8">ADR Not found.</div>
 
@@ -442,21 +442,21 @@ export default function AdrDetailPage() {
           <div className="space-y-10">
             <section>
               <h2 className="text-2xl font-semibold text-violet-700 mb-4">Context</h2>
-              <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
+              <div className="space-y-4 leading-relaxed text-gray-700 whitespace-pre-line">
                 {adr.context ? adr.context.split('\n').map((p, i) => <p key={i}>{p}</p>) : "—"}
               </div>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold text-violet-700 mb-4">Decision</h2>
-              <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
+              <div className="space-y-4 leading-relaxed text-gray-700 whitespace-pre-line">
                 {adr.decision ? adr.decision.split('\n').map((p, i) => <p key={i}>{p}</p>) : "—"}
               </div>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold text-violet-700 mb-4">Consequences</h2>
-              <div className="space-y-4 leading-relaxed text-muted-foreground text-gray-700 whitespace-pre-line">
+              <div className="space-y-4 leading-relaxed text-gray-700 whitespace-pre-line">
                 {adr.consequences ? adr.consequences.split('\n').map((p, i) => <p key={i}>{p}</p>) : "—"}
               </div>
             </section>

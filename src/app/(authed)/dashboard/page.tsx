@@ -84,13 +84,13 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen p-8 bg-background">
+    <main className="min-h-screen p-8">
       <h1 className="text-4xl font-bold mb-8 text-gray-900">Welcome</h1>
 
       {/* Recent RFCs */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold">Recent RFCs</h2>
+          <h2 className="text-2xl font-semibold text-gray-700">Recent RFCs</h2>
           <Link href="/rfc" className="text-sm text-purple-600 hover:text-purple-700 hover:underline">
             View all &gt;
           </Link>
@@ -101,9 +101,9 @@ export default function DashboardPage() {
         ) : (
           <Card className="border border-gray-200 divide-y divide-gray-200 px-4 shadow-sm rounded-xl">
             {loadingRfcs ? (
-              <div className="py-3 text-sm text-muted-foreground">Loading…</div>
+              <div className="py-3 text-sm ">Loading…</div>
             ) : rfcs.length === 0 ? (
-              <div className="py-3 text-sm text-muted-foreground">No RFCs yet.</div>
+              <div className="py-3 text-sm ">No RFCs yet.</div>
             ) : (
               rfcs.map((rfc) => (
                 <Link
@@ -111,7 +111,7 @@ export default function DashboardPage() {
                   href={`/rfc/${rfc.id}`}
                   className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
                 >
-                  <span className="text-sm font-medium text-foreground">{rfc.title}</span>
+                  <span className="text-sm font-medium text-foreground text-gray-700">{rfc.title}</span>
                   <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(rfc))}</span>
                 </Link>
               ))
@@ -123,7 +123,7 @@ export default function DashboardPage() {
       {/* Recent ADRs */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold">Recent ADRs</h2>
+          <h2 className="text-2xl font-semibold text-gray-700">Recent ADRs</h2>
           <Link href="/adr" className="text-sm text-purple-600 hover:text-purple-700 hover:underline">
             View all &gt;
           </Link>
@@ -134,9 +134,9 @@ export default function DashboardPage() {
         ) : (
           <Card className="border border-gray-200 divide-y divide-gray-200 px-4 shadow-sm rounded-xl">
             {loadingAdrs ? (
-              <div className="py-3 text-sm text-muted-foreground">Loading…</div>
+              <div className="py-3 text-sm text-gray-700">Loading…</div>
             ) : adrs.length === 0 ? (
-              <div className="py-3 text-sm text-muted-foreground">No ADRs yet.</div>
+              <div className="py-3 text-sm text-gray-700">No ADRs yet.</div>
             ) : (
               adrs.map((adr) => (
                 <Link
@@ -144,7 +144,7 @@ export default function DashboardPage() {
                   href={`/adr/${adr.id}`}
                   className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
                 >
-                  <span className="text-sm font-medium text-foreground">{adr.title}</span>
+                  <span className="text-sm font-medium text-foreground text-gray-700">{adr.title}</span>
                   <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(adr))}</span>
                 </Link>
               ))

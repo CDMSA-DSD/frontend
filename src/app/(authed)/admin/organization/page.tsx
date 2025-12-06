@@ -237,7 +237,7 @@ export default function OrganizationSettings() {
   const isGitHubConnected = Boolean(repoOwner)
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen p-8">
       <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">
         Manage the organization's settings here
       </h1>
@@ -247,47 +247,47 @@ export default function OrganizationSettings() {
           {/* Basic info */}
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="company-name" className="text-sm font-normal">
+              <Label htmlFor="company-name" className="text-sm font-normal text-gray-900">
                 Company Name
               </Label>
               <Input
                 id="company-name"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="h-11"
+                className="h-11 bg-white text-gray-900"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="domain" className="text-sm font-normal">
+              <Label htmlFor="domain" className="text-sm font-normal text-gray-900">
                 Domain
               </Label>
               <Input
                 id="domain"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                className="h-11"
+                className="h-11 bg-white text-gray-900"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-normal">
+              <Label htmlFor="description" className="text-sm font-normal text-gray-900">
                 Description or industry
               </Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="min-h-[100px] resize-none"
+                className="min-h-[100px] resize-none bg-white text-gray-900"
               />
             </div>
           </div>
 
           {/* GitHub section */}
-          <div className="space-y-4 border rounded-xl p-4">
+          <div className="space-y-4 border rounded-xl p-4 border-black">
             <div>
-              <h2 className="text-base font-semibold">GitHub integration</h2>
-              <p className="text-xs text-muted-foreground mt-1">
+              <h2 className="text-base font-semibold text-gray-900">GitHub integration</h2>
+              <p className="text-xs mt-1 text-gray-900">
                 Connect GitHub and choose the repository and branch where ADRs
                 will be stored.
               </p>
@@ -301,7 +301,7 @@ export default function OrganizationSettings() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="github-token"
-                    className="text-sm font-normal"
+                    className="text-sm font-normal text-gray-900"
                   >
                     GitHub Access Token
                   </Label>
@@ -310,7 +310,7 @@ export default function OrganizationSettings() {
                     type="password"
                     value={githubToken}
                     onChange={(e) => setGithubToken(e.target.value)}
-                    className="h-11"
+                    className="h-11 bg-white text-gray-900"
                     placeholder="ghp_..."
                   />
                 </div>
@@ -322,7 +322,7 @@ export default function OrganizationSettings() {
                 >
                   {connecting ? "Connecting..." : "Connect GitHub"}
                 </Button>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-900">
                   Use a GitHub personal access token with appropriate repo
                   permissions.
                 </p>
@@ -423,7 +423,7 @@ export default function OrganizationSettings() {
           </button>
 
           {message && (
-            <p className="text-sm text-center mt-4 text-muted-foreground">
+            <p className="text-sm text-center mt-4">
               {message}
             </p>
           )}

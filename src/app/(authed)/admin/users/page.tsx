@@ -217,7 +217,6 @@ export default function UsersPage() {
               px-8
               text-sm
               font-medium
-              text-foreground
               shadow-sm
               hover:bg-[#e5e5e5]
               transition
@@ -231,7 +230,7 @@ export default function UsersPage() {
         <UsersList users={filteredUsers} onDeleteUser={handleDeleteUser} />
 
         {message && (
-          <p className="mt-4 text-center text-sm text-muted-foreground">
+          <p className="mt-4 text-center text-sm text-gray-700">
             {message}
           </p>
         )}

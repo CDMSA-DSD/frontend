@@ -297,7 +297,7 @@ export default function RFCPage() {
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                   disabled={isSubmitting}
                 />
               </div>
@@ -312,7 +312,7 @@ export default function RFCPage() {
                   id="context"
                   value={formData.context}
                   onChange={(e) => setFormData({ ...formData, context: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                   disabled={isSubmitting}
                 />
               </div>
@@ -328,7 +328,7 @@ export default function RFCPage() {
                   onChange={(e) => setFormData({ ...formData, problemStatement: e.target.value })}
                   placeholder="Describe the issue or motivation behind this RFC"
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -361,6 +361,7 @@ export default function RFCPage() {
                       }}
                       placeholder={availableUsers.length > 0 ? "Select reviewers..." : "No users available"}
                       classNamePrefix="react-select"
+                      className="text-gray-900"
                     />
                   </div>
 
@@ -385,6 +386,7 @@ export default function RFCPage() {
                       }}
                       placeholder={availableContexts.length > 0 ? "Select context groups..." : "No context groups available"}
                       classNamePrefix="react-select"
+                      className="text-gray-900"
                     />
                   </div>
                 </div>
