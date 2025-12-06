@@ -9,6 +9,8 @@ type NotificationDrawerProps = {
   onClose: () => void;
   notifications: Notification[];
   onNotificationClick: (notification: Notification) => void;
+  onMarkAllRead: () => void;
+  onClearAll: () => void;
 };
 
 function formatDate(iso: string) {
@@ -21,6 +23,8 @@ export function NotificationDrawer({
   onClose,
   notifications,
   onNotificationClick,
+  onMarkAllRead,
+  onClearAll,
 }: NotificationDrawerProps) {
   if (!open) return null;
 
@@ -38,14 +42,32 @@ export function NotificationDrawer({
         {/* Cabecera */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-xl font-semibold">Notifications</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close notifications"
-            className="p-1 rounded-full hover:bg-gray-100"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onMarkAllRead}
+              className="text-sm text-purple-600 hover:underline"
+            >
+              Mark all read
+            </button>
+
+            <button
+              onClick={onClearAll}
+              className="text-sm text-gray-600 hover:underline"
+            >
+              Clear
+            </button>
+
+            <button
+              onClick={onClose}
+              aria-label="Close notifications"
+              className="p-1 rounded-full hover:bg-gray-100"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
         </div>
+
 
         {/* Contenido */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -59,10 +81,9 @@ export function NotificationDrawer({
                 key={n.id}
                 onClick={() => onNotificationClick(n)}
                 className={`w-full text-left rounded-xl border bg-white px-4 py-3 shadow-sm hover:shadow-md transition 
-                  ${
-                    !n.read
-                      ? "border-purple-300 bg-purple-50"
-                      : "border-gray-200"
+                  ${!n.read
+                    ? "border-purple-300 bg-purple-50"
+                    : "border-gray-200"
                   }`}
               >
                 <p className="text-sm font-medium text-gray-900">
