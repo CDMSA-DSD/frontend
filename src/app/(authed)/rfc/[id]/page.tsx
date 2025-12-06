@@ -1,12 +1,13 @@
 "use client"
 import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLeft, Paperclip } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
 
 import { Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
+import DiagramViewer from '@/src/components/ui/diagramViewer'
 
 interface BackendAlternative {
   id: number
@@ -36,6 +37,8 @@ interface BackendRFC {
   isAuthor: boolean
   alternatives: BackendAlternative[]
   comments: Comment[]
+  xml: string | null
+  attachments: Attachment[]
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
@@ -68,6 +71,14 @@ interface AdrFormData {
   context: string
   decision: string
   consequences: string
+}
+
+interface Attachment {
+  id: number;
+  fileName: string;
+  contentType: string;
+  size: number;
+  downloadUrl: string;
 }
 
 const formatDate = (isoString: string): string => {
@@ -129,6 +140,35 @@ export default function RFCDetailPage() {
   const [userVotes, setUserVotes] = useState<Record<number, boolean | null>>({})
   const isReviewer = true
 
+  const [uploadingRfcAttachments, setUploadingRfcAttachments] = useState(false);
+  const [newRfcAttachments, setNewRfcAttachments] = useState<File[]>([]);
+
+  const [newAlternativeFiles, setNewAlternativeFiles] = useState<File[]>([]);
+  const [newAlternativeDiagramXml, setNewAlternativeDiagramXml] = useState<string>("");
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const newAltFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [altAttachments, setAltAttachments] =
+    useState<Record<number, Attachment[]>>({});
+  const [altNewFiles, setAltNewFiles] =
+    useState<Record<number, File[]>>({});
+  const [altUploading, setAltUploading] =
+    useState<Record<number, boolean>>({});
+
+  const [isEditingDiagram, setIsEditingDiagram] = useState(false)
+  const [diagramXml, setDiagramXml] = useState<string>('')
+  const [isSavingDiagram, setIsSavingDiagram] = useState(false)
+
+  const [altDiagramXml, setAltDiagramXml] =
+    useState<Record<number, string>>({})
+  const [altEditingDiagram, setAltEditingDiagram] =
+    useState<Record<number, boolean>>({})
+  const [altSavingDiagram, setAltSavingDiagram] =
+    useState<Record<number, boolean>>({})
+
+
   useEffect(() => {
     if (!rfcId) return;
     // fetchRfcData is defined outside the effect so it can be reused (e.g. after posting a comment)
@@ -148,6 +188,16 @@ export default function RFCDetailPage() {
 
       const data: BackendRFC = await response.json()
       setRfcData(data)
+      setDiagramXml(data.xml ?? '')
+
+
+      if (data.alternatives && data.alternatives.length > 0) {
+        await Promise.all(
+          data.alternatives.map((alt) =>
+            fetchAlternativeAttachments(alt.id, false)
+          )
+        );
+      }
     } catch (e) {
       console.error("Fetching RFC failed:", e)
       setError(e instanceof Error ? e.message : 'An unknown error occurred')
@@ -155,6 +205,263 @@ export default function RFCDetailPage() {
       setLoading(false)
     }
   }
+
+  const fetchAlternativeAttachments = async (altId: number, showAlert = true) => {
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          `Failed to load alternative ${altId} (status ${res.status})`
+        );
+      }
+
+      const data = await res.json();
+      setAltAttachments((prev) => ({
+        ...prev,
+        [altId]: data.attachments || [],
+      }));
+
+      setAltDiagramXml(prev => ({
+        ...prev,
+        [altId]: data.xml || '',
+      }))
+
+
+    } catch (e) {
+      console.error("Failed to fetch alternative attachments:", e);
+      if (showAlert) {
+        alert("Could not load alternative attachments.");
+      }
+    }
+  };
+
+  const handleAltFilesChange = (altId: number, files: FileList | null) => {
+    if (!files) return;
+    setAltNewFiles((prev) => ({
+      ...prev,
+      [altId]: Array.from(files),
+    }));
+  };
+
+  const uploadAlternativeAttachments = async (altId: number) => {
+    const files = altNewFiles[altId];
+    if (!files || files.length === 0) return;
+
+    setAltUploading((prev) => ({ ...prev, [altId]: true }));
+
+    try {
+      const fd = new FormData();
+      files.forEach((f) => fd.append("files", f));
+
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/attachments`,
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          `Upload alternative attachments failed (status ${res.status})`
+        );
+      }
+
+
+      await fetchAlternativeAttachments(altId);
+
+      setAltNewFiles((prev) => ({ ...prev, [altId]: [] }));
+    } catch (e) {
+      console.error("Upload alt attachments error:", e);
+      alert("Could not upload attachments for this alternative.");
+    } finally {
+      setAltUploading((prev) => ({ ...prev, [altId]: false }));
+    }
+  };
+
+  const handleDownloadAltAttachment = async (att: Attachment) => {
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/attachments/${att.id}/download`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Download failed (status ${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = att.fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Alternative attachment download failed:", e);
+      alert("Could not download alternative attachment.");
+    }
+  };
+
+
+  const handleUploadRfcAttachments = async () => {
+    if (!rfcId || newRfcAttachments.length === 0) return;
+
+    setUploadingRfcAttachments(true);
+    try {
+      const fd = new FormData();
+      newRfcAttachments.forEach((file) => {
+        fd.append("files", file);
+      });
+
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/attachments`,
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Upload failed (status ${res.status})`);
+      }
+
+      await fetchRfcData();
+      setNewRfcAttachments([]);
+    } catch (e) {
+      console.error("Upload RFC attachments failed:", e);
+      alert("Failed to upload attachments.");
+    } finally {
+      setUploadingRfcAttachments(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (att: Attachment) => {
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/attachments/${att.id}/download`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Download failed (status ${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = att.fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Attachment download failed:", e);
+      alert("Could not download attachment.");
+    }
+  };
+
+
+  const handleSaveDiagram = async () => {
+    if (!rfcId) return
+    if (!rfcData) return
+
+    setIsSavingDiagram(true)
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/diagram`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            xmlContent: diagramXml, // UpdateCreateDiagramRequest.xmlContent
+          }),
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error(`Failed to save diagram (status ${res.status})`)
+      }
+
+      const updated: BackendRFC = await res.json()
+      setRfcData(updated)
+      setDiagramXml(updated.xml ?? "")
+      setIsEditingDiagram(false)
+    } catch (e) {
+      console.error("Saving diagram failed:", e)
+      alert("Could not save diagram.")
+    } finally {
+      setIsSavingDiagram(false)
+    }
+  }
+
+  const startEditingAlternativeDiagram = (altId: number) => {
+    setAltEditingDiagram((prev) => ({ ...prev, [altId]: true }))
+  }
+
+  const cancelEditingAlternativeDiagram = (altId: number) => {
+    setAltEditingDiagram((prev) => ({ ...prev, [altId]: false }))
+
+  }
+
+  const handleAltDiagramChange = (altId: number, value: string) => {
+    setAltDiagramXml((prev) => ({ ...prev, [altId]: value }))
+  }
+
+  const handleSaveAlternativeDiagram = async (altId: number) => {
+    const xml = altDiagramXml[altId] ?? ""
+
+    setAltSavingDiagram((prev) => ({ ...prev, [altId]: true }))
+
+    try {
+      const res = await fetcher(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/diagram`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ xmlContent: xml }), // UpdateCreateDiagramRequest
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error(
+          `Failed to save alternative diagram (status ${res.status})`
+        )
+      }
+
+      const updated = await res.json() // AlternativeSpecificResponse
+
+      setAltDiagramXml((prev) => ({
+        ...prev,
+        [altId]: updated.xml || "",
+      }))
+      setAltEditingDiagram((prev) => ({ ...prev, [altId]: false }))
+    } catch (e) {
+      console.error("Saving alternative diagram failed:", e)
+      alert("Could not save alternative diagram.")
+    } finally {
+      setAltSavingDiagram((prev) => ({ ...prev, [altId]: false }))
+    }
+  }
+
+
 
   const handleVoteForAlternative = async (altId: number, outcome: boolean) => {
     if (!isReviewer) return
@@ -189,17 +496,27 @@ export default function RFCDetailPage() {
       title: alternativeForm.title,
       description: alternativeForm.description,
       pros: alternativeForm.pros.join(';'),
-      cons: alternativeForm.cons.join(';')
+      cons: alternativeForm.cons.join(';'),
+      // usamos el XML que el usuario haya pegado (o null)
+      xml: newAlternativeDiagramXml || null,
     }
+
+    const multipart = new FormData();
+    multipart.append(
+      "data",
+      new Blob([JSON.stringify(payload)], { type: "application/json" })
+    );
+
+    // añadimos los ficheros seleccionados para la nueva alternativa
+    newAlternativeFiles.forEach((file) => {
+      multipart.append("files", file);
+    });
 
     setIsSubmittingAlternative(true)
     try {
       const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/alternatives`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
+        body: multipart
       })
 
       if (!res.ok) throw new Error(`Failed to create alternative (status ${res.status})`)
@@ -212,6 +529,8 @@ export default function RFCDetailPage() {
 
       setShowNewAlternativeModal(false)
       setAlternativeForm({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
+      setNewAlternativeFiles([])
+      setNewAlternativeDiagramXml("")
     } catch (e) {
       console.error('Create alternative failed:', e)
       alert('Failed to create alternative. See console for details.')
@@ -220,11 +539,15 @@ export default function RFCDetailPage() {
     }
   }
 
+
   const handleCancelAlternative = () => {
     if (isSubmittingAlternative) return
     setShowNewAlternativeModal(false)
     setAlternativeForm({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
+    setNewAlternativeFiles([])
+    setNewAlternativeDiagramXml("")
   }
+
 
   const addProsItem = () => {
     const val = alternativeForm.prosInput.trim()
@@ -246,14 +569,14 @@ export default function RFCDetailPage() {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
   }
 
-  const handlePostComment = async (content:string, parentId : number | null = null) => {
+  const handlePostComment = async (content: string, parentId: number | null = null) => {
     if (isPostingComment) return
     if (!rfcId) return
     if (!content || content.trim().length === 0) return
 
     const payload = {
-        content: content.trim(),
-        parentId
+      content: content.trim(),
+      parentId
     }
 
     setIsPostingComment(true)
@@ -481,6 +804,171 @@ export default function RFCDetailPage() {
           </div>
         </section>
 
+        {/* RFC Attachments */}
+        <section>
+          <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+            Attachments
+          </h2>
+
+          {rfcData.attachments && rfcData.attachments.length > 0 ? (
+            <ul className="space-y-2">
+              {rfcData.attachments.map((att) => (
+                <li key={att.id} className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4 text-violet-600" />
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadAttachment(att)}
+                    className="text-violet-700 hover:underline text-sm"
+                  >
+                    {att.fileName}
+                  </button>
+                  <span className="text-xs text-gray-500">
+                    ({Math.round(att.size / 1024)} KB)
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500 text-sm">No attachments.</p>
+          )}
+
+
+          {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
+            <div className="mt-4 space-y-2">
+
+              <input
+                ref={fileInputRef}
+                id="rfc-more-attachments"
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (!e.target.files) return;
+                  setNewRfcAttachments(Array.from(e.target.files));
+                }}
+                disabled={uploadingRfcAttachments}
+              />
+
+              {/* button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                   bg-violet-50 text-violet-800 text-sm font-medium
+                   border border-violet-200 shadow-sm
+                   hover:bg-violet-100 transition-colors"
+                disabled={uploadingRfcAttachments}
+              >
+                <Paperclip className="w-4 h-4" />
+                Add attachments
+              </button>
+
+              {newRfcAttachments.length > 0 && (
+                <>
+                  <p className="text-xs text-gray-500">
+                    {newRfcAttachments.length} file(s) ready to upload
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleUploadRfcAttachments}
+                    disabled={uploadingRfcAttachments}
+                    className="px-4 py-2 text-sm rounded-full
+        bg-violet-600 text-white font-medium
+        hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {uploadingRfcAttachments ? "Uploading..." : "Upload attachments"}
+                  </button>
+                </>
+              )}
+
+            </div>
+          )}
+        </section>
+
+
+        <section>
+          <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+            Diagram
+          </h2>
+
+          {!isEditingDiagram ? (
+            <div className="space-y-3">
+              {rfcData.xml ? (
+                <>
+                  <p className="text-sm text-gray-600">
+                    This RFC already has a saved diagram (XML).
+                  </p>
+                  <DiagramViewer xml={rfcData.xml} />
+
+                  {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDiagram(true)}
+                      className="inline-flex items-center px-4 py-2 text-sm rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                    >
+                      Edit diagram
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500">
+                    No diagram has been added for this RFC.
+                  </p>
+                  {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDiagram(true)}
+                      className="inline-flex items-center px-4 py-2 text-sm rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                    >
+                      Add diagram
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <textarea
+                value={diagramXml}
+                onChange={(e) => setDiagramXml(e.target.value)}
+                rows={10}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono
+                   focus:outline-none focus:ring-2 focus:ring-violet-500"
+                placeholder="Paste here the draw.io XML..."
+              />
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveDiagram}
+                  disabled={isSavingDiagram}
+                  className="px-4 py-2 text-sm rounded-lg bg-violet-600 text-white
+                     hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {isSavingDiagram ? "Saving..." : "Save diagram"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditingDiagram(false)
+                    setDiagramXml(rfcData.xml ?? "")
+                  }}
+                  className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700
+                     hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+
+            </div>
+          )}
+        </section>
+
+
         {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
             onClick={handleCloseNoDecision}
@@ -490,7 +978,10 @@ export default function RFCDetailPage() {
             {isClosing ? 'Closing...' : 'Close RFC (No Decision)'}
           </button>
         )}
+
       </div>
+
+
     )
   }
 
@@ -574,8 +1065,8 @@ export default function RFCDetailPage() {
             >
               <ThumbsUp
                 className={`w-5 h-5 ${userVotes[alt.id] === true
-                    ? 'text-violet-600'
-                    : 'text-gray-400 hover:text-violet-600'
+                  ? 'text-violet-600'
+                  : 'text-gray-400 hover:text-violet-600'
                   }`}
               />
               <span className="text-sm text-gray-700">
@@ -592,8 +1083,8 @@ export default function RFCDetailPage() {
             >
               <ThumbsDown
                 className={`w-5 h-5 ${userVotes[alt.id] === false
-                    ? 'text-violet-600'
-                    : 'text-gray-400 hover:text-violet-600'
+                  ? 'text-violet-600'
+                  : 'text-gray-400 hover:text-violet-600'
                   }`}
               />
               <span className="text-sm text-gray-700">
@@ -631,6 +1122,88 @@ export default function RFCDetailPage() {
           )}
         </div>
 
+        <section>
+            <h3 className="text-sm font-semibold text-violet-700 mb-2">
+              Attachments
+            </h3>
+
+            {/* Attachment list */}
+            {altAttachments[alt.id] && altAttachments[alt.id].length > 0 ? (
+              <ul className="space-y-1">
+                {altAttachments[alt.id].map((att) => (
+                  <li key={att.id} className="flex items-center gap-2">
+                    <Paperclip className="w-3 h-3 text-violet-600" />
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadAltAttachment(att)}
+                      className="text-violet-700 hover:underline text-xs"
+                    >
+                      {att.fileName}
+                    </button>
+                    <span className="text-[10px] text-gray-500">
+                      ({Math.round(att.size / 1024)} KB)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-500">
+                No attachments loaded.
+              </p>
+            )}
+
+            {/* Add attachments only UNDER_REVIEW */}
+            {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
+              <div className="mt-2 flex flex-col items-start gap-1">
+                <input
+                  id={`alt-${alt.id}-attachments`}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) =>
+                    handleAltFilesChange(alt.id, e.target.files)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById(`alt-${alt.id}-attachments`)
+                      ?.click()
+                  }
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                   bg-violet-50 text-violet-800 text-sm font-medium
+                   border border-violet-200 shadow-sm
+                   hover:bg-violet-100 transition-colors"
+                  disabled={altUploading[alt.id]}
+                >
+                  <Paperclip className="w-3 h-3" />
+                  Add Attachments
+                </button>
+
+                {altNewFiles[alt.id] && altNewFiles[alt.id].length > 0 && (
+                  <>
+                    <p className="text-[11px] text-gray-500">
+                      {altNewFiles[alt.id].length} file(s) ready to upload
+                    </p>
+
+                    {/* Upload */}
+                    <button
+                      type="button"
+                      onClick={() => uploadAlternativeAttachments(alt.id)}
+                      disabled={altUploading[alt.id]}
+                      className="px-4 py-2 text-xs rounded-full
+                       bg-violet-600 text-white font-medium
+                       hover:bg-violet-700 disabled:opacity-50"
+                    >
+                      {altUploading[alt.id] ? "Uploading..." : "Upload attachments"}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </section>
+
         {/* Pros/Cons */}
         <div className="flex gap-4 flex-shrink-0">
           {/* Pros */}
@@ -662,8 +1235,91 @@ export default function RFCDetailPage() {
               ))}
             </ul>
           </div>
+
         </div>
       </div>
+
+      {/* Diagram section */}
+          <section className="mt-4 border-t border-gray-100 pt-3">
+            <h3 className="text-sm font-semibold text-violet-700 mb-2">
+              Diagram
+            </h3>
+
+            {!altEditingDiagram[alt.id] ? (
+              <div className="space-y-2">
+                {altDiagramXml[alt.id] && altDiagramXml[alt.id].length > 0 ? (
+                  <>
+                    <p className="text-xs text-gray-600">
+                      This alternative already has a saved diagram (XML).
+                    </p>
+                    <DiagramViewer xml={altDiagramXml[alt.id]} />
+
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+                      <button
+                        type="button"
+                        onClick={() => startEditingAlternativeDiagram(alt.id)}
+                        className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                      >
+                        Edit diagram
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500">
+                      No diagram has been added for this alternative.
+                    </p>
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+                      <button
+                        type="button"
+                        onClick={() => startEditingAlternativeDiagram(alt.id)}
+                        className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
+                         bg-violet-600 text-white hover:bg-violet-700"
+                      >
+                        Add diagram
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <textarea
+                  value={altDiagramXml[alt.id] ?? ""}
+                  onChange={(e) =>
+                    handleAltDiagramChange(alt.id, e.target.value)
+                  }
+                  rows={8}
+                  className="w-full border border-gray-300 rounded-lg p-2 text-xs font-mono
+                   focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="Paste here the draw.io XML for this alternative..."
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSaveAlternativeDiagram(alt.id)}
+                    disabled={altSavingDiagram[alt.id]}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white
+                     hover:bg-violet-700 disabled:opacity-50"
+                  >
+                    {altSavingDiagram[alt.id] ? "Saving..." : "Save diagram"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cancelEditingAlternativeDiagram(alt.id)}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-300
+                     text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+              </div>
+            )}
+
+          </section>
     </div>
   )
 
@@ -733,7 +1389,7 @@ export default function RFCDetailPage() {
       {/* Comments */}
       <div>
         {rfcData.comments.length > 0 ? (
-          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false}/>)
+          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false} />)
         ) : (
           <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
         )}
@@ -751,7 +1407,9 @@ export default function RFCDetailPage() {
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-8 border-2 border-violet-600"
+         className="bg-white w-full max-w-3xl rounded-lg shadow-lg 
+           overflow-hidden max-h-[90vh] flex flex-col"
+
         >
           {/* Modal Header */}
           <div className="p-6 border-b relative">
@@ -840,7 +1498,7 @@ export default function RFCDetailPage() {
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={() => { if (winningAlternative) fetchGeneratedAdr(winningAlternative.id) }}
                 className="px-4 py-2 bg-sky-600 text-white border border-gray-300 rounded-lg hover:bg-sky-700 disabled:opacity-50"
@@ -922,13 +1580,14 @@ export default function RFCDetailPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-violet-600"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-violet-600 overflow-hidden max-h-[90vh] flex flex-col"
           >
             <div className="p-8 border-b">
               <h2 className="text-3xl font-bold text-center text-gray-900">Add New Alternative</h2>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 overflow-y-auto">
+
               <div>
                 <label htmlFor="alt-title" className="block text-sm font-semibold text-gray-900 mb-2">
                   Title <span className="text-red-500">*</span>
@@ -1013,16 +1672,60 @@ export default function RFCDetailPage() {
                 </div>
               </div>
 
-              {/* add attachments */}
-              {/* <div className="flex justify-end">
-                <button
-                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900 disabled:opacity-50"
+              {/* Attachments for the NEW alternative */}
+              <div>
+
+                <div className="flex flex-col items-end gap-2">
+                  <input
+                    ref={newAltFileInputRef}
+                    id="new-alt-attachments"
+                    type="file"
+                    multiple
+                    className="hidden"
+                    disabled={isSubmittingAlternative}
+                    onChange={(e) => {
+                      if (!e.target.files) return;
+                      setNewAlternativeFiles(Array.from(e.target.files));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => newAltFileInputRef.current?.click()}
+                    disabled={isSubmittingAlternative}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                   bg-violet-50 text-violet-800 text-sm font-medium
+                   border border-violet-200 shadow-sm
+                   hover:bg-violet-100 transition-colors"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Add attachments
+                  </button>
+
+                  {newAlternativeFiles.length > 0 && (
+                    <p className="text-xs text-gray-500">
+                      {newAlternativeFiles.map((f) => f.name).join(", ")}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Diagram XML for the NEW alternative */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Diagram XML
+                </label>
+                <textarea
+                  value={newAlternativeDiagramXml}
+                  onChange={(e) => setNewAlternativeDiagramXml(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg
+                             focus:outline-none focus:ring-2 focus:ring-violet-500
+                             text-sm font-mono resize-none"
                   disabled={isSubmittingAlternative}
-                >
-                  <Paperclip className="w-5 h-5" />
-                  <span className="font-medium">Add Attachments</span>
-                </button>
-              </div> */}
+                  placeholder="Paste here the draw.io XML for this alternative (optional)..."
+                />
+              </div>
+
             </div>
 
             <div className="p-6 flex items-center justify-between">
