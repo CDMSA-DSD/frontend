@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import { Comment } from "@/lib/types";
 import { ParamValue } from "next/dist/server/request/params";
 import {Mention, MentionsInput} from "react-mentions";
+import render from "next/dist/compiled/@vercel/og/og";
 
 interface CommentZoneProps {
     comment: Comment;
@@ -9,6 +10,42 @@ interface CommentZoneProps {
     members:{id:number, firstname:string, lastName:string}[]
     isReply?: boolean;
 }
+
+function renderCommentText(text: string) {
+    const mentionRegex = /@\[(.*?)\]\((.*?)\)/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+        const [full, display, id] = match;
+
+        // Checking that we are not parsing twice same text!
+        // If we have match.index / lastIndex, it means that there is content before mention
+        if (match.index > lastIndex) {
+            parts.push(text.slice(lastIndex, match.index));
+        }
+
+        parts.push(
+            <span
+                key={match.index}
+                className="bg-[#DFDDFF] font-semibold cursor-pointer"
+            >
+                @{display}
+            </span>
+        );
+
+        lastIndex = mentionRegex.lastIndex;
+    }
+
+    // Check if after every mention pasted there is still content
+    if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+    }
+
+    return parts;
+}
+
 
 export default function CommentZone({comment, handleSubmit, members ,isReply = false} : CommentZoneProps): React.JSX.Element{
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
@@ -22,6 +59,7 @@ export default function CommentZone({comment, handleSubmit, members ,isReply = f
         (() => setMentions(newMentions))();
     }, [replyText]);
 
+
     return (
         <div key={comment.id} className={`${isReply ? 'ml-12 mt-4' : 'mb-6 mt-4'}`}>
             <div className="bg-gray-50 rounded-lg p-4">
@@ -29,7 +67,7 @@ export default function CommentZone({comment, handleSubmit, members ,isReply = f
                     <span className="font-semibold text-gray-900">{comment.author}</span>
                     <span className="text-sm text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
                 </div>
-                <p className="text-gray-700 mb-3">{comment.content}</p>
+                <p className="text-gray-700 mb-3">{renderCommentText(comment.content)}</p>
                 <div className="flex items-center gap-4">
                     <button className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setShowReplyForm(true)}>Reply</button>
                 </div>
