@@ -95,7 +95,10 @@ export default function DashboardPage() {
           setRfcs([]);
         } else {
           const json = await res.json();
-          setRfcs((json?.content as RfcResponse[]) ?? []);
+          const items = (json?.content as RfcResponse[]) ?? [];
+          // Ensure RFCs are ordered newest -> oldest by createdAt
+          items.sort((a, b) => new Date(b.createdAt ?? "").getTime() - new Date(a.createdAt ?? "").getTime());
+          setRfcs(items);
           setRfcsErr(null);
         }
       } catch (err: any) {
@@ -118,7 +121,10 @@ export default function DashboardPage() {
           setAdrs([]);
         } else {
           const json = await res.json();
-          setAdrs((json?.content as AdrResponse[]) ?? []);
+          const items = (json?.content as AdrResponse[]) ?? [];
+          // Ensure ADRs are ordered newest -> oldest by createdAt
+          items.sort((a, b) => new Date(b.createdAt ?? "").getTime() - new Date(a.createdAt ?? "").getTime());
+          setAdrs(items);
           setAdrsErr(null);
         }
       } catch (err: any) {
