@@ -8,7 +8,7 @@ import fetcher from "@/src/lib/fetcher"
 
 type ParticipatingUser = {
   userId: number
-  name: string
+  fullName: string
   role: string
   jobTitle: string
 }
@@ -654,7 +654,7 @@ export default function AdrDetailPage() {
                         >
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              {user.name}
+                              {user.fullName}
                             </p>
                             <p className="text-xs text-gray-500">
                               {user.jobTitle || "—"}
@@ -684,7 +684,7 @@ export default function AdrDetailPage() {
                         >
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              {user.name}
+                              {user.fullName}
                             </p>
                             <p className="text-xs text-gray-500">
                               {user.jobTitle || "—"}

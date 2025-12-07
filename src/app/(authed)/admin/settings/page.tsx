@@ -9,7 +9,7 @@ type MeResponse = {
   id: number;
   email: string;
   firstname?: string;
-  lastname?: string;
+  lastName?: string;
   jobTitle?: string; // ← backend field for "role"
 };
 
@@ -42,7 +42,7 @@ export default function SettingsPage() {
         const json = (await res.json()) as MeResponse;
         setMe(json);
         setFirstname(json.firstname ?? "");
-        setLastname(json.lastname ?? "");
+        setLastname(json.lastName ?? "");
         setJobTitle(json.jobTitle ?? "");
       } catch (e: any) {
         setError(e?.message ?? "Failed to load profile.");
@@ -82,7 +82,7 @@ export default function SettingsPage() {
       const updated = (await res.json()) as MeResponse;
       setMe(updated);
       setFirstname(updated.firstname ?? "");
-      setLastname(updated.lastname ?? "");
+      setLastname(updated.lastName ?? "");
       setJobTitle(updated.jobTitle ?? "");
       setSuccess("Settings saved.");
     } catch (e: any) {
