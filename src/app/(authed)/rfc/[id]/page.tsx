@@ -150,15 +150,13 @@ export default function RFCDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newCommentContent, setNewCommentContent] = useState('')
-  const [mentions, setMentions] = useState<{id:string}[]>([])
+  const [mentions, setMentions] = useState<number[]>([])
   const [isPostingComment, setIsPostingComment] = useState(false)
 
     useEffect(() => {
         const regex = /@\[(.*?)\]\((.*?)\)/g;
         const matches = [...newCommentContent.matchAll(regex)];
-        const newMentions = matches.map((match) => ({
-            id: match[2].toString(), // ID de la mention
-        }));
+        const newMentions = matches.map(match => Number(match[2]));// ID de la mention;
         (() => setMentions(newMentions))();
     }, [newCommentContent]);
 
@@ -286,7 +284,7 @@ export default function RFCDetailPage() {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
   }
 
-  const handlePostComment = async (content:string, mentions:{id:string}[], parentId : number | null = null) => {
+  const handlePostComment = async (content:string, mentions:number[], parentId : number | null = null) => {
     if (isPostingComment) return
     if (!rfcId) return
     if (!content || content.trim().length === 0) return
@@ -760,6 +758,7 @@ export default function RFCDetailPage() {
           >
               <Mention
                   className="mention"
+
                   trigger="@"
                   data={members.map(m => ({
                       id: m.id,

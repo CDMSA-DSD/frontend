@@ -5,7 +5,7 @@ import {Mention, MentionsInput} from "react-mentions";
 
 interface CommentZoneProps {
     comment: Comment;
-    handleSubmit : (comment:string, mentions:{id:string}[], parentId: number | null) => void;
+    handleSubmit : (comment:string, mentions:number[], parentId: number | null) => void;
     members:{id:number, firstname:string, lastName:string}[]
     isReply?: boolean;
 }
@@ -13,14 +13,12 @@ interface CommentZoneProps {
 export default function CommentZone({comment, handleSubmit, members ,isReply = false} : CommentZoneProps): React.JSX.Element{
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [replyText, setReplyText] = useState<string>("");
-    const [mentions, setMentions] = useState<{id:string}[]>([]);
+    const [mentions, setMentions] = useState<number[]>([]);
 
     useEffect(() => {
         const regex = /@\[(.*?)\]\((.*?)\)/g;
         const matches = [...replyText.matchAll(regex)];
-        const newMentions = matches.map((match) => ({
-            id: match[2].toString(), // ID de la mention
-        }));
+        const newMentions = matches.map(match => Number(match[2]));// ID de la mention;
         (() => setMentions(newMentions))();
     }, [replyText]);
 
