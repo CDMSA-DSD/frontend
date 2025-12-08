@@ -1,5 +1,6 @@
 "use client"
-import { MessageCircle, Plus, X, Paperclip, Send } from 'lucide-react'
+import Select, { MultiValue } from "react-select";
+import { MessageCircle, Plus, X, Send, Paperclip } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { parseDescription } from '@/lib/utils'
 import Link from 'next/link'
@@ -15,6 +16,20 @@ interface BackendRFC {
   commentCount: number;
 }
 
+interface User {
+  id: number;
+  firstname: string;
+  lastname: string;
+  email: string;
+}
+
+interface Context {
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+}
+
 export default function RFCPage() {
   const [rfcs, setRfcs] = useState<BackendRFC[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,9 +38,15 @@ export default function RFCPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    context: '', // Not used in POST body, but kept for user input
-    problemStatement: '' // Not used in POST body, but kept for user input
+    context: '',
+    problemStatement: ''
   });
+
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [availableContexts, setAvailableContexts] = useState<Context[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [selectedContextIds, setSelectedContextIds] = useState<number[]>([]);
+  const [isLoadingReviewerData, setIsLoadingReviewerData] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -47,7 +68,7 @@ export default function RFCPage() {
   };
 
   const formatStatus = (status: BackendRFC['status']) => {
-    return status.replace(/_/g, ' '); // Converts UNDER_REVIEW to UNDER REVIEW
+    return status.replace(/_/g, ' ');
   };
 
   const fetchRFCs = async () => {
@@ -71,21 +92,54 @@ export default function RFCPage() {
     }
   };
 
+  const loadReviewerData = async () => {
+    setIsLoadingReviewerData(true);
+    try {
+      const usersRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`);
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        const users = usersData._embedded?.users || [];
+        setAvailableUsers(users.map((u: any) => ({
+          id: u.id,
+          firstname: u.firstname,
+          lastname: u.lastName,
+          email: u.email
+        })));
+      }
+
+      const contextsRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts`);
+      if (contextsRes.ok) {
+        const contexts = await contextsRes.json();
+        setAvailableContexts(contexts);
+      }
+    } catch (e) {
+      console.error('Failed to load reviewers data:', e);
+    } finally {
+      setIsLoadingReviewerData(false);
+    }
+  };
+
   useEffect(() => {
     fetchRFCs();
   }, []);
 
+  useEffect(() => {
+    if (isModalOpen) {
+      loadReviewerData();
+    }
+  }, [isModalOpen]);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    // Use a combination of context and problemStatement for the 'description' field, split by RFCSPLIT
     const description = `Context: ${formData.context}\n---RFCSPLIT---\nProblem: ${formData.problemStatement}`;
 
     const postBody = {
       title: formData.title,
       description: description,
-      templateId: 1, // Default value, only working with one template
+      templateId: 1,
+      userReviewerIds: selectedUserIds,
+      contextReviewerIds: selectedContextIds,
       xml: diagramXml || null, // draw.io XML
     };
 
@@ -111,12 +165,10 @@ export default function RFCPage() {
       }
 
       await fetchRFCs();
-      handleCancel(); // Resets form and closes modal
+      handleCancel();
       setAttachments([]);
-
     } catch (e) {
       console.error('Failed to create RFC:', e);
-      // You might want a toast/notification here for the user
       alert('Failed to submit new RFC. Check console for details.');
     } finally {
       setIsSubmitting(false);
@@ -126,6 +178,8 @@ export default function RFCPage() {
   const handleCancel = () => {
     setIsModalOpen(false);
     setFormData({ title: '', context: '', problemStatement: '' });
+    setSelectedUserIds([]);
+    setSelectedContextIds([]);
   };
 
   useEffect(() => {
@@ -136,7 +190,6 @@ export default function RFCPage() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [isModalOpen]);
-
 
   return (
     <div className="min-h-screen bg-white p-8">
@@ -210,8 +263,7 @@ export default function RFCPage() {
                     {rfc.title}
                   </h2>
                   <p className="text-sm text-gray-500 mb-3">
-                    {/* Using standard JS date format for simplicity */}
-                    {new Date(rfc.createdAt).toLocaleDateString()}, by {rfc.authorName}
+                      {new Date(rfc.createdAt).toLocaleDateString()}, by {rfc.authorName}
                   </p>
                   <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
                     {context}
@@ -241,7 +293,7 @@ export default function RFCPage() {
       {isModalOpen && (
         <div
           onClick={() => !isSubmitting && setIsModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-white/10 backdrop-blur-sm backdrop-saturate-125"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-white/10 backdrop-blur-sm backdrop-saturate-125 overflow-y-auto p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -254,7 +306,7 @@ export default function RFCPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="p-8 space-y-6 overflow-y-auto">
+            <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
               {/* Title */}
               <div>
                 <label htmlFor="title" className="block text-sm font-semibold text-gray-900 mb-2">
@@ -265,7 +317,7 @@ export default function RFCPage() {
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                   disabled={isSubmitting}
                 />
               </div>
@@ -280,7 +332,7 @@ export default function RFCPage() {
                   id="context"
                   value={formData.context}
                   onChange={(e) => setFormData({ ...formData, context: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                   disabled={isSubmitting}
                 />
               </div>
@@ -296,7 +348,7 @@ export default function RFCPage() {
                   onChange={(e) => setFormData({ ...formData, problemStatement: e.target.value })}
                   placeholder="Describe the issue or motivation behind this RFC"
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -353,10 +405,68 @@ export default function RFCPage() {
 
 
 
+              {/* Reviewers Section */}
+              {isLoadingReviewerData ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-600">Loading reviewers...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Individual Reviewers */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Individual Reviewers
+                    </label>
+                    <Select
+                      isMulti
+                      isDisabled={isSubmitting}
+                      options={availableUsers.map(user => ({
+                        value: user.id,
+                        label: `${user.firstname} ${user.lastname} (${user.email})`
+                      }))}
+                      value={availableUsers.filter(u => selectedUserIds.includes(u.id)).map(user => ({
+                        value: user.id,
+                        label: `${user.firstname} ${user.lastname} (${user.email})`
+                      }))}
+                      onChange={(selected: MultiValue<{ value: number; label: string }>) => {
+                        setSelectedUserIds(selected.map(opt => opt.value));
+                      }}
+                      placeholder={availableUsers.length > 0 ? "Select reviewers..." : "No users available"}
+                      classNamePrefix="react-select"
+                      className="text-gray-900"
+                    />
+                  </div>
+
+                  {/* Context Groups */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Context Groups
+                    </label>
+                    <Select
+                      isMulti
+                      isDisabled={isSubmitting}
+                      options={availableContexts.map(context => ({
+                        value: context.id,
+                        label: context.name
+                      }))}
+                      value={availableContexts.filter(c => selectedContextIds.includes(c.id)).map(context => ({
+                        value: context.id,
+                        label: context.name
+                      }))}
+                      onChange={(selected: MultiValue<{ value: number; label: string }>) => {
+                        setSelectedContextIds(selected.map(opt => opt.value));
+                      }}
+                      placeholder={availableContexts.length > 0 ? "Select context groups..." : "No context groups available"}
+                      classNamePrefix="react-select"
+                      className="text-gray-900"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 flex items-center justify-between">
+            <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
               <button
                 onClick={handleCancel}
                 className="flex items-center gap-2 px-6 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
@@ -365,14 +475,16 @@ export default function RFCPage() {
                 <X className="w-5 h-5" />
                 Cancel
               </button>
-              <button
-                onClick={handleSubmit}
-                className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400 disabled:cursor-not-allowed"
-                disabled={isSubmitting || !formData.title || !formData.context || !formData.problemStatement}
-              >
-                <Send className="w-5 h-5" />
-                {isSubmitting ? 'Submitting...' : 'Submit for Discussion'}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSubmit}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400 disabled:cursor-not-allowed"
+                  disabled={isSubmitting || !formData.title || !formData.context || !formData.problemStatement}
+                >
+                  <Send className="w-5 h-5" />
+                  {isSubmitting ? 'Submitting...' : 'Submit'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
