@@ -26,6 +26,7 @@ export default function SurveyLayout({ children }: SurveyLayoutProps) {
           {children}
         </main>
       </div>
+      <script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
     </div>
   )
 }
