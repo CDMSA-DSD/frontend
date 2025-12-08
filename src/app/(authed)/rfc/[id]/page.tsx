@@ -1,13 +1,14 @@
 "use client"
 import { FileText, Lightbulb, MessageSquare, ThumbsUp, ThumbsDown, Plus, ArrowLeft, Paperclip } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
 
-import { Comment } from '@/lib/types'
+import {Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
 import DiagramViewer from '@/src/components/ui/diagramViewer'
+import { MentionsInput, Mention } from "react-mentions";
 
 interface BackendAlternative {
   id: number
@@ -132,11 +133,38 @@ export default function RFCDetailPage() {
     consequences: ''
   })
 
+    /**
+     * @brief Get all the user from user organization
+     */
+    const getContextMembers = async () : Promise<void> => {
+        try {
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users");
+            if (res.ok) {
+                const data = await res.json();
+                setMembers(data._embedded?.users);
+                console.log(data._embedded?.users)
+            }
+            else throw new Error("Could not find members");
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+  const [members, setMembers] = useState<Member[]>([])
+
   const [rfcData, setRfcData] = useState<BackendRFC | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newCommentContent, setNewCommentContent] = useState('')
+  const [mentions, setMentions] = useState<number[]>([])
   const [isPostingComment, setIsPostingComment] = useState(false)
+
+    useEffect(() => {
+        const regex = /@\[(.*?)\]\((.*?)\)/g;
+        const matches = [...newCommentContent.matchAll(regex)];
+        const newMentions = matches.map(match => Number(match[2]));// ID de la mention;
+        (() => setMentions(newMentions))();
+    }, [newCommentContent]);
 
   const alternatives: Alternative[] = rfcData ? rfcData.alternatives.map(mapAlternative) : []
 
@@ -186,6 +214,7 @@ export default function RFCDetailPage() {
     if (!rfcId) return;
     // fetchRfcData is defined outside the effect so it can be reused (e.g. after posting a comment)
     fetchRfcData()
+    getContextMembers()
   }, [rfcId])
 
   const fetchRfcData = async () => {
@@ -658,14 +687,15 @@ export default function RFCDetailPage() {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
   }
 
-  const handlePostComment = async (content: string, parentId: number | null = null) => {
+  const handlePostComment = async (content: string, mentions:number[], parentId: number | null = null) => {
     if (isPostingComment) return
     if (!rfcId) return
     if (!content || content.trim().length === 0) return
 
     const payload = {
       content: content.trim(),
-      parentId
+      parentId,
+      mentions
     }
 
     setIsPostingComment(true)
@@ -1579,17 +1609,28 @@ export default function RFCDetailPage() {
     <div className="space-y-6">
       {/* New Comment */}
       <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
-        <textarea
-          placeholder="Add a comment..."
-          value={newCommentContent}
-          onChange={(e) => setNewCommentContent(e.target.value)}
-          className="w-full text-black px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-          rows={3}
-          disabled={isPostingComment}
-        />
+          <MentionsInput
+              className="mentions"
+              value={newCommentContent}
+              onChange={(e) => setNewCommentContent(e.target.value)}
+              placeholder="What's on your mind?"
+          >
+              <Mention
+                  className="mention"
+
+                  trigger="@"
+                  data={members.map(m => ({
+                      id: m.id,
+                      display: `${m.firstname} ${m.lastName}`,
+                  }))}
+                  displayTransform={(_: string, display: string) => `@${display}`}
+                  markup="@[__display__](__id__)"
+                  appendSpaceOnAdd
+              />
+          </MentionsInput>
         <div className="flex justify-end mt-2">
           <button
-            onClick={() => handlePostComment(newCommentContent)}
+            onClick={() => handlePostComment(newCommentContent, mentions)}
             className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
             disabled={isPostingComment || !newCommentContent.trim()}
           >
@@ -1601,7 +1642,7 @@ export default function RFCDetailPage() {
       {/* Comments */}
       <div>
         {rfcData.comments.length > 0 ? (
-          rfcData.comments.map((comment) => <CommentZone key={comment.id} handleSubmit={handlePostComment} comment={comment} isReply={false} />)
+          rfcData.comments.map((comment) => <CommentZone key={comment.id} members={members.map(m => m)} handleSubmit={handlePostComment} comment={comment} isReply={false} />)
         ) : (
           <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
         )}
