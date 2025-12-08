@@ -580,56 +580,6 @@ export default function AdrDetailPage() {
     }
   }
 
-  const handleCancelClick = () => {
-    setIsCancelModalOpen(true)
-  }
-
-  const handleConfirmCancelAdr = async () => {
-    if (!adr) return
-
-    try {
-      setIsCancelling(true)
-
-      const res = await fetcher(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/adrs/${adr.id}`,
-        {
-          method: "DELETE",
-        },
-      )
-
-      if (res.status === 403) {
-        alert("You are not allowed to cancel this ADR.")
-        return
-      }
-
-      if (res.status === 404) {
-        alert("ADR not found or already cancelled.")
-        return
-      }
-
-      if (res.status === 409) {
-        alert("Only draft ADRs can be cancelled.")
-        return
-      }
-
-      if (!res.ok) {
-        const t = await res.text()
-        throw new Error(`DELETE /adrs/${adr.id} ${res.status} — ${t}`)
-      }
-
-      if (adr.rfcId) {
-        router.push(`/rfc/${adr.rfcId}`)
-      } else {
-        router.push("/adr")
-      }
-    } catch (e: any) {
-      alert(`Failed to cancel ADR: ${e?.message ?? String(e)}`)
-    } finally {
-      setIsCancelling(false)
-      setIsCancelModalOpen(false)
-    }
-  }
-
   if (loading) return <div className="p-8 text-gray-700">Loading…</div>
   if (error) return <div className="p-8 text-red-600">{error}</div>
   if (!adr) return <div className="p-8">ADR Not found.</div>

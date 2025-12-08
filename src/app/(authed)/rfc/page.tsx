@@ -1,6 +1,6 @@
 "use client"
 import Select, { MultiValue } from "react-select";
-import { MessageCircle, Plus, X, Send } from 'lucide-react'
+import { MessageCircle, Plus, X, Send, Paperclip } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { parseDescription } from '@/lib/utils'
 import Link from 'next/link'

@@ -1268,52 +1268,61 @@ export default function RFCDetailPage() {
           </section>
         )}
 
-        <section>
-          <div className="flex items-center justify-between mb-4">
+        {/* Reviewers */}
+        {(!rfcData.userReviewers || rfcData.userReviewers.length === 0) && 
+         (!rfcData.contextReviewers || rfcData.contextReviewers.length === 0) && 
+         !rfcData.isAuthor ? (
+          <></>
+        ) : (
+          <section>
             <h2 className="text-2xl font-semibold text-violet-700">Reviewers</h2>
-            {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
-              <button
-                onClick={handleOpenReviewersModal}
-                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm font-medium"
-              >
-                Manage Reviewers
-              </button>
-            )}
-          </div>
 
-          <div className="space-y-4">
-            {rfcData.userReviewers && rfcData.userReviewers.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Individual Reviewers</h3>
-                <div className="flex flex-wrap gap-2">
-                  {rfcData.userReviewers.map(reviewer => (
-                    <div key={reviewer.id} className="bg-violet-100 text-violet-800 px-3 py-1.5 rounded-full text-sm font-medium">
-                      {reviewer.firstname} {reviewer.lastname} ({reviewer.email})
-                    </div>
-                  ))}
-                </div>
+            {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
+              <div className="mt-2 mb-4">
+                <button
+                  onClick={handleOpenReviewersModal}
+                  className="px-4 py-2 text-sm rounded-lg bg-violet-600 text-white
+                  hover:bg-violet-700 disabled:opacity-50"
+                >
+                  Manage Reviewers
+                </button>
               </div>
             )}
 
-            {rfcData.contextReviewers && rfcData.contextReviewers.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Context Groups</h3>
-                <div className="flex flex-wrap gap-2">
-                  {rfcData.contextReviewers.map(context => (
-                    <div key={context.id} className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium">
-                      {context.name} {context.type && `(${context.type})`}
-                    </div>
-                  ))}
+            <div className="space-y-4 mb-4">
+              {rfcData.userReviewers && rfcData.userReviewers.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Individual Reviewers</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {rfcData.userReviewers.map(reviewer => (
+                      <div key={reviewer.id} className="bg-violet-100 text-violet-800 px-3 py-1.5 rounded-full text-sm font-medium">
+                        {reviewer.firstname} {reviewer.lastname} ({reviewer.email})
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {(!rfcData.userReviewers || rfcData.userReviewers.length === 0) && 
-             (!rfcData.contextReviewers || rfcData.contextReviewers.length === 0) && (
-              <p className="text-gray-500 italic">No reviewers assigned yet.</p>
-            )}
-          </div>
-        </section>
+              {rfcData.contextReviewers && rfcData.contextReviewers.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Context Groups</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {rfcData.contextReviewers.map(context => (
+                      <div key={context.id} className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium">
+                        {context.name} {context.type && `(${context.type})`}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(!rfcData.userReviewers || rfcData.userReviewers.length === 0) && 
+               (!rfcData.contextReviewers || rfcData.contextReviewers.length === 0) && (
+                <p className="text-sm text-gray-500">No reviewers assigned yet.</p>
+              )}
+            </div>
+          </section>
+        )}
 
         {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor && (
           <button
@@ -1930,7 +1939,7 @@ export default function RFCDetailPage() {
       <OkBanner text={okMessage}/>
       <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">{rfcData.title}</h1>
       <p className="text-lg text-center text-gray-500 mb-8">
-        RFC #{rfcData.id} | Author: {rfcData.authorName} | Status: {rfcData.status.replace(/_/g, ' ')}
+        RFC #{rfcData.id} | Author: {rfcData.authorName} | Status: {rfcData.status.replace(/_/g, ' ')} {rfcData.isWatching? "| 👁️ Watched" : "| "}
           {!rfcData.isWatching && (
               <button
                   onClick={handleSubscribe}
