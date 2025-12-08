@@ -4,11 +4,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
-
 import {Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
 import DiagramViewer from '@/src/components/ui/diagramViewer'
 import { MentionsInput, Mention } from "react-mentions";
+import ErrorBanner from "@/src/components/ui/errorBanner"
+import OkBanner from "@/src/components/ui/okBanner"
 
 interface BackendAlternative {
   id: number
@@ -38,10 +39,19 @@ interface BackendRFC {
   updatedAt: string
   isAuthor: boolean
   alternatives: BackendAlternative[]
-  comments: Comment[]
+  comments: Comment[],
+  isWatching?:boolean // remove "?" when backend implemented
   xml: string | null
   attachments: Attachment[]
   addition?: string | null
+}
+
+type Member = {
+    "id": number,
+    "firstname": string,
+    "lastName": string,
+    "email": string,
+    "contextAdmin":boolean
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
@@ -155,6 +165,8 @@ export default function RFCDetailPage() {
   const [rfcData, setRfcData] = useState<BackendRFC | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [okMessage, setOkMessage] = useState<string | null>(null)
   const [newCommentContent, setNewCommentContent] = useState('')
   const [mentions, setMentions] = useState<number[]>([])
   const [isPostingComment, setIsPostingComment] = useState(false)
@@ -685,6 +697,30 @@ export default function RFCDetailPage() {
 
   const removeConsItem = (index: number) => {
     setAlternativeForm(prev => ({ ...prev, cons: prev.cons.filter((_, i) => i !== index) }))
+  }
+
+  const handleSubscribe = async () => {
+      try{
+          const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/subscribe`, {
+              method:"POST",
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+          })
+          if(res.ok) {
+              setRfcData((prev: BackendRFC | null): BackendRFC => ({...prev!, isWatching: true}))
+              setErrorMessage(null)
+              setOkMessage("You have successfully subscribed to " + rfcData?.title)
+          }
+          else {
+              const data : {message:string} = await res.json()
+              setOkMessage(null)
+              setOkMessage(data.message)
+          }
+      }
+      catch(e){
+          console.log(e)
+      }
   }
 
   const handlePostComment = async (content: string, mentions:number[], parentId: number | null = null) => {
@@ -1219,6 +1255,7 @@ export default function RFCDetailPage() {
           <p className="text-gray-700 whitespace-pre-line">
             {isExpanded ? alt.fullText : alt.description}
           </p>
+
 
           {/* {isExpanded && alt.attachments && alt.attachments.length > 0 && (
             <div className="mt-4">
@@ -1776,11 +1813,22 @@ export default function RFCDetailPage() {
 
   return (
     <div className="min-h-screen bg-white p-8">
+      <ErrorBanner text={errorMessage}/>
+      <OkBanner text={okMessage}/>
       {/* Header */}
       <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">{rfcData.title}</h1>
       <p className="text-lg text-center text-gray-500 mb-8">
-        RFC #{rfcData.id} | Author: {rfcData.authorName} | Status: {rfcData.status.replace(/_/g, ' ')}
+        RFC #{rfcData.id} | Author: {rfcData.authorName} | Status: {rfcData.status.replace(/_/g, ' ')} {rfcData.isWatching? "| 👁️ Watched" : "| "}
+          {!rfcData.isWatching && (
+              <button
+                  onClick={handleSubscribe}
+                  className=" justify-center px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold"
+              >
+                  Subscribe
+              </button>
+          )}
       </p>
+
 
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-8">

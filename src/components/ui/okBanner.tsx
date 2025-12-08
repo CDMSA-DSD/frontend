@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Banner({text}:{text:string}): React.JSX.Element{
+export default function Banner({text}:{text:string | null}): React.JSX.Element{
     return (
         <>
             {text && (
