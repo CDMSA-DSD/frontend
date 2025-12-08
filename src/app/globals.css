@@ -26,18 +26,22 @@ body {
 }
 
 @layer components {
-    .p-autocomplete-token {
-        @apply pr-3 rounded-full;
-    }
+  .p-autocomplete-token {
+    @apply pr-3 rounded-full;
+  }
 
-    .p-autocomplete-token-icon {
-        @apply text-[#5E50A4] ml-1 text-sm cursor-pointer;
-    }
+  .p-autocomplete-token-icon {
+    @apply text-[#5E50A4] ml-1 text-sm cursor-pointer;
+  }
 
-    .p-autocomplete-token-icon:hover {
-        @apply text-[#3e2d78];
-    }
-}
+  .p-autocomplete-token-icon:hover {
+    @apply text-[#3e2d78];
+  }
+
+  .mxgraph svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
 
 @layer components {
     .mentions--singleLine .mentions__control {
@@ -89,4 +93,6 @@ body {
         justify-content: start;
         gap: 10px;
     }
+}
+
 }
