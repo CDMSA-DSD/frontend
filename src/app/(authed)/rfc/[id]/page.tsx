@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
-
 import {Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
 import DiagramViewer from '@/src/components/ui/diagramViewer'
@@ -45,6 +44,14 @@ interface BackendRFC {
   xml: string | null
   attachments: Attachment[]
   addition?: string | null
+}
+
+type Member = {
+    "id": number,
+    "firstname": string,
+    "lastName": string,
+    "email": string,
+    "contextAdmin":boolean
 }
 
 type TabType = 'presentation' | 'alternatives' | 'discussion'
