@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function okBanner({text}:{text:string}): React.JSX.Element{
+export default function okBanner({text}:{text:string | null}): React.JSX.Element{
     return (
         <>
             {text && (
