@@ -460,7 +460,7 @@ export default function Home(): React.JSX.Element {
                             >
                                 Login
                             </button>
-                            <a className="items-center justify-center p-4 flex mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors" href="https://login.microsoftonline.com/b85ca6c8-b1c2-499e-8ae1-76598936d3ec/oauth2/v2.0/authorize?client_id=3a95e7be-4755-451a-b253-b7bc24004214&response_type=code&redirect_uri=http://localhost:3000/auth/microsoft&response_mode=query&scope=openid%20profile%20email%20https%3A%2F%2Fgraph.microsoft.com%2Fuser.read">
+                            <a className="items-center justify-center p-4 flex mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors" href="https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=3a95e7be-4755-451a-b253-b7bc24004214&response_type=code&redirect_uri=http://localhost:3000/auth/microsoft&response_mode=query&scope=openid%20profile%20email%20https%3A%2F%2Fgraph.microsoft.com%2Fuser.read">
                                     <img className="mr-4" src="https://learn.microsoft.com/en-us/entra/identity-platform/media/howto-add-branding-in-apps/ms-symbollockup_mssymbol_19.svg"/>
                                     <p className="">Login with Microsoft Account</p>
                             </a>
