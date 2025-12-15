@@ -42,7 +42,7 @@ export default function UsersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetcher(`${BACKEND_URL}/users`)
+        const res = await fetcher(`${BACKEND_URL}/users?page=0&size=100`)
 
         if (!res.ok) {
           const text = await res.text()

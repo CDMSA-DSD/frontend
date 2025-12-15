@@ -43,7 +43,7 @@ export default function Contexts(): React.JSX.Element {
 
     const getOrgEmails = async (orgId: number): Promise<void> => {
         const res = await fetcher(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/users`
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/users?page=0&size=100`
         )
 
         const data = await res.json()
@@ -74,7 +74,7 @@ export default function Contexts(): React.JSX.Element {
 
     const getExistingContexts = async () => {
         try {
-            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts");
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts?page=0&size=100");
             if (res.ok) setContextList(JSON.parse(await res.text()));
             else throw new Error("Could not find context");
         } catch (err) {
@@ -138,10 +138,7 @@ export default function Contexts(): React.JSX.Element {
     }
 
 
-    const addContextMember = async (
-        contextId: number,
-        email: string
-    ) => {
+    const addContextMember = async (contextId: number, email: string) => {
         try {
             const res = await fetcher(
                 `${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts/${contextId}/members`,
@@ -150,26 +147,26 @@ export default function Contexts(): React.JSX.Element {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email }),
                 }
-            )
+            );
 
             if (!res.ok) {
-                const data = await res.json()
-                setError(data.message)
-                return
+                const data = await res.json();
+                setError(data.message);
+                return;
             }
 
-            setOk(`Member ${email} added.`)
-            setSelectedEmailByContext((prev) => ({
-                ...prev,
-                [contextId]: "",
-            }))
+            setOk(`Member ${email} added.`);
 
-            await getContextMembers(contextId)
+            setEmails((prevEmails) => [...prevEmails, email]);
+            setFilteredEmails((prevFilteredEmails) => [...prevFilteredEmails, email]);
+
+            await getContextMembers(contextId);
         } catch (err) {
-            console.error(err)
-            setError("Failed to add member")
+            console.error(err);
+            setError("Failed to add member");
         }
-    }
+    };
+
 
     const removeContextMember = async (
         contextId: number,
@@ -335,7 +332,19 @@ export default function Contexts(): React.JSX.Element {
   divide-[#E6E1F3]
   overflow-hidden
 ">
-                                    <div className="grid grid-cols-[1fr_160px_80px] bg-gray-50 px-4 py-3 text-sm font-medium text-gray-600">
+                                    <div className="
+  grid
+  grid-cols-[1fr_1fr_0.75fr_0fr]
+  items-center
+  px-4
+  py-4
+  gap-4
+  text-sm
+  font-medium
+  text-gray-600
+  bg-gray-50
+">
+                                        <span>Name</span>
                                         <span>Email</span>
                                         <span>Role</span>
                                         <span></span>
@@ -349,10 +358,20 @@ export default function Contexts(): React.JSX.Element {
                                         members.map((member) => (
                                             <div
                                                 key={member.userId}
-                                                className="grid grid-cols-[1fr_135px_120px] items-center px-4 py-4"
+                                                className="grid grid-cols-[1fr_1fr_auto_auto] items-center px-4 py-4 gap-4"
+
                                             >
 
-                                                <span>{member.email}</span>
+                                                <div className="font-medium text-gray-900">
+                                                    {member.firstname || member.lastname
+                                                        ? `${member.firstname ?? ""} ${member.lastname ?? ""}`.trim()
+                                                        : "—"}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {member.email}
+                                                </div>
+
+
 
                                                 {/* ROLE SELECT */}
                                                 <select
