@@ -13,7 +13,7 @@ export default function MicrosoftAuth(): React.JSX.Element {
         // backend expects { code }
         const payload = {code};
 
-        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/login", {
+        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/oauth2/microsoft", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(payload),
