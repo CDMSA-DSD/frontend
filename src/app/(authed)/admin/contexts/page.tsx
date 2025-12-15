@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
+import { ChevronDown, X } from "lucide-react"
 import ErrorBanner from "@/components/ui/errorBanner"
 import fetcher from "@/src/lib/fetcher"
-import { Input } from "@/src/components/ui/input";
+import { AutoComplete, AutoCompleteCompleteEvent } from "primereact/autocomplete";
 
 export default function Contexts(): React.JSX.Element {
     type ContextType = {
@@ -37,6 +38,39 @@ export default function Contexts(): React.JSX.Element {
     const [error, setError] = useState<string>("")
     const [ok, setOk] = useState<string>("")
 
+    const [emails, setEmails] = useState<string[]>([])
+    const [filteredEmails, setFilteredEmails] = useState<string[]>([])
+
+    const getOrgEmails = async (orgId: number): Promise<void> => {
+        const res = await fetcher(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/users`
+        )
+
+        const data = await res.json()
+
+        const orgEmails =
+            data._embedded?.users?.map((u: { email: string }) => u.email) || []
+
+        setEmails(orgEmails)
+        setFilteredEmails(orgEmails)
+    }
+
+
+    const search = (event: AutoCompleteCompleteEvent) => {
+        let _filteredEmails: string[]
+
+        if (!event.query.trim().length) {
+            _filteredEmails = [...emails]
+        } else {
+            _filteredEmails = emails.filter((email) =>
+                email.toLowerCase().startsWith(event.query.toLowerCase())
+            )
+        }
+
+        setFilteredEmails(_filteredEmails)
+    }
+
+
 
     const getExistingContexts = async () => {
         try {
@@ -49,8 +83,10 @@ export default function Contexts(): React.JSX.Element {
     };
 
     useEffect(() => {
-        getExistingContexts();
-    }, []);
+        getExistingContexts()
+        getOrgEmails(0)
+    }, [])
+
 
 
     const getContextMembers = async (contextId: number) => {
@@ -154,12 +190,12 @@ export default function Contexts(): React.JSX.Element {
             {/* HEADER */}
             <div className="flex items-center justify-between mb-10">
                 <h1 className="text-4xl font-bold text-gray-900">
-                    Manage contexts
+                    Manage contexts here
                 </h1>
 
                 <button
                     onClick={() => setShowNewContextModal(true)}
-                    className="h-14 rounded-full bg-[#f2f2f2] px-8 text-sm font-medium shadow-sm hover:bg-[#e5e5e5] transition"
+                    className=" h-14 rounded-full bg-[#5E50A4]  px-8  text-sm  font-medium  text-white  shadow-sm  hover:bg-violet-700  transition"
                 >
                     Create context
                 </button>
@@ -173,7 +209,7 @@ export default function Contexts(): React.JSX.Element {
                     return (
                         <details
                             key={context.id}
-                            className="rounded-3xl border bg-white shadow-sm"
+                            className="rounded-3xl border border-[#E6E1F3] bg-white shadow-sm"
                             onToggle={(e) => {
                                 if ((e.target as HTMLDetailsElement).open) {
                                     getContextMembers(context.id)
@@ -182,25 +218,56 @@ export default function Contexts(): React.JSX.Element {
                         >
                             {/* HEADER */}
                             <summary className="flex cursor-pointer items-center justify-between px-6 py-5 list-none">
-                                <div>
-                                    <h2 className="text-lg font-semibold text-gray-900">
-                                        {context.name}
-                                    </h2>
-                                    {context.type && (
-                                        <p className="text-sm text-gray-500">{context.type}</p>
+                                <div className="flex flex-col gap-1">
+                                    {/* Nombre + Type */}
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-lg font-semibold text-gray-900">
+                                            {context.name}
+                                        </h2>
+
+                                        {context.type && (
+                                            <span
+                                                className="
+          text-xs
+          px-2
+          py-1
+          rounded-full
+          bg-[#F2EFFA]
+          text-[#5E50A4]
+          font-medium
+        "
+                                            >
+                                                {context.type}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Descripción */}
+                                    {context.description && (
+                                        <p className="text-sm text-gray-500 max-w-2xl">
+                                            {context.description}
+                                        </p>
                                     )}
                                 </div>
 
-                                <span className="text-xl text-gray-400 transition-transform group-open:rotate-180">
-                                    ˅
-                                </span>
+
+                                <ChevronDown
+                                    className="
+    h-5 w-5
+    text-gray-400
+    transition-transform
+    group-open:rotate-180
+  "
+                                />
+
                             </summary>
 
                             {/* BODY */}
-                            <div className="border-t px-6 py-6">
+                            <div className="border-t border-[#E6E1F3] px-6 py-6">
+
                                 {/* ADD MEMBER */}
                                 <form
-                                    className="mb-6 flex items-center gap-4"
+                                    className="mb-6 flex items-center gap-4 w-full"
                                     onSubmit={(e) => {
                                         e.preventDefault()
                                         const email = selectedEmailByContext[context.id]
@@ -208,28 +275,66 @@ export default function Contexts(): React.JSX.Element {
                                         addContextMember(context.id, email)
                                     }}
                                 >
-                                    <Input
-                                        placeholder="Insert user email"
-                                        className="h-14 rounded-full bg-[#f2f2f2]"
+                                    <AutoComplete
                                         value={selectedEmailByContext[context.id] || ""}
+                                        suggestions={filteredEmails}
+                                        completeMethod={search}
                                         onChange={(e) =>
                                             setSelectedEmailByContext((prev) => ({
                                                 ...prev,
-                                                [context.id]: e.target.value,
+                                                [context.id]: e.value,
                                             }))
                                         }
+                                        className="flex-1"
+                                        inputClassName="
+  w-full
+  h-12
+  rounded-full
+  bg-[#f2f2f2]
+  px-6
+  text-sm
+  outline-none
+  focus:outline-none
+  focus:ring-2
+  focus:ring-[#C7BDF0]
+  focus:border-[#C7BDF0]
+"
+
+                                        panelClassName="
+  mt-2
+  rounded-2xl
+  bg-white
+  shadow-lg
+  border
+  border-[#E6E1F3]
+  p-2
+"
+                                        itemTemplate={(email: string) => (
+                                            <div className="px-3 py-1 text-sm hover:bg-gray-100 rounded-lg">
+                                                {email}
+                                            </div>
+                                        )}
+
+                                        placeholder="Insert user email"
                                     />
 
                                     <button
                                         type="submit"
-                                        className="h-14 rounded-full bg-violet-600 px-6 text-sm font-medium text-white hover:bg-violet-700 transition"
+                                        className="whitespace-nowrap h-12 rounded-full bg-violet-600 px-6 text-sm font-medium text-white hover:bg-violet-700 transition"
                                     >
                                         Add user
                                     </button>
                                 </form>
 
                                 {/* MEMBERS TABLE */}
-                                <div className="rounded-2xl border overflow-hidden">
+                                <div className="
+  rounded-2xl
+  border
+  border-[#E6E1F3]
+  divide-y
+  divide-[#E6E1F3]
+  overflow-hidden
+">
                                     <div className="grid grid-cols-[1fr_160px_80px] bg-gray-50 px-4 py-3 text-sm font-medium text-gray-600">
                                         <span>Email</span>
                                         <span>Role</span>
@@ -244,44 +349,52 @@ export default function Contexts(): React.JSX.Element {
                                         members.map((member) => (
                                             <div
                                                 key={member.userId}
-                                                className="grid grid-cols-[1fr_160px_80px] items-center border-t px-4 py-4"
+                                                className="grid grid-cols-[1fr_135px_120px] items-center px-4 py-4"
                                             >
+
                                                 <span>{member.email}</span>
 
-                                                <span className="text-sm">
-                                                    {member.contextAdmin ? "Context admin" : "Member"}
-                                                </span>
-
-                                                <div className="flex justify-end gap-2">
-                                                    {member.contextAdmin ? (
-                                                        <button
-                                                            onClick={() =>
-                                                                removeContextAdmin(context.id, member.userId)
-                                                            }
-                                                            className="text-xs text-gray-500 hover:underline"
-                                                        >
-                                                            Demote
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                addContextAdmin(context.id, member.userId)
-                                                            }
-                                                            className="text-xs text-violet-600 hover:underline"
-                                                        >
-                                                            Promote
-                                                        </button>
-                                                    )}
-
-                                                    <button
-                                                        onClick={() =>
-                                                            removeContextMember(context.id, member.userId)
+                                                {/* ROLE SELECT */}
+                                                <select
+                                                    value={member.contextAdmin ? "admin" : "member"}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value
+                                                        if (value === "admin") {
+                                                            addContextAdmin(context.id, member.userId)
+                                                        } else {
+                                                            removeContextAdmin(context.id, member.userId)
                                                         }
-                                                        className="text-xs text-red-600 hover:underline"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </div>
+                                                    }}
+                                                    className="
+    h-9
+    rounded-full
+    bg-[#F2EFFA]
+    px-3
+    text-sm
+    text-gray-700
+    outline-none
+    focus:ring-2
+    focus:ring-[#C7BDF0]
+  "
+                                                >
+                                                    <option value="member">Member</option>
+                                                    <option value="admin">Context admin</option>
+                                                </select>
+
+                                                {/* REMOVE ICON */}
+                                                <button
+                                                    onClick={() => removeContextMember(context.id, member.userId)}
+                                                    className="
+    ml-20
+    text-gray-400
+    hover:text-red-500
+    transition
+  "
+                                                    aria-label="Remove user"
+                                                >
+                                                    <X size={18} />
+                                                </button>
+
                                             </div>
                                         ))
                                     )}
@@ -376,7 +489,8 @@ export default function Contexts(): React.JSX.Element {
                                 onChange={(e) =>
                                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                                 }
-                                className="w-full rounded-[10px] border px-4 py-4"
+                                className="w-full rounded-[10px] border border-[#E6E1F3]
+ px-4 py-4"
                             />
                         </div>
 
@@ -388,7 +502,8 @@ export default function Contexts(): React.JSX.Element {
                                 onChange={(e) =>
                                     setFormData((prev) => ({ ...prev, type: e.target.value }))
                                 }
-                                className="w-full rounded-[10px] border px-4 py-4"
+                                className="w-full rounded-[10px] border border-[#E6E1F3]
+ px-4 py-4"
                             />
                         </div>
                         <div>
@@ -403,14 +518,16 @@ export default function Contexts(): React.JSX.Element {
                                         description: e.target.value,
                                     }))
                                 }
-                                className="w-full rounded-[10px] border px-4 py-4 min-h-[120px]"
+                                className="w-full rounded-[10px] border border-[#E6E1F3]
+ px-4 py-4 min-h-[120px]"
                             />
                         </div>
                         <div className="mt-4 flex justify-end gap-3">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-4 h-[40px] rounded-[20px] border text-[#5E50A4]"
+                                className="px-4 h-[40px] rounded-[20px] border border-[#E6E1F3]
+ text-[#5E50A4]"
                             >
                                 Cancel
                             </button>
