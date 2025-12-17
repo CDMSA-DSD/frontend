@@ -11,7 +11,7 @@ export default function MicrosoftAuth(): React.JSX.Element {
     const token: string | null = useSearchParams().get('state');
 
     async function handleCode(): Promise<void> {
-        // backend expects { code }
+        // backend expects { code, token }
         const payload = {code, token};
 
         const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/oauth2/microsoft", {
