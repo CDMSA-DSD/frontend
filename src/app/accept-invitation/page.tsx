@@ -4,6 +4,7 @@ import Background from "../../components/background"
 import React, { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"
+import MicrosoftOAuth from "@/components/ui/MicrosoftOAuth";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080"
@@ -94,7 +95,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
           // ignore JSON parse errors
         }
 
-        setErrorMessage(backendMessage)
+        setErrorMessage(backendMessage);
         return
       }
 
@@ -234,6 +235,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
         >
           {submitting ? "Registering..." : "Register"}
         </button>
+        <MicrosoftOAuth inviteToken={token}/>
       </form>
     </>
   )
