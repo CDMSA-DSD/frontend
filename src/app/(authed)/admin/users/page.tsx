@@ -10,6 +10,8 @@ type OrgUser = {
   id: number
   email: string
   role: string
+  firstname: string
+  lastName: string
   status: string
   joinedAt?: string
 }
@@ -68,6 +70,8 @@ export default function UsersPage() {
             id: u.id,
             email: u.email,
             role: u.jobTitle || backendRole || "Member",
+            firstname: u.firstname,
+            lastName: u.lastName,
             status: u.status ?? "ACTIVE",
             joinedAt: u.joinedAt,
           }

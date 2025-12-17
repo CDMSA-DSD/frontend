@@ -25,6 +25,7 @@ export interface Comment {
     content: string
     authorId: number
     author: string
+    authorName: string
     createdAt: string
     updatedAt: string | null
     replies: Comment[]
