@@ -9,6 +9,7 @@ export interface Page<T> {
 export interface RfcResponse {
   id: number;
   title: string;
+  status: 'CLOSED_DECIDED' | 'CLOSED_NON_DECIDED' | 'UNDER_REVIEW';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -16,6 +17,7 @@ export interface RfcResponse {
 export interface AdrResponse {
   id: number;
   title: string;
+  status: 'APPROVED' | 'DRAFT';
   createdAt?: string;
   updatedAt?: string;
 }
