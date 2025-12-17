@@ -8,10 +8,11 @@ export default function MicrosoftAuth(): React.JSX.Element {
 
 
     const code: string | null = useSearchParams().get('code');
+    const token: string | null = useSearchParams().get('state');
 
     async function handleCode(): Promise<void> {
         // backend expects { code }
-        const payload = {code};
+        const payload = {code, token};
 
         const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/oauth2/microsoft", {
             method: "POST",
@@ -45,12 +46,14 @@ export default function MicrosoftAuth(): React.JSX.Element {
         if (code) {
             handleCode();
         }
-    }, [code]);
+    }, [code, token]);
 
     return (
-        <div style={{padding: '20px', fontFamily: 'Arial, sans-serif'}}>
+        <div style={{padding: '20px', fontFamily: 'Arial'}}>
             <h1>Code :</h1>
-            <p>{code ? code : 'Aucun code trouvé dans l\'URL.'}</p>
+            <p>{code ? code : 'No code.'}</p>
+            <h1>Token :</h1>
+            <p>{token ? token : 'No token invitation.'}</p>
         </div>
     );
 }
