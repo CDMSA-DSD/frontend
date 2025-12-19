@@ -4,6 +4,7 @@ import Background from "../components/background"
 import React, {FormEvent, useState} from "react";
 import {useRouter} from "next/navigation";
 import MicrosoftOAuth from "@/components/ui/MicrosoftOAuth";
+import {setLoginSession} from "@/lib/utils";
 
 export default function Home(): React.JSX.Element {
     const [showNewOrganizationModal, setShowNewOrganizationModal] = useState(false);
@@ -390,19 +391,8 @@ export default function Home(): React.JSX.Element {
                     throw new Error(text || "Server error");
                 }
 
-                const data = await res.json();
-
                 // Persist auth info (token + user + roles) for other parts of the app
-                try {
-                    localStorage.setItem("auth", JSON.stringify({
-                        token: data.token,
-                        user: data.user,
-                        isAdmin: data.isAdmin,
-                        contextIsAdmin: data.contextIsAdmin ?? [],
-                    }));
-                } catch (e) {
-                    console.warn("Could not persist auth to localStorage", e);
-                }
+                setLoginSession(await res.json());
 
                 router.push("/dashboard");
             } catch (err) {
