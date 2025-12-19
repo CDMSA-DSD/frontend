@@ -3,6 +3,7 @@
 import {useSearchParams} from "next/navigation";
 import {router} from "next/client";
 import {useEffect} from "react";
+import {setLoginSession} from "@/lib/utils";
 
 export default function MicrosoftAuth(): React.JSX.Element {
 
@@ -22,23 +23,11 @@ export default function MicrosoftAuth(): React.JSX.Element {
 
         if (!res.ok) {
             const text = await res.text().catch(() => "");
-            throw new Error(text || "Server error");
+            await router.push("/?error=" + text);
         }
-
-        const data = await res.json();
 
         // Persist auth info (token + user + roles) for other parts of the app
-        try {
-            localStorage.setItem("auth", JSON.stringify({
-                token: data.token,
-                user: data.user,
-                isAdmin: data.isAdmin,
-                contextIsAdmin: data.contextIsAdmin ?? [],
-            }));
-        } catch (e) {
-            console.warn("Could not persist auth to localStorage", e);
-        }
-
+        setLoginSession(await res.json());
         await router.push("/dashboard");
     }
 
