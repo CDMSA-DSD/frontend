@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import type { AdrResponse, RfcResponse } from "@/lib/types";
 import { authFetch } from "@/lib/fetcher";
+import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget";
 
 function formatRelative(iso?: string) {
   if (!iso) return "";
@@ -672,6 +673,9 @@ export default function DashboardPage() {
           </Card>
         )}
       </section>
+
+      {/* Floating Chatbot widget */}
+      <ChatbotWidget />
     </main>
   );
 }
