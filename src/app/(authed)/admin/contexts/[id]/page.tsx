@@ -40,7 +40,7 @@ export default function GetContextById(): React.JSX.Element {
      * @brief Get all emails from the organization of the current [id] context in order to suggest them when adding a new context member
      */
     const getOrgEmails = async (orgId : number): Promise<void> => {
-        const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users");
+        const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users?page=0&size=100");
 
         const data = await res.json();
         const orgEmails = data._embedded?.users?.map((user: { email: string }) => user.email) || [];

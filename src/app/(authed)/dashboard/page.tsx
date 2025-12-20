@@ -141,7 +141,7 @@ export default function DashboardPage() {
     (async () => {
       try {
         const res = await authFetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/users`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/users?page=0&size=100`,
         );
         if (!res.ok) {
           console.error("Failed to load users:", res.status);
