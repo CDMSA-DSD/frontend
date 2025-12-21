@@ -1,11 +1,12 @@
 "use client"
 
-import {useSearchParams} from "next/navigation";
-import {router} from "next/client";
+import {useRouter, useSearchParams} from "next/navigation";
 import {useEffect} from "react";
 import {setLoginSession} from "@/lib/utils";
+import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export default function MicrosoftAuth(): React.JSX.Element {
+    const router : AppRouterInstance = useRouter();
 
 
     const code: string | null = useSearchParams().get('code');
@@ -38,11 +39,6 @@ export default function MicrosoftAuth(): React.JSX.Element {
     }, [code, token]);
 
     return (
-        <div style={{padding: '20px', fontFamily: 'Arial'}}>
-            <h1>Code :</h1>
-            <p>{code ? code : 'No code.'}</p>
-            <h1>Token :</h1>
-            <p>{token ? token : 'No token invitation.'}</p>
-        </div>
+        <div></div>
     );
 }
