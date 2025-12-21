@@ -4,6 +4,8 @@ export type UsersListUser = {
   id: number
   email: string
   role: string
+  firstname: string
+  lastName: string
   joinedOn?: string
   joinedAt?: string
 }
@@ -44,17 +46,17 @@ export function UsersList({ users, onDeleteUser }: UsersListProps) {
         className="
           mb-4
           grid 
-          grid-cols-[1fr_auto_auto_auto]
+          grid-cols-[1fr_1fr_1fr_1fr_auto]
           gap-4
           border-b
           border-[#e5e5e5] 
           pb-4
         "
       >
+         <div className="text-base font-medium"> Name</div>
         <div className="text-base font-medium">Email</div>
         <div className="w-32 text-base font-medium">Role</div>
-        <div className="w-32 text-base font-medium">
-          Joined On
+        <div className="w-32 text-base font-medium">Joined On
         </div>
         <div className="w-8" />
       </div>
@@ -70,6 +72,8 @@ export function UsersList({ users, onDeleteUser }: UsersListProps) {
               key={user.id}
               email={user.email}
               role={user.role}
+              firstname={user.firstname}
+              lastName={user.lastName}
               joinedOn={formatJoined(user)}
               onDelete={onDeleteUser ? () => onDeleteUser(user.id) : undefined}
             />

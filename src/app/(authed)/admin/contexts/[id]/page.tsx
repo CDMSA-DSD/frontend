@@ -34,13 +34,13 @@ export default function GetContextById(): React.JSX.Element {
     const { id } = useParams();
     const router = useRouter();
     const [context, setContext] = useState<Context>()
-    const [members, setMembers] = useState<Member[]>()
+    const [members, setMembers] = useState<Member[]>([])
 
     /**
      * @brief Get all emails from the organization of the current [id] context in order to suggest them when adding a new context member
      */
     const getOrgEmails = async (orgId : number): Promise<void> => {
-        const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users");
+        const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users?page=0&size=100");
 
         const data = await res.json();
         const orgEmails = data._embedded?.users?.map((user: { email: string }) => user.email) || [];
@@ -195,117 +195,100 @@ export default function GetContextById(): React.JSX.Element {
     }, []);
 
 
-    // Terrible code
-    return (
-        <div className="flex flex-col mt-5 h-screen max-w-2xl mx-auto ml-auto mr-auto text-black">
-            <ErrorBanner text={error}/>
-            <OkBanner text={ok}/>
-            <h1 className="text-4xl text-[#5E50A4]">{context?.name}</h1>
-            <div className="flex justify-end mt-2">
-                <button
-                    onClick={deleteContextById}
-                    className="flex-none h-[56px] px-6 rounded-[24px] bg-red-600 text-white hover:bg-red-700 transition-colors"
-                >
-                    Delete Context
-                </button>
-            </div>
-            <div className="p-4">
-                <h2 className="text-1xl text-[#625B71]">Type: {context?.type}</h2>
-                <p>{context?.description}</p>
-            </div>
-            <div>
-                <h1 className="text-4xl text-[#5E50A4]">Context Admins</h1>
-                {members?.every((member) => !member.contextAdmin) && (
-                    <div className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
-                        <p>There is currently no context admin!</p>
-                    </div>
-                )}
-                {members?.map((member: Member)  : false | React.JSX.Element => (
-                    member.contextAdmin &&
-                    <div key={member.userId} className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
-                        <p> {member.email}</p>
-                        <div className="ml-auto">
-                            <button className="drop-shadow-xl lg:w-auto p-4 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
-                            onClick={() => removeContextAdmin(member.userId)}
-                            >
-                                ⬇ Revoke Context Admin ⬇
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            <div>
-                <h1 className="text-4xl text-[#5E50A4]">Context Members</h1>
-                <div className="">
-                    <form     className="mb-4 flex flex-row items-center gap-3"
-                              onSubmit={(e) => {
-                                  e.preventDefault();
-                                  setOk("");
-                                  setError("");
-                                  selectedEmails.map(email => addContextMember(email));
-                                  setSelectedEmails([]);
-                              }}
-                    >
-                        <div className="flex w-full border border-[#5E50A4] rounded-[24px] p-4">
-                            <AutoComplete
-                                multiple
-                                value={selectedEmails}
-                                suggestions={filteredEmails}
-                                completeMethod={search}
-                                onChange={(e: any) => setSelectedEmails(e.value)}
-                                panelClassName="rounded-[24px] p-4 bg-white text-black shadow-lg"
-                                style={{
+     return (
+    <div className="max-w-5xl mx-auto p-8 text-black">
+      <ErrorBanner text={error} />
+      <OkBanner text={ok} />
 
-                                }}
-                                selectedItemTemplate={(email: string) => (
-                                    <div className="flex items-center rounded-2xl bg-[#F5F0FF] border border-[#5E50A4] px-3 py-1 mr-2">
-                                        <span className="text-sm text-[#1D1B20]">{email}</span>
-
-                                        <button
-                                            type="button"
-                                            className="ml-2 flex items-center justify-center w-5 h-5 rounded-full hover:bg-[#E0D4FF] transition-colors"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedEmails((prev) => prev.filter((v) => v !== email));
-                                            }}
-                                        >
-                                            <i className="pi pi-times text-xs text-[#5E50A4]" />
-                                        </button>
-                                    </div>
-                                )}
-
-                            />
-                        </div>
-                        <button className="flex-none h-[56px] px-6 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors">
-                            Add Member(s)
-                        </button>
-                    </form>
-                </div>
-                {members?.every((member) => member.contextAdmin) && (
-                    <div className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
-                        <p>There are currently no regular members!</p>
-                    </div>
-                )}
-                {members?.map((member: Member)  : false | React.JSX.Element => (
-                    !member.contextAdmin &&
-                    <div key={member.userId} className="flex flex-row items-center p-4 mb-4 border border-[#5E50A4] rounded-[24px]">
-                        <p> {member.email}</p>
-                        <div className="ml-auto">
-                            <button className="drop-shadow-xl lg:w-auto p-4 mr-3 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
-                                    onClick={() => addContextAdmin(member.userId)}
-                            >
-                                ⬆ Set Context Admin ⬆
-                            </button>
-                            <button className="drop-shadow-xl lg:w-auto p-4 rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
-                            onClick={() => removeContextMember(member.userId)}
-                            >
-                                Remove from context
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
+      {/* HEADER */}
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-4xl font-bold text-[#5E50A4]">
+            {context?.name}
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {context?.type} · {context?.description}
+          </p>
         </div>
-    )
+
+        <button
+          onClick={deleteContextById}
+          className="h-[40px] px-4 rounded-[20px] border border-red-500 text-red-600 hover:bg-red-50"
+        >
+          Delete
+        </button>
+      </div>
+
+      {/* ADD MEMBERS */}
+      <div className="bg-white border rounded-[24px] p-4 mb-6">
+        <form
+          className="flex gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setError("");
+            setOk("");
+            selectedEmails.forEach(addContextMember);
+            setSelectedEmails([]);
+          }}
+        >
+          <AutoComplete
+            multiple
+            value={selectedEmails}
+            suggestions={filteredEmails}
+            completeMethod={search}
+            onChange={(e) => setSelectedEmails(e.value)}
+            className="w-full"
+          />
+
+          <button className="h-[48px] px-6 rounded-[24px] bg-[#5E50A4] text-white">
+            Add
+          </button>
+        </form>
+      </div>
+
+      {/* MEMBERS LIST */}
+      <div className="bg-white border rounded-[24px] divide-y">
+        {members.map((member) => (
+          <div
+            key={member.userId}
+            className="flex items-center px-6 py-4"
+          >
+            <div>
+              <p className="font-medium">{member.email}</p>
+              {member.contextAdmin && (
+                <span className="text-xs font-semibold text-[#5E50A4]">
+                  Context admin
+                </span>
+              )}
+            </div>
+
+            <div className="ml-auto flex gap-4">
+              {member.contextAdmin ? (
+                <button
+                  onClick={() => removeContextAdmin(member.userId)}
+                  className="text-sm text-gray-600 hover:underline"
+                >
+                  Demote
+                </button>
+              ) : (
+                <button
+                  onClick={() => addContextAdmin(member.userId)}
+                  className="text-sm text-[#5E50A4] hover:underline"
+                >
+                  Promote
+                </button>
+              )}
+
+              <button
+                onClick={() => removeContextMember(member.userId)}
+                className="text-sm text-red-500 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

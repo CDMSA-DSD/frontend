@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import {type ClassValue, clsx} from "clsx"
+import {twMerge} from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -37,4 +37,17 @@ export const parseDescription = (desc: string | null | undefined): { context: st
 
   // Nothing to split; treat entire description as context
   return { context: desc.trim(), problem: '' }
+}
+
+export function setLoginSession(data: { token: string; user: string; isAdmin: string; contextIsAdmin: string; }) {
+    try {
+        localStorage.setItem("auth", JSON.stringify({
+            token: data.token,
+            user: data.user,
+            isAdmin: data.isAdmin,
+            contextIsAdmin: data.contextIsAdmin ?? [],
+        }));
+    } catch (e) {
+        console.warn("Could not persist auth to localStorage", e);
+    }
 }
