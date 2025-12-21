@@ -5,6 +5,14 @@ import { useState, useEffect, useRef } from 'react'
 import { parseDescription } from '@/lib/utils'
 import Link from 'next/link'
 import fetcher from '@/src/lib/fetcher'
+import DrawIoEditorModal from '@/src/components/ui/DrawIoEditorModal'
+
+interface BackendUserRaw {
+  id: number;
+  firstname: string;
+  lastName: string;
+  email: string;
+}
 
 interface BackendRFC {
   id: number;
@@ -47,6 +55,7 @@ export default function RFCPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
   const [selectedContextIds, setSelectedContextIds] = useState<number[]>([]);
   const [isLoadingReviewerData, setIsLoadingReviewerData] = useState(false);
+  const [isDrawIoEditorOpen, setIsDrawIoEditorOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -98,11 +107,14 @@ export default function RFCPage() {
       const usersRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`);
       if (usersRes.ok) {
         const usersData = await usersRes.json();
-        const users = usersData._embedded?.users || [];
-        setAvailableUsers(users.map((u: any) => ({
+
+        // Specifichiamo che users è un array di BackendUserRaw
+        const users: BackendUserRaw[] = usersData._embedded?.users || [];
+
+        setAvailableUsers(users.map((u: BackendUserRaw) => ({
           id: u.id,
           firstname: u.firstname,
-          lastname: u.lastName,
+          lastname: u.lastName, // Qui facciamo la traduzione: da lastName (BE) a lastname (FE)
           email: u.email
         })));
       }
@@ -180,6 +192,7 @@ export default function RFCPage() {
     setFormData({ title: '', context: '', problemStatement: '' });
     setSelectedUserIds([]);
     setSelectedContextIds([]);
+    setDiagramXml('');
   };
 
   useEffect(() => {
@@ -389,17 +402,59 @@ export default function RFCPage() {
                 )}
               </div>
 
+              {/* Diagram section */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Diagram XML (optional)
+                  Architecture Diagram (optional)
                 </label>
-                <textarea
-                  value={diagramXml}
-                  onChange={(e) => setDiagramXml(e.target.value)}
-                  rows={6}
-                  className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono
-               focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  placeholder="Paste draw.io XML if you already have it..."
+
+                <div className="flex flex-col items-start gap-3 p-4 bg-violet-50/50 border border-violet-100 rounded-xl">
+                  {diagramXml ? (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2 text-green-700 font-medium">
+                          <div className="w-2 h-2 bg-green-500 rounded-full" />
+                          Diagram added successfully
+                        </div>
+                        <div className="flex gap-4">
+                          <button
+                              type="button"
+                              onClick={() => setIsDrawIoEditorOpen(true)}
+                              className="text-violet-700 text-sm font-bold hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                              type="button"
+                              onClick={() => setDiagramXml('')}
+                              className="text-red-600 text-sm font-bold hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                  ) : (
+                      <div className="flex flex-col gap-2">
+                        <p className="text-xs text-gray-500 italic">
+                          No diagram added. Designing one helps reviewers understand the architecture.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setIsDrawIoEditorOpen(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all text-sm font-semibold shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Design Architecture Diagram
+                        </button>
+                      </div>
+                  )}
+                </div>
+
+                <DrawIoEditorModal
+                    isOpen={isDrawIoEditorOpen}
+                    initialXml={diagramXml}
+                    onSave={(xml) => setDiagramXml(xml)}
+                    onClose={() => setIsDrawIoEditorOpen(false)}
+                    title="Create RFC Architecture"
                 />
               </div>
 
