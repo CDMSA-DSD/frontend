@@ -3,13 +3,16 @@ import { X } from "lucide-react"
 export type UserRowProps = {
   email: string
   role: string
+  firstname: string
+  lastName: string
   joinedOn?: string
   onDelete?: () => void
 }
 
-export function UserRow({ email, role, joinedOn, onDelete }: UserRowProps) {
+export function UserRow({ email, role, firstname, lastName, joinedOn, onDelete }: UserRowProps) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 rounded-full bg-muted/40 px-6 py-3">
+    <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] items-center gap-4 rounded-full bg-muted/40 px-6 py-3">
+      <div className="text-sm">{firstname}{" "}{lastName}</div>
       <div className="text-sm">{email}</div>
       <div className="w-32 text-sm">{role}</div>
       <div className="w-32 text-sm">

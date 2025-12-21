@@ -10,6 +10,8 @@ type OrgUser = {
   id: number
   email: string
   role: string
+  firstname: string
+  lastName: string
   status: string
   joinedAt?: string
 }
@@ -42,7 +44,7 @@ export default function UsersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetcher(`${BACKEND_URL}/users`)
+        const res = await fetcher(`${BACKEND_URL}/users?page=0&size=100`)
 
         if (!res.ok) {
           const text = await res.text()
@@ -68,6 +70,8 @@ export default function UsersPage() {
             id: u.id,
             email: u.email,
             role: u.jobTitle || backendRole || "Member",
+            firstname: u.firstname,
+            lastName: u.lastName,
             status: u.status ?? "ACTIVE",
             joinedAt: u.joinedAt,
           }

@@ -1,10 +1,10 @@
 "use client"
 
-import React, {useEffect, useState} from "react";
-import Background from "@/components/background"
-import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import { ChevronDown, X } from "lucide-react"
 import ErrorBanner from "@/components/ui/errorBanner"
 import fetcher from "@/src/lib/fetcher"
+import { AutoComplete, AutoCompleteCompleteEvent } from "primereact/autocomplete";
 
 export default function Contexts(): React.JSX.Element {
     type ContextType = {
@@ -15,12 +15,66 @@ export default function Contexts(): React.JSX.Element {
         "description": string
     }
 
+    type Member = {
+        userId: number
+        firstname: string
+        lastname: string
+        email: string
+        contextAdmin: boolean
+    }
+
+
     const [showNewContextModal, setShowNewContextModal] = useState(false);
     const [contextList, setContextList] = useState<ContextType[] | null>(null);
 
+    const [membersByContext, setMembersByContext] = useState<
+        Record<number, Member[]>
+    >({})
+
+    const [selectedEmailByContext, setSelectedEmailByContext] = useState<
+        Record<number, string>
+    >({})
+
+    const [error, setError] = useState<string>("")
+    const [ok, setOk] = useState<string>("")
+
+    const [emails, setEmails] = useState<string[]>([])
+    const [filteredEmails, setFilteredEmails] = useState<string[]>([])
+
+    const getOrgEmails = async (orgId: number): Promise<void> => {
+        const res = await fetcher(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/users?page=0&size=100`
+        )
+
+        const data = await res.json()
+
+        const orgEmails =
+            data._embedded?.users?.map((u: { email: string }) => u.email) || []
+
+        setEmails(orgEmails)
+        setFilteredEmails(orgEmails)
+    }
+
+
+    const search = (event: AutoCompleteCompleteEvent) => {
+        let _filteredEmails: string[]
+
+        if (!event.query.trim().length) {
+            _filteredEmails = [...emails]
+        } else {
+            _filteredEmails = emails.filter((email) =>
+                email.toLowerCase().startsWith(event.query.toLowerCase())
+            )
+        }
+
+        setFilteredEmails(_filteredEmails)
+    }
+
+
+
     const getExistingContexts = async () => {
         try {
-            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts");
+            const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts?page=0&size=100");
             if (res.ok) setContextList(JSON.parse(await res.text()));
             else throw new Error("Could not find context");
         } catch (err) {
@@ -29,41 +83,362 @@ export default function Contexts(): React.JSX.Element {
     };
 
     useEffect(() => {
-        getExistingContexts();
-    }, []);
+        getExistingContexts()
+        getOrgEmails(0)
+    }, [])
+
+
+
+    const getContextMembers = async (contextId: number) => {
+        try {
+            const res = await fetcher(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts/${contextId}/members`
+            )
+
+            if (!res.ok) throw new Error("Could not fetch members")
+
+            const data: Member[] = await res.json()
+
+            setMembersByContext((prev) => ({
+                ...prev,
+                [contextId]: data,
+            }))
+        } catch (err) {
+            console.error(err)
+            setError("Failed to load context members")
+        }
+    }
+
+    const addContextAdmin = async (
+        contextId: number,
+        userId: number
+    ) => {
+        await fetcher(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts/${contextId}/admins`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId }),
+            }
+        )
+
+        await getContextMembers(contextId)
+    }
+
+    const removeContextAdmin = async (
+        contextId: number,
+        userId: number
+    ) => {
+        await fetcher(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts/${contextId}/admins/${userId}`,
+            { method: "DELETE" }
+        )
+
+        await getContextMembers(contextId)
+    }
+
+
+    const addContextMember = async (contextId: number, email: string) => {
+        try {
+            const res = await fetcher(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts/${contextId}/members`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email }),
+                }
+            );
+
+            if (!res.ok) {
+                const data = await res.json();
+                setError(data.message);
+                return;
+            }
+
+            setOk(`Member ${email} added.`);
+
+            setEmails((prevEmails) => [...prevEmails, email]);
+            setFilteredEmails((prevFilteredEmails) => [...prevFilteredEmails, email]);
+
+            await getContextMembers(contextId);
+        } catch (err) {
+            console.error(err);
+            setError("Failed to add member");
+        }
+    };
+
+
+    const removeContextMember = async (
+        contextId: number,
+        userId: number
+    ) => {
+        await fetcher(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/contexts/${contextId}/members/${userId}`,
+            { method: "DELETE" }
+        )
+
+        await getContextMembers(contextId)
+    }
+
+
 
     return (
-        <div className="min-h-screen p-8 items-center justify-between mb-4 text-black">
-            <Background/>
-            <div className="mb-4">
-                <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">Manage the organization's contexts here</h1>
+        <div className="min-h-screen p-8 text-black max-w-6xl mx-auto">
+            {/* HEADER */}
+            <div className="flex items-center justify-between mb-10">
+                <h1 className="text-4xl font-bold text-gray-900">
+                    Manage contexts here
+                </h1>
+
+                <button
+                    onClick={() => setShowNewContextModal(true)}
+                    className=" h-14 rounded-full bg-[#5E50A4]  px-8  text-sm  font-medium  text-white  shadow-sm  hover:bg-violet-700  transition"
+                >
+                    Create context
+                </button>
             </div>
-            <div className="display flex flex-col gap-4 max-w-2/3">
-                {contextList?.sort((a, b) => a.id - b.id).map((item: ContextType) => (
-                    <div key={item.id} className="border p-5 gap-5 border-[#5E50A4] rounded-[24px]">
-                        <div className="flex flex-row items-center">
-                            <Link href={"/admin/contexts/" + item.id}><h2
-                                className="text-3xl text-[#5E50A4]">{item.name}</h2></Link>
-                            {item.type && (<p className=" ml-3"> Type : {item.type}</p>)}
-                        </div>
-                        <p className="text-2xl"> {item.description}</p>
-                    </div>
-                ))}
+
+            {/* CONTEXT LIST */}
+            <div className="flex flex-col gap-4">
+                {contextList?.map((context) => {
+                    const members = membersByContext[context.id] || []
+
+                    return (
+                        <details
+                            key={context.id}
+                            className="rounded-3xl border border-[#E6E1F3] bg-white shadow-sm"
+                            onToggle={(e) => {
+                                if ((e.target as HTMLDetailsElement).open) {
+                                    getContextMembers(context.id)
+                                }
+                            }}
+                        >
+                            {/* HEADER */}
+                            <summary className="flex cursor-pointer items-center justify-between px-6 py-5 list-none">
+                                <div className="flex flex-col gap-1">
+                                    {/* Nombre + Type */}
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-lg font-semibold text-gray-900">
+                                            {context.name}
+                                        </h2>
+
+                                        {context.type && (
+                                            <span
+                                                className="
+          text-xs
+          px-2
+          py-1
+          rounded-full
+          bg-[#F2EFFA]
+          text-[#5E50A4]
+          font-medium
+        "
+                                            >
+                                                {context.type}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Descripción */}
+                                    {context.description && (
+                                        <p className="text-sm text-gray-500 max-w-2xl">
+                                            {context.description}
+                                        </p>
+                                    )}
+                                </div>
+
+
+                                <ChevronDown
+                                    className="
+    h-5 w-5
+    text-gray-400
+    transition-transform
+    group-open:rotate-180
+  "
+                                />
+
+                            </summary>
+
+                            {/* BODY */}
+                            <div className="border-t border-[#E6E1F3] px-6 py-6">
+
+                                {/* ADD MEMBER */}
+                                <form
+                                    className="mb-6 flex items-center gap-4 w-full"
+                                    onSubmit={(e) => {
+                                        e.preventDefault()
+                                        const email = selectedEmailByContext[context.id]
+                                        if (!email) return
+                                        addContextMember(context.id, email)
+                                    }}
+                                >
+                                    <AutoComplete
+                                        value={selectedEmailByContext[context.id] || ""}
+                                        suggestions={filteredEmails}
+                                        completeMethod={search}
+                                        onChange={(e) =>
+                                            setSelectedEmailByContext((prev) => ({
+                                                ...prev,
+                                                [context.id]: e.value,
+                                            }))
+                                        }
+                                        className="flex-1"
+                                        inputClassName="
+  w-full
+  h-12
+  rounded-full
+  bg-[#f2f2f2]
+  px-6
+  text-sm
+  outline-none
+  focus:outline-none
+  focus:ring-2
+  focus:ring-[#C7BDF0]
+  focus:border-[#C7BDF0]
+"
+
+                                        panelClassName="
+  mt-2
+  rounded-2xl
+  bg-white
+  shadow-lg
+  border
+  border-[#E6E1F3]
+  p-2
+"
+                                        itemTemplate={(email: string) => (
+                                            <div className="px-3 py-1 text-sm hover:bg-gray-100 rounded-lg">
+                                                {email}
+                                            </div>
+                                        )}
+
+                                        placeholder="Insert user email"
+                                    />
+
+                                    <button
+                                        type="submit"
+                                        className="whitespace-nowrap h-12 rounded-full bg-violet-600 px-6 text-sm font-medium text-white hover:bg-violet-700 transition"
+                                    >
+                                        Add user
+                                    </button>
+                                </form>
+
+                                {/* MEMBERS TABLE */}
+                                <div className="
+  rounded-2xl
+  border
+  border-[#E6E1F3]
+  divide-y
+  divide-[#E6E1F3]
+  overflow-hidden
+">
+                                    <div className="
+  grid
+  grid-cols-[1fr_1fr_0.75fr_0fr]
+  items-center
+  px-4
+  py-4
+  gap-4
+  text-sm
+  font-medium
+  text-gray-600
+  bg-gray-50
+">
+                                        <span>Name</span>
+                                        <span>Email</span>
+                                        <span>Role</span>
+                                        <span></span>
+                                    </div>
+
+                                    {members.length === 0 ? (
+                                        <div className="px-4 py-6 text-sm text-gray-500">
+                                            No members in this context.
+                                        </div>
+                                    ) : (
+                                        members.map((member) => (
+                                            <div
+                                                key={member.userId}
+                                                className="grid grid-cols-[1fr_1fr_auto_auto] items-center px-4 py-4 gap-4"
+
+                                            >
+
+                                                <div className="font-medium text-gray-900">
+                                                    {member.firstname || member.lastname
+                                                        ? `${member.firstname ?? ""} ${member.lastname ?? ""}`.trim()
+                                                        : "—"}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {member.email}
+                                                </div>
+
+
+
+                                                {/* ROLE SELECT */}
+                                                <select
+                                                    value={member.contextAdmin ? "admin" : "member"}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value
+                                                        if (value === "admin") {
+                                                            addContextAdmin(context.id, member.userId)
+                                                        } else {
+                                                            removeContextAdmin(context.id, member.userId)
+                                                        }
+                                                    }}
+                                                    className="
+    h-9
+    rounded-full
+    bg-[#F2EFFA]
+    px-3
+    text-sm
+    text-gray-700
+    outline-none
+    focus:ring-2
+    focus:ring-[#C7BDF0]
+  "
+                                                >
+                                                    <option value="member">Member</option>
+                                                    <option value="admin">Context admin</option>
+                                                </select>
+
+                                                {/* REMOVE ICON */}
+                                                <button
+                                                    onClick={() => removeContextMember(context.id, member.userId)}
+                                                    className="
+    ml-20
+    text-gray-400
+    hover:text-red-500
+    transition
+  "
+                                                    aria-label="Remove user"
+                                                >
+                                                    <X size={18} />
+                                                </button>
+
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </details>
+                    )
+                })}
             </div>
-            <button className="mt-2 mx-auto p-4 h-[56px] rounded-[24px] bg-[#5E50A4] text-white"
-                    onClick={() => setShowNewContextModal(true)}>
-                Add a new context
-            </button>
-            <NewContextModal open={showNewContextModal} onClose={() => setShowNewContextModal(false)}/>
+
+            {/* CREATE CONTEXT MODAL */}
+            <NewContextModal
+                open={showNewContextModal}
+                onClose={() => setShowNewContextModal(false)}
+            />
         </div>
-    );
+    )
+
 
 
 
     function NewContextModal({
-                                 open,
-                                 onClose,
-                             }: {
+        open,
+        onClose,
+    }: {
         open: boolean;
         onClose: () => void;
     }): React.JSX.Element | null {
@@ -94,9 +469,9 @@ export default function Contexts(): React.JSX.Element {
                 );
 
                 if (!res.ok) {
-                    const data : {message:string} = await res.json()
+                    const data: { message: string } = await res.json()
                     setErrorMessage(data.message)
-                }else{
+                } else {
                     setErrorMessage("")
                     await getExistingContexts();
                     onClose();
@@ -131,9 +506,10 @@ export default function Contexts(): React.JSX.Element {
                                 required
                                 value={formData.name}
                                 onChange={(e) =>
-                                    setFormData((prev) => ({...prev, name: e.target.value}))
+                                    setFormData((prev) => ({ ...prev, name: e.target.value }))
                                 }
-                                className="w-full rounded-[10px] border px-4 py-4"
+                                className="w-full rounded-[10px] border border-[#E6E1F3]
+ px-4 py-4"
                             />
                         </div>
 
@@ -143,9 +519,10 @@ export default function Contexts(): React.JSX.Element {
                                 type="text"
                                 value={formData.type}
                                 onChange={(e) =>
-                                    setFormData((prev) => ({...prev, type: e.target.value}))
+                                    setFormData((prev) => ({ ...prev, type: e.target.value }))
                                 }
-                                className="w-full rounded-[10px] border px-4 py-4"
+                                className="w-full rounded-[10px] border border-[#E6E1F3]
+ px-4 py-4"
                             />
                         </div>
                         <div>
@@ -160,14 +537,16 @@ export default function Contexts(): React.JSX.Element {
                                         description: e.target.value,
                                     }))
                                 }
-                                className="w-full rounded-[10px] border px-4 py-4 min-h-[120px]"
+                                className="w-full rounded-[10px] border border-[#E6E1F3]
+ px-4 py-4 min-h-[120px]"
                             />
                         </div>
                         <div className="mt-4 flex justify-end gap-3">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-4 h-[40px] rounded-[20px] border text-[#5E50A4]"
+                                className="px-4 h-[40px] rounded-[20px] border border-[#E6E1F3]
+ text-[#5E50A4]"
                             >
                                 Cancel
                             </button>

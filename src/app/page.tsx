@@ -1,8 +1,11 @@
 "use client"
 
-import Background from "../components/background"
+import Background from "../components/background";
+import ErrorBanner from "../components/ui/errorBanner";
 import React, {FormEvent, useState} from "react";
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
+import MicrosoftOAuth from "@/components/ui/MicrosoftOAuth";
+import {setLoginSession} from "@/lib/utils";
 
 export default function Home(): React.JSX.Element {
     const [showNewOrganizationModal, setShowNewOrganizationModal] = useState(false);
@@ -10,7 +13,7 @@ export default function Home(): React.JSX.Element {
     return (
         <div style={{backgroundColor: "white", height: "100vh"}}>
             <Background/>
-
+            <ErrorBanner text={useSearchParams().get("error")}/>
             <div className="flex flex-col gap-4 justify-center items-center h-screen max-w-2xl mx-auto">
                 {/* Made with Figma */}
                 <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -389,19 +392,8 @@ export default function Home(): React.JSX.Element {
                     throw new Error(text || "Server error");
                 }
 
-                const data = await res.json();
-
                 // Persist auth info (token + user + roles) for other parts of the app
-                try {
-                    localStorage.setItem("auth", JSON.stringify({
-                        token: data.token,
-                        user: data.user,
-                        isAdmin: data.isAdmin,
-                        contextIsAdmin: data.contextIsAdmin ?? [],
-                    }));
-                } catch (e) {
-                    console.warn("Could not persist auth to localStorage", e);
-                }
+                setLoginSession(await res.json());
 
                 router.push("/dashboard");
             } catch (err) {
@@ -460,6 +452,7 @@ export default function Home(): React.JSX.Element {
                             >
                                 Login
                             </button>
+                            <MicrosoftOAuth/>
                             <div className="flex items-center justify-between text-sm w-full">
                                 <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                                     <input

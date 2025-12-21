@@ -104,7 +104,7 @@ export default function RFCPage() {
   const loadReviewerData = async () => {
     setIsLoadingReviewerData(true);
     try {
-      const usersRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`);
+      const usersRes = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users?page=0&size=100`);
       if (usersRes.ok) {
         const usersData = await usersRes.json();
 
