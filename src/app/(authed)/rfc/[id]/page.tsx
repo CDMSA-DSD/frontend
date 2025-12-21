@@ -147,6 +147,8 @@ export default function RFCDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [okMessage, setOkMessage] = useState<string | null>(null)
 
+  const [isNewAltEditorOpen, setIsNewAltEditorOpen] = useState(false);
+
   const alternatives: Alternative[] = rfcData ? rfcData.alternatives.map(mapAlternative) : []
 
   const [diagramXml, setDiagramXml] = useState<string>('')
@@ -341,7 +343,7 @@ export default function RFCDetailPage() {
 
       <div className="max-w-6xl mx-auto">
         {activeTab === 'presentation' && <RfcPresentation rfcData={rfcData} setRfcData={setRfcData} fetchRfcData={fetchRfcData} diagramXml={diagramXml} setDiagramXml={setDiagramXml} setOkMessage={setOkMessage} setErrorMessage={setErrorMessage} users={users} />}
-        {activeTab === 'alternatives' && <RfcAlternative rfcData={rfcData} setRfcData={setRfcData} alternatives={alternatives} fetchAlternativeAttachments={fetchAlternativeAttachments} fetchRfcData={fetchRfcData} altAttachments={altAttachments} altDiagramXml={altDiagramXml} setAltDiagramXml={setAltDiagramXml} />}
+        {activeTab === 'alternatives' && <RfcAlternative rfcData={rfcData} setRfcData={setRfcData} alternatives={alternatives} fetchAlternativeAttachments={fetchAlternativeAttachments} fetchRfcData={fetchRfcData} altAttachments={altAttachments} altDiagramXml={altDiagramXml} setAltDiagramXml={setAltDiagramXml} setErrorMessage={setErrorMessage}/>}
         <div id="discussion-section">
           <RfcDiscussion rfcData={rfcData} fetchRfcData={fetchRfcData} users={users} />
         </div>

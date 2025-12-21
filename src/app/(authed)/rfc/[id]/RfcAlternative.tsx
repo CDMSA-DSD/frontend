@@ -16,9 +16,10 @@ type RfcAlternativeProps = {
   altAttachments: Record<number, Attachment[]>;
   altDiagramXml: Record<number, string>;
   setAltDiagramXml: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-export default function RfcAlternative({rfcData, setRfcData, alternatives, fetchAlternativeAttachments, fetchRfcData, altAttachments, altDiagramXml, setAltDiagramXml}: RfcAlternativeProps) {
+export default function RfcAlternative({rfcData, setRfcData, alternatives, fetchAlternativeAttachments, fetchRfcData, altAttachments, altDiagramXml, setAltDiagramXml, setErrorMessage}: RfcAlternativeProps) {
   const [isSubmittingAlternative, setIsSubmittingAlternative] = useState(false)
   const [newAlternativeFiles, setNewAlternativeFiles] = useState<File[]>([]);
   const [newAlternativeDiagramXml, setNewAlternativeDiagramXml] = useState<string>("");
@@ -26,6 +27,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
 
   const [selectedAlternative, setSelectedAlternative] = useState<Alternative | null>(null)
 
+  const [isNewAltEditorOpen, setIsNewAltEditorOpen] = useState(false);
   const [showNewAlternativeModal, setShowNewAlternativeModal] = useState(false)
   const [alternativeForm, setAlternativeForm] = useState<AlternativeForm>({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
 
@@ -246,11 +248,10 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
 
     const multipart = new FormData();
     multipart.append(
-      "data",
-      new Blob([JSON.stringify(payload)], { type: "application/json" })
+        "data",
+        new Blob([JSON.stringify(payload)], { type: "application/json" })
     );
 
-    // añadimos los ficheros seleccionados para la nueva alternativa
     newAlternativeFiles.forEach((file) => {
       multipart.append("files", file);
     });
@@ -264,11 +265,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
 
       if (!res.ok) throw new Error(`Failed to create alternative (status ${res.status})`)
 
-      const refreshed = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}`)
-      if (refreshed.ok) {
-        const data: BackendRFC = await refreshed.json()
-        setRfcData(data)
-      }
+      await fetchRfcData();
 
       setShowNewAlternativeModal(false)
       setAlternativeForm({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
@@ -276,7 +273,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
       setNewAlternativeDiagramXml("")
     } catch (e) {
       console.error('Create alternative failed:', e)
-      alert('Failed to create alternative. See console for details.')
+      setErrorMessage("Failed to create alternative.");
     } finally {
       setIsSubmittingAlternative(false)
     }
@@ -1081,17 +1078,38 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
               {/* Diagram XML for the NEW alternative */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Diagram XML
+                  Diagram XML (optional)
                 </label>
-                <textarea
-                  value={newAlternativeDiagramXml}
-                  onChange={(e) => setNewAlternativeDiagramXml(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg
-                              focus:outline-none focus:ring-2 focus:ring-violet-500
-                              text-sm font-mono resize-none"
-                  disabled={isSubmittingAlternative}
-                  placeholder="Paste here the draw.io XML for this alternative (optional)..."
+
+                <div className="flex flex-col items-start gap-2">
+                  {newAlternativeDiagramXml ? (
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-green-600 font-medium">Diagram added!</span>
+                        <button
+                            type="button"
+                            onClick={() => setIsNewAltEditorOpen(true)}
+                            className="text-xs text-violet-600 underline"
+                        >
+                          Edit diagram
+                        </button>
+                      </div>
+                  ) : (
+                      <button
+                          type="button"
+                          onClick={() => setIsNewAltEditorOpen(true)}
+                          className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700"
+                      >
+                        + Design Diagram
+                      </button>
+                  )}
+                </div>
+
+                <DrawIoEditorModal
+                    isOpen={isNewAltEditorOpen}
+                    initialXml={newAlternativeDiagramXml}
+                    onSave={(xml) => setNewAlternativeDiagramXml(xml)}
+                    onClose={() => setIsNewAltEditorOpen(false)}
+                    title="New Alternative Diagram"
                 />
               </div>
 
