@@ -4,6 +4,8 @@ import { AdrFormData, Alternative, AlternativeForm, Attachment, BackendRFC } fro
 import { parseDescription } from "@/src/lib/utils";
 import DiagramViewer from "@/src/components/ui/diagramViewer";
 import fetcher from "@/src/lib/fetcher";
+import DrawIoEditorModal from '@/src/components/ui/DrawIoEditorModal'
+
 
 type RfcAlternativeProps = {
   rfcData: BackendRFC;
@@ -27,6 +29,8 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
   const [showNewAlternativeModal, setShowNewAlternativeModal] = useState(false)
   const [alternativeForm, setAlternativeForm] = useState<AlternativeForm>({ title: '', description: '', pros: [], cons: [], prosInput: '', consInput: '' })
 
+  const [isDrawIoModalOpen, setIsDrawIoModalOpen] = useState(false)
+
   const [userVotes, setUserVotes] = useState<Record<number, boolean | null>>({})
 
   const [altNewFiles, setAltNewFiles] =
@@ -44,6 +48,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
   const [altAdding, setAltAdding] = useState<Record<number, boolean>>({})
   const [altAdditionInputs, setAltAdditionInputs] = useState<Record<number, string>>({})
   const [altEditingAddition, setAltEditingAddition] = useState<Record<number, boolean>>({})
+  const [activeAltIdForModal, setActiveAltIdForModal] = useState<number | null>(null);
 
   const [showAdrModal, setShowAdrModal] = useState(false)
   const [winningAlternative, setWinningAlternative] = useState<Alternative | null>(null)
@@ -144,44 +149,24 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
     setAltDiagramXml((prev) => ({ ...prev, [altId]: value }))
   }
 
-  const handleSaveAlternativeDiagram = async (altId: number) => {
-    const xml = altDiagramXml[altId] ?? ""
-
+  const handleSaveAlternativeDiagram = async (altId: number, xmlFromModal: string) => {
     setAltSavingDiagram((prev) => ({ ...prev, [altId]: true }))
-
     try {
-      const res = await fetcher(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/diagram`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ xmlContent: xml }), // UpdateCreateDiagramRequest
-        }
-      )
-
-      if (!res.ok) {
-        throw new Error(
-          `Failed to save alternative diagram (status ${res.status})`
-        )
-      }
-
-      const updated = await res.json() // AlternativeSpecificResponse
-
-      setAltDiagramXml((prev) => ({
-        ...prev,
-        [altId]: updated.xml || "",
-      }))
-      setAltEditingDiagram((prev) => ({ ...prev, [altId]: false }))
+      const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/alternatives/${altId}/diagram`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ xmlContent: xmlFromModal }),
+      })
+      if (!res.ok) throw new Error(`Status: ${res.status}`)
+      const updated = await res.json()
+      setAltDiagramXml((prev) => ({ ...prev, [altId]: updated.xml || "" }))
+      setActiveAltIdForModal(null)
     } catch (e) {
-      console.error("Saving alternative diagram failed:", e)
-      alert("Could not save alternative diagram.")
+      console.error("Saving failed:", e)
     } finally {
       setAltSavingDiagram((prev) => ({ ...prev, [altId]: false }))
     }
   }
-
   // Submit an addition for a specific alternative
   const handleSubmitAltAddition = async (altId: number) => {
     if (!altId) return
@@ -725,87 +710,58 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
             </section>
           )}
 
-        {/* Diagram section */}
-        {(!altDiagramXml[alt.id] || altDiagramXml[alt.id].length == 0) && !rfcData.isAuthor ? (
+      {/* Diagram section */}
+      {(!altDiagramXml[alt.id] || altDiagramXml[alt.id].length == 0) && !rfcData.isAuthor ? (
           <></>
-        ) : (
-            <section className="mt-4 border-t border-gray-100 pt-3">
-              <h3 className="text-sm font-semibold text-violet-700 mb-2">
-                Diagram
-              </h3>
+      ) : (
+          <section className="mt-4 border-t border-gray-100 pt-3">
+            <h3 className="text-sm font-semibold text-violet-700 mb-2">
+              Diagram
+            </h3>
 
-              {!altEditingDiagram[alt.id] ? (
-                <div className="space-y-2">
-                  {altDiagramXml[alt.id] && altDiagramXml[alt.id].length > 0 ? (
-                    <>
-                      <DiagramViewer xml={altDiagramXml[alt.id]} />
-
-                      {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+            <div className="space-y-2">
+              {altDiagramXml[alt.id] && altDiagramXml[alt.id].length > 0 ? (
+                  <>
+                    <DiagramViewer xml={altDiagramXml[alt.id]} />
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
                         <button
-                          type="button"
-                          onClick={() => startEditingAlternativeDiagram(alt.id)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
-                          bg-violet-600 text-white hover:bg-violet-700"
+                            type="button"
+                            onClick={() => {
+                              setActiveAltIdForModal(alt.id);
+                            }}
+                            className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700"
                         >
                           Edit diagram
                         </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs text-gray-500">
-                        No diagram has been added for this alternative.
-                      </p>
-                      {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+                    )}
+                  </>
+              ) : (
+                  <>
+                    <p className="text-xs text-gray-500">No diagram has been added for this alternative.</p>
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
                         <button
-                          type="button"
-                          onClick={() => startEditingAlternativeDiagram(alt.id)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
-                          bg-violet-600 text-white hover:bg-violet-700"
+                            type="button"
+                            onClick={() => {
+                              setActiveAltIdForModal(alt.id);
+                            }}
+                            className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700"
                         >
                           Add diagram
                         </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <textarea
-                    value={altDiagramXml[alt.id] ?? ""}
-                    onChange={(e) =>
-                      handleAltDiagramChange(alt.id, e.target.value)
-                    }
-                    rows={8}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-xs font-mono
-                    focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    placeholder="Paste here the draw.io XML for this alternative..."
-                  />
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSaveAlternativeDiagram(alt.id)}
-                      disabled={altSavingDiagram[alt.id]}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white
-                      hover:bg-violet-700 disabled:opacity-50"
-                    >
-                      {altSavingDiagram[alt.id] ? "Saving..." : "Save diagram"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => cancelEditingAlternativeDiagram(alt.id)}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-gray-300
-                      text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-
-                </div>
+                    )}
+                  </>
               )}
-            </section>
-          )}
+            </div>
+
+            <DrawIoEditorModal
+                isOpen={activeAltIdForModal === alt.id}
+                initialXml={altDiagramXml[alt.id] || ''}
+                onSave={(xml) => handleSaveAlternativeDiagram(alt.id, xml)}
+                onClose={() => setActiveAltIdForModal(null)}
+                title={`Alternative Diagram: ${alt.title}`}
+            />
+          </section>
+      )}
 
         {/* Alternative addition (annex) */}
         {!alt.addition && !rfcData.isAuthor ? (

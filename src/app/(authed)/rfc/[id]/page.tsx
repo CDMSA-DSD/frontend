@@ -138,6 +138,7 @@ export default function RFCDetailPage() {
   const params = useParams()
   const rfcId = params.id
 
+
   const [activeTab, setActiveTab] = useState<TabType>('presentation')
 
   const [rfcData, setRfcData] = useState<BackendRFC | null>(null)
@@ -339,7 +340,7 @@ export default function RFCDetailPage() {
       </div>
 
       <div className="max-w-6xl mx-auto">
-        {activeTab === 'presentation' && <RfcPresentation rfcData={rfcData} setRfcData={setRfcData} fetchRfcData={fetchRfcData} diagramXml={diagramXml} setDiagramXml={setDiagramXml} users={users} />}
+        {activeTab === 'presentation' && <RfcPresentation rfcData={rfcData} setRfcData={setRfcData} fetchRfcData={fetchRfcData} diagramXml={diagramXml} setDiagramXml={setDiagramXml} setOkMessage={setOkMessage} setErrorMessage={setErrorMessage} users={users} />}
         {activeTab === 'alternatives' && <RfcAlternative rfcData={rfcData} setRfcData={setRfcData} alternatives={alternatives} fetchAlternativeAttachments={fetchAlternativeAttachments} fetchRfcData={fetchRfcData} altAttachments={altAttachments} altDiagramXml={altDiagramXml} setAltDiagramXml={setAltDiagramXml} />}
         <div id="discussion-section">
           <RfcDiscussion rfcData={rfcData} fetchRfcData={fetchRfcData} users={users} />
