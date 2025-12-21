@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import type { AdrResponse, RfcResponse } from "@/lib/types";
 import { authFetch } from "@/lib/fetcher";
+import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget";
 
 function formatRelative(iso?: string) {
   if (!iso) return "";
@@ -173,7 +174,7 @@ export default function DashboardPage() {
     (async () => {
       try {
         const res = await authFetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/users`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/users?page=0&size=100`,
         );
         if (!res.ok) {
           console.error("Failed to load users:", res.status);
@@ -715,6 +716,9 @@ export default function DashboardPage() {
           </Card>
         )}
       </section>
+
+      {/* Floating Chatbot widget */}
+      <ChatbotWidget />
     </main>
   );
 }
