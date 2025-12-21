@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
 import { parseDescription } from "@/src/lib/utils";
 import { Attachment, BackendRFC, Context, User } from "./page";
-import { Paperclip } from "lucide-react";
+import {Paperclip, Plus} from "lucide-react";
 import Select, { MultiValue } from "react-select";
 import DiagramViewer from "@/src/components/ui/diagramViewer";
 import fetcher from "@/src/lib/fetcher";
+import DrawIoEditorModal from '@/src/components/ui/DrawIoEditorModal'
 
 type RfcPresentationProps = {
   rfcData: BackendRFC;
@@ -12,10 +13,12 @@ type RfcPresentationProps = {
   fetchRfcData: () => Promise<void>;
   diagramXml: string;
   setDiagramXml: React.Dispatch<React.SetStateAction<string>>;
+  setOkMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>
   users: User[];
 };
 
-export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, diagramXml, setDiagramXml, users }: RfcPresentationProps) {
+export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, diagramXml, setDiagramXml, setOkMessage, setErrorMessage, users }: RfcPresentationProps) {
   const { context: contextText, problem: problemText } = parseDescription(rfcData.description)
   const [showReviewersModal, setShowReviewersModal] = useState(false)
   const [isLoadingReviewerData, setIsLoadingReviewerData] = useState(false)
@@ -33,6 +36,8 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [selectedContextIds, setSelectedContextIds] = useState<number[]>([])
   const [availableContexts, setAvailableContexts] = useState<Context[]>([])
+
+  const [isDrawIoModalOpen, setIsDrawIoModalOpen] = useState(false)
 
   const [isClosing, setIsClosing] = useState(false)
 
@@ -141,40 +146,33 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
     }
   };
 
-  const handleSaveDiagram = async () => {
+  const handleSaveDiagram = async (xmlFromModal: string) => {
     if (!rfcId) return
-    if (!rfcData) return
-
     setIsSavingDiagram(true)
     try {
       const res = await fetcher(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/diagram`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            xmlContent: diagramXml, // UpdateCreateDiagramRequest.xmlContent
-          }),
-        }
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/diagram`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ xmlContent: xmlFromModal }), // Usiamo l'XML della modale
+          }
       )
-
-      if (!res.ok) {
-        throw new Error(`Failed to save diagram (status ${res.status})`)
-      }
+      if (!res.ok) throw new Error(`Status: ${res.status}`)
 
       const updated: BackendRFC = await res.json()
       setRfcData(updated)
       setDiagramXml(updated.xml ?? "")
-      setIsEditingDiagram(false)
+      setOkMessage("Diagram saved!")
     } catch (e) {
-      console.error("Saving diagram failed:", e)
-      alert("Could not save diagram.")
+      console.error("Saving faild:", e)
+      setErrorMessage("Error in saving the diagram.")
     } finally {
       setIsSavingDiagram(false)
+      setIsDrawIoModalOpen(false)
     }
   }
+
 
   const handleSubmitRfcAddition = async () => {
     if (!rfcId || isAddingRfcAddition) return
@@ -360,86 +358,56 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
       </section>
       )}
 
-      {!rfcData.xml && !rfcData.isAuthor ? (
-        <></>
-      ) : (
-      <section>
-        <h2 className="text-2xl font-semibold text-violet-700 mb-4">
-          Diagram
-        </h2>
+      {/* Diagram with draw.io */}
+      {(!rfcData.xml && !rfcData.isAuthor) ? null : (
+          <section className="border-t border-gray-100 pt-8">
+            <h2 className="text-2xl font-bold text-violet-800 mb-6 text-center md:text-left">Architecture Diagram</h2>
 
-        {!isEditingDiagram ? (
-          <div className="space-y-3">
-            {rfcData.xml ? (
-              <>
-                <DiagramViewer xml={rfcData.xml} />
-
-                {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingDiagram(true)}
-                    className="inline-flex items-center px-4 py-2 text-sm rounded-lg
-                        bg-violet-600 text-white hover:bg-violet-700"
-                  >
-                    Edit diagram
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-gray-500">
-                  No diagram has been added for this RFC.
-                </p>
-                {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingDiagram(true)}
-                    className="inline-flex items-center px-4 py-2 text-sm rounded-lg
-                        bg-violet-600 text-white hover:bg-violet-700"
-                  >
-                    Add diagram
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <textarea
-              value={diagramXml}
-              onChange={(e) => setDiagramXml(e.target.value)}
-              rows={10}
-              className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono
-                  focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="Paste here the draw.io XML..."
-            />
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleSaveDiagram}
-                disabled={isSavingDiagram}
-                className="px-4 py-2 text-sm rounded-lg bg-violet-600 text-white
-                    hover:bg-violet-700 disabled:opacity-50"
-              >
-                {isSavingDiagram ? "Saving..." : "Save diagram"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditingDiagram(false)
-                  setDiagramXml(rfcData.xml ?? "")
-                }}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700
-                    hover:bg-gray-50"
-              >
-                Cancel
-              </button>
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+              {rfcData.xml ? (
+                  <div className="p-4 space-y-4">
+                    <div className="bg-gray-50 rounded-lg border border-gray-100 min-h-[300px] flex items-center justify-center p-4">
+                      <DiagramViewer xml={rfcData.xml} />
+                    </div>
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+                        <div className="flex justify-end">
+                          <button
+                              type="button"
+                              onClick={() => setIsDrawIoModalOpen(true)}
+                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all font-medium shadow-md"
+                          >
+                            Edit architecture diagram
+                          </button>
+                        </div>
+                    )}
+                  </div>
+              ) : (
+                  <div className="p-12 text-center bg-gray-50/50">
+                    <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <Plus className="text-gray-400 w-8 h-8" />
+                    </div>
+                    <p className="text-gray-500 mb-6">A visual diagram helps reviewers understand your proposal better.</p>
+                    {rfcData.isAuthor && rfcData.status === 'UNDER_REVIEW' && (
+                        <button
+                            type="button"
+                            onClick={() => setIsDrawIoModalOpen(true)}
+                            className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all font-semibold shadow-lg shadow-green-100"
+                        >
+                          + Create architecture diagram
+                        </button>
+                    )}
+                  </div>
+              )}
             </div>
 
-          </div>
-        )}
-      </section>
+            <DrawIoEditorModal
+                isOpen={isDrawIoModalOpen}
+                initialXml={diagramXml}
+                onSave={handleSaveDiagram}
+                onClose={() => setIsDrawIoModalOpen(false)}
+                title={`Editor: ${rfcData.title}`}
+            />
+          </section>
       )}
 
       {/* RFC addition (annex) */}
