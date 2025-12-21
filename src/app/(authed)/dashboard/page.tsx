@@ -82,6 +82,38 @@ export default function DashboardPage() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+
+
+  const getStatusColorRFC = (status: RfcResponse['status']) => {
+    switch (status) {
+      case 'CLOSED_DECIDED':
+      case 'CLOSED_NON_DECIDED':
+        return 'bg-purple-200 text-purple-800';
+      case 'UNDER_REVIEW':
+        return 'bg-green-200 text-green-800';
+      default:
+        return 'bg-gray-200 text-gray-700';
+    }
+  };
+
+  const formatStatusRFC = (status: RfcResponse['status']) => {
+    return status.replace(/_/g, ' ');
+  };
+
+
+  const getStatusColorADR = (status: AdrResponse['status']) => {
+    switch (status) {
+      case 'APPROVED':
+        return 'bg-green-200 text-green-800';
+      default:
+        return 'bg-gray-200 text-gray-700';
+    }
+  };
+
+  const formatStatusADR = (status: AdrResponse['status']) => {
+    return status.replace(/_/g, ' ');
+  };
+
   // Recent RFCs / ADRs
   useEffect(() => {
     (async () => {
@@ -271,7 +303,7 @@ export default function DashboardPage() {
 
         const params = new URLSearchParams();
         params.set("q", q);
-        params.set("sort", sort); 
+        params.set("sort", sort);
         if (authorFilter) params.set("authorId", authorFilter);
         if (dateFrom) params.set("dateFrom", dateFrom);
         if (dateTo) params.set("dateTo", dateTo);
@@ -630,9 +662,15 @@ export default function DashboardPage() {
                   className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
                 >
                   <span className="text-sm font-medium text-foreground text-gray-700">{rfc.title}</span>
-                  <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(rfc))}</span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <span className="text-xs text-gray-400">{formatRelative(pickTimestamp(rfc))}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColorRFC(rfc.status)}`}>
+                      {formatStatusRFC(rfc.status)}
+                    </span>
+                  </div>
                 </Link>
               ))
+
             )}
           </Card>
         )}
@@ -666,7 +704,12 @@ export default function DashboardPage() {
                   className="flex items-center justify-between py-3 hover:bg-muted/20 transition-colors"
                 >
                   <span className="text-sm font-medium text-foreground text-gray-700">{adr.title}</span>
-                  <span className="text-sm text-gray-500">{formatRelative(pickTimestamp(adr))}</span>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <span className="text-xs text-gray-400">{formatRelative(pickTimestamp(adr))}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColorADR(adr.status)}`}>
+                      {formatStatusADR(adr.status)}
+                    </span>
+                     </div>
                 </Link>
               ))
             )}

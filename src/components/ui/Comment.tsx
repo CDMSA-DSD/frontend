@@ -1,11 +1,13 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { Comment } from "@/lib/types";
-import {Mention, MentionsInput} from "react-mentions";
+import { ParamValue } from "next/dist/server/request/params";
+import { Mention, MentionsInput } from "react-mentions";
+import render from "next/dist/compiled/@vercel/og/og";
 
 interface CommentZoneProps {
     comment: Comment;
-    handleSubmit: (comment:string, mentions:number[], parentId: number | null) => void;
-    members: {id:number, firstname:string, lastName:string}[]
+    handleSubmit: (comment: string, mentions: number[], parentId: number | null) => void;
+    members: { id: number, firstname: string, lastName: string }[]
     isReply?: boolean;
 }
 
@@ -45,7 +47,7 @@ function renderCommentText(text: string) {
 }
 
 
-export default function CommentZone({comment, handleSubmit, members ,isReply = false} : CommentZoneProps): React.JSX.Element{
+export default function CommentZone({ comment, handleSubmit, members, isReply = false }: CommentZoneProps): React.JSX.Element {
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [replyText, setReplyText] = useState<string>("");
     const [mentions, setMentions] = useState<number[]>([]);
@@ -62,7 +64,15 @@ export default function CommentZone({comment, handleSubmit, members ,isReply = f
         <div key={comment.id} className={`${isReply ? 'ml-12 mt-4' : 'mb-6 mt-4'}`}>
             <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold text-gray-900">{comment.author}</span>
+                    <span className="font-semibold text-gray-900">
+                        {comment.authorName}
+                        <span className="ml-2 text-sm text-purple-600 bg-gray-100 rounded-full px-3 py-1">
+                            {comment.author}
+                        </span>
+                    </span>
+
+
+
                     <span className="text-sm text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
                 </div>
                 <p className="text-gray-700 mb-3">{renderCommentText(comment.content)}</p>
@@ -90,18 +100,18 @@ export default function CommentZone({comment, handleSubmit, members ,isReply = f
                                 appendSpaceOnAdd
                             />
                         </MentionsInput>
-                    <button
-                        onClick={() => handleSubmit(replyText, mentions, comment.id)}
-                        className="px-4 py-1 text-white rounded-lg bg-violet-600 hover:bg-violet-700"
-                    >
-                        Reply
-                    </button
-                    >
+                        <button
+                            onClick={() => handleSubmit(replyText, mentions, comment.id)}
+                            className="px-4 py-1 text-white rounded-lg bg-violet-600 hover:bg-violet-700"
+                        >
+                            Reply
+                        </button
+                        >
                     </div>
-                    )
+                )
                 }
             </div>
-            {comment.replies?.map((reply) => <CommentZone key={reply.id} handleSubmit={handleSubmit} members={members} comment={reply} isReply={true}/>)}
+            {comment.replies?.map((reply) => <CommentZone key={reply.id} handleSubmit={handleSubmit} members={members} comment={reply} isReply={true} />)}
         </div>
     )
 }
