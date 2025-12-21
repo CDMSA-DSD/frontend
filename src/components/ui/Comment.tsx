@@ -1,13 +1,11 @@
 import React, {useEffect, useState} from "react";
 import { Comment } from "@/lib/types";
-import { ParamValue } from "next/dist/server/request/params";
 import {Mention, MentionsInput} from "react-mentions";
-import render from "next/dist/compiled/@vercel/og/og";
 
 interface CommentZoneProps {
     comment: Comment;
-    handleSubmit : (comment:string, mentions:number[], parentId: number | null) => void;
-    members:{id:number, firstname:string, lastName:string}[]
+    handleSubmit: (comment:string, mentions:number[], parentId: number | null) => void;
+    members: {id:number, firstname:string, lastName:string}[]
     isReply?: boolean;
 }
 
