@@ -1,44 +1,52 @@
-"use client"
+"use client";
 
-import {useRouter, useSearchParams} from "next/navigation";
-import {useEffect} from "react";
-import {setLoginSession} from "@/lib/utils";
-import {AppRouterInstance} from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { useRouter, useSearchParams } from "next/navigation";
+import {Suspense, useEffect} from "react";
+import { setLoginSession } from "@/lib/utils";
 
-export default function MicrosoftAuth(): React.JSX.Element {
-    const router : AppRouterInstance = useRouter();
+function MicrosoftAuthInner(): null {
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
-
-    const code: string | null = useSearchParams().get('code');
-    const token: string | null = useSearchParams().get('state');
-
-    async function handleCode(): Promise<void> {
-        // backend expects { code, token }
-        const payload = {code, token};
-
-        const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/oauth2/microsoft", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            await router.push("/?error=" + text);
-        }
-
-        // Persist auth info (token + user + roles) for other parts of the app
-        setLoginSession(await res.json());
-        await router.push("/dashboard");
-    }
+    const code = searchParams.get("code");
+    const token = searchParams.get("state");
 
     useEffect(() => {
-        if (code) {
-            handleCode();
-        }
-    }, [code, token]);
+        if (!code) return;
 
+        async function handleCode() {
+            const payload = { code, token };
+
+            const res = await fetch(
+                process.env.NEXT_PUBLIC_BACKEND_URL + "/auth/oauth2/microsoft",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                }
+            );
+
+            if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                router.push("/?error=" + encodeURIComponent(text));
+                return;
+            }
+
+            setLoginSession(await res.json());
+            router.push("/dashboard");
+        }
+
+        handleCode();
+    }, [code, token, router]);
+
+    return null;
+}
+
+export default function MicrosoftAuthPage() {
     return (
-        <div></div>
+        <Suspense fallback={null}>
+            <MicrosoftAuthInner />
+        </Suspense>
     );
 }
+
