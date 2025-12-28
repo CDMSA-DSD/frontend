@@ -64,7 +64,6 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
   })
   
   const rfcId = rfcData?.id
-  const isReviewer = true
 
   const handleAltFilesChange = (altId: number, files: FileList | null) => {
     if (!files) return;
@@ -209,7 +208,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
   }
 
   const handleVoteForAlternative = async (altId: number, outcome: boolean) => {
-    if (!isReviewer) return
+    if (!rfcData.isReviewer) return
     if (rfcData?.status !== 'UNDER_REVIEW') return
 
     setUserVotes(prev => {
@@ -530,7 +529,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
               <button
                 type="button"
                 onClick={() => handleVoteForAlternative(alt.id, true)}
-                disabled={!isReviewer || rfcData.status !== 'UNDER_REVIEW'}
+                disabled={!rfcData.isReviewer || rfcData.status !== 'UNDER_REVIEW'}
                 className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ThumbsUp
@@ -547,7 +546,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
               <button
                 type="button"
                 onClick={() => handleVoteForAlternative(alt.id, false)}
-                disabled={!isReviewer || rfcData.status !== 'UNDER_REVIEW'}
+                disabled={!rfcData.isReviewer || rfcData.status !== 'UNDER_REVIEW'}
                 className="flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ThumbsDown
@@ -561,7 +560,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                 </span>
               </button>
 
-              {(!isReviewer || rfcData.status !== 'UNDER_REVIEW') && (
+              {(!rfcData.isReviewer || rfcData.status !== 'UNDER_REVIEW') && (
                 <span className="text-xs text-gray-500 ml-2">
                   Voting disabled
                 </span>

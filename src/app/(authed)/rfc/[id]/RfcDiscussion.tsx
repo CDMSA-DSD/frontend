@@ -59,40 +59,44 @@ export default function RfcDiscussion({ rfcData, fetchRfcData, users }: {
       <div className="space-y-6">
         <hr className="mt-10"></hr>
         <h2 className="text-2xl font-semibold text-violet-700 mb-4">Discussion</h2>
-        <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
-            <MentionsInput
-                className="mentions"
-                value={newCommentContent}
-                onChange={(e) => setNewCommentContent(e.target.value)}
-                placeholder="What's on your mind?"
-            >
-                <Mention
-                    className="mention"
+        {rfcData.isReviewer ? (
+          <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
+              <MentionsInput
+                  className="mentions"
+                  value={newCommentContent}
+                  onChange={(e) => setNewCommentContent(e.target.value)}
+                  placeholder="What's on your mind?"
+              >
+                  <Mention
+                      className="mention"
 
-                    trigger="@"
-                    data={users.map(m => ({
-                        id: m.id,
-                        display: `${m.firstname} ${m.lastName}`,
-                    }))}
-                    displayTransform={(_: string, display: string) => `@${display}`}
-                    markup="@[__display__](__id__)"
-                    appendSpaceOnAdd
-                />
-            </MentionsInput>
-          <div className="flex justify-end mt-2">
-            <button
-              onClick={() => handlePostComment(newCommentContent, mentions)}
-              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
-              disabled={isPostingComment || !newCommentContent.trim()}
-            >
-              {isPostingComment ? 'Posting...' : 'Post Comment'}
-            </button>
+                      trigger="@"
+                      data={users.map(m => ({
+                          id: m.id,
+                          display: `${m.firstname} ${m.lastName}`,
+                      }))}
+                      displayTransform={(_: string, display: string) => `@${display}`}
+                      markup="@[__display__](__id__)"
+                      appendSpaceOnAdd
+                  />
+              </MentionsInput>
+            <div className="flex justify-end mt-2">
+              <button
+                onClick={() => handlePostComment(newCommentContent, mentions)}
+                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                disabled={isPostingComment || !newCommentContent.trim()}
+              >
+                {isPostingComment ? 'Posting...' : 'Post Comment'}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className="text-gray-500 italic">Only reviewers can post comments on this RFC.</p>
+        )}
 
         <div>
           {rfcData.comments.length > 0 ? (
-            rfcData.comments.map((comment) => <CommentZone key={comment.id} members={users.map(m => m)} handleSubmit={handlePostComment} comment={comment} isReply={false} />)
+            rfcData.comments.map((comment) => <CommentZone key={comment.id} members={users.map(m => m)} handleSubmit={handlePostComment} comment={comment} isReply={false} isReviewer={rfcData.isReviewer} />)
           ) : (
             <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
           )}
