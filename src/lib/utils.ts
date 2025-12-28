@@ -51,3 +51,29 @@ export function setLoginSession(data: { token: string; user: string; isAdmin: st
         console.warn("Could not persist auth to localStorage", e);
     }
 }
+
+export function getAdminStatus(): { isAdmin?: boolean; contextIsAdmin?: any[] } | null {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        const raw = localStorage.getItem('auth');
+        if (!raw) { return null; }
+        const parsed = JSON.parse(raw);
+        return { isAdmin: !!parsed?.isAdmin, contextIsAdmin: parsed?.contextIsAdmin ?? [] };
+    } catch (e) {
+        return null;
+    }
+}
+
+export function updateContextAdminStatus(contextIsAdmin: any[]) {
+    if (typeof window === 'undefined') return;
+    try {
+        const raw = localStorage.getItem('auth');
+        if (!raw) { return; }
+        const parsed = JSON.parse(raw);
+        parsed.contextIsAdmin = contextIsAdmin;
+        localStorage.setItem('auth', JSON.stringify(parsed));
+    } catch (e) {
+        console.warn("Could not update context admin status in localStorage", e);
+    }
+}
