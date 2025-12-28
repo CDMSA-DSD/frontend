@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { UsersList } from "@/components/users/users-list"
 import { X } from "lucide-react"
 import fetcher from "@/src/lib/fetcher"
+import { getAdminStatus } from "@/src/lib/utils"
 
 type OrgUser = {
   id: number
@@ -40,6 +41,8 @@ export default function UsersPage() {
 
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [invitationsLoading, setInvitationsLoading] = useState(false)
+
+  const adminStatus = getAdminStatus();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -319,7 +322,7 @@ export default function UsersPage() {
     <div className="min-h-screen p-8 items-center justify-between mb-4 text-black">
       <div className="mb-4">
         <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">
-          Manage the organization&apos;s users here
+          { adminStatus?.isAdmin ? "Manage the organization's users here" : "View the organization's users here" }
         </h1>
 
         {/* Search + button row */}
@@ -345,27 +348,29 @@ export default function UsersPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={openInviteModal}
-            className="
-              h-14
-              rounded-full
-              bg-[#f2f2f2]
-              px-8
-              text-sm
-              font-medium
-              shadow-sm
-              hover:bg-[#e5e5e5]
-              transition
-            "
-          >
-            Invite controls
-          </button>
+          {adminStatus?.isAdmin && (
+            <button
+              type="button"
+              onClick={openInviteModal}
+              className="
+                h-14
+                rounded-full
+                bg-[#f2f2f2]
+                px-8
+                text-sm
+                font-medium
+                shadow-sm
+                hover:bg-[#e5e5e5]
+                transition
+              "
+            >
+              Invite controls
+            </button>
+          )}
         </div>
 
         {/* Users table */}
-        <UsersList users={filteredUsers} onDeleteUser={handleDeleteUser} />
+        <UsersList users={filteredUsers} onDeleteUser={handleDeleteUser} isAdmin={adminStatus?.isAdmin} />
 
         {message && (
           <p className="mt-4 text-center text-sm text-gray-700">

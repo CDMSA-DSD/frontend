@@ -4,7 +4,9 @@ import React, { useEffect, useState } from "react";
 import { ChevronDown, X } from "lucide-react"
 import ErrorBanner from "@/components/ui/errorBanner"
 import fetcher from "@/src/lib/fetcher"
+import { getAdminStatus, updateContextAdminStatus } from "@/src/lib/utils";
 import { AutoComplete, AutoCompleteCompleteEvent } from "primereact/autocomplete";
+import { get } from "http";
 
 export default function Contexts(): React.JSX.Element {
     type ContextType = {
@@ -13,6 +15,7 @@ export default function Contexts(): React.JSX.Element {
         "name": string,
         "type": string,
         "description": string
+        "contextAdmin"?: boolean
     }
 
     type Member = {
@@ -22,6 +25,17 @@ export default function Contexts(): React.JSX.Element {
         email: string
         contextAdmin: boolean
     }
+
+    type ContextAdmin = {
+        contextId: number;
+        name: string;
+    }
+
+    type Permissions = {
+        isAdmin?: boolean;
+        contextIsAdmin?: ContextAdmin[];
+        name?: string;
+    };
 
 
     const [showNewContextModal, setShowNewContextModal] = useState(false);
@@ -40,6 +54,8 @@ export default function Contexts(): React.JSX.Element {
 
     const [emails, setEmails] = useState<string[]>([])
     const [filteredEmails, setFilteredEmails] = useState<string[]>([])
+
+    const [permissions, setPermissions] = useState<Permissions | null>(getAdminStatus());
 
     const getOrgEmails = async (orgId: number): Promise<void> => {
         const res = await fetcher(
@@ -74,9 +90,40 @@ export default function Contexts(): React.JSX.Element {
 
     const getExistingContexts = async () => {
         try {
+            const adminRes = await fetcher(
+                `${process.env.NEXT_PUBLIC_BACKEND_URL}/me/contexts/admin`
+            )
+
+            if (!adminRes.ok) throw new Error("Could not fetch admin contexts");
+            const adminData: ContextAdmin[] = await adminRes.json();
+
+            setPermissions((prev) => ({
+                ...prev,
+                contextIsAdmin: adminData,
+            }));
+
+            updateContextAdminStatus(adminData);
+
             const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/contexts?page=0&size=100");
-            if (res.ok) setContextList(JSON.parse(await res.text()));
-            else throw new Error("Could not find context");
+            if (!res.ok) throw new Error("Could not find context");
+
+            // reorder contexts so that admin contexts appear first, if user is a context admin, set contextAdmin to true
+            if (adminData.length > 0) {
+                const reorderedContexts = (JSON.parse(await res.text())).map(
+                    (context: ContextType) => ({
+                        ...context,
+                        contextAdmin: adminData.some((admin) => admin.contextId == context.id),
+                    })
+                ).sort((a: ContextType, b: ContextType) => {
+                    if (a.contextAdmin && !b.contextAdmin) return -1;
+                    if (!a.contextAdmin && b.contextAdmin) return 1;
+                    return 0;
+                });
+
+                setContextList(reorderedContexts);
+            } else {
+                setContextList(JSON.parse(await res.text()));
+            }
         } catch (err) {
             console.log(err);
         }
@@ -187,15 +234,17 @@ export default function Contexts(): React.JSX.Element {
             {/* HEADER */}
             <div className="flex items-center justify-between mb-10">
                 <h1 className="text-4xl font-bold text-gray-900">
-                    Manage contexts here
+                    {(permissions?.isAdmin || permissions?.contextIsAdmin?.length !== 0) && "Manage contexts here" || "View contexts here"}
                 </h1>
 
+            {permissions?.isAdmin && (
                 <button
                     onClick={() => setShowNewContextModal(true)}
                     className=" h-14 rounded-full bg-[#5E50A4]  px-8  text-sm  font-medium  text-white  shadow-sm  hover:bg-violet-700  transition"
                 >
                     Create context
                 </button>
+            )}
             </div>
 
             {/* CONTEXT LIST */}
@@ -263,6 +312,7 @@ export default function Contexts(): React.JSX.Element {
                             <div className="border-t border-[#E6E1F3] px-6 py-6">
 
                                 {/* ADD MEMBER */}
+                                {(context.contextAdmin || permissions?.isAdmin) && (
                                 <form
                                     className="mb-6 flex items-center gap-4 w-full"
                                     onSubmit={(e) => {
@@ -322,6 +372,7 @@ export default function Contexts(): React.JSX.Element {
                                         Add user
                                     </button>
                                 </form>
+                                )}
 
                                 {/* MEMBERS TABLE */}
                                 <div className="
@@ -384,6 +435,7 @@ export default function Contexts(): React.JSX.Element {
                                                             removeContextAdmin(context.id, member.userId)
                                                         }
                                                     }}
+                                                    disabled={!permissions?.isAdmin}
                                                     className="
     h-9
     rounded-full
@@ -403,6 +455,7 @@ export default function Contexts(): React.JSX.Element {
                                                 {/* REMOVE ICON */}
                                                 <button
                                                     onClick={() => removeContextMember(context.id, member.userId)}
+                                                    disabled={!(permissions?.isAdmin || context.contextAdmin)}
                                                     className="
     ml-20
     text-gray-400
@@ -413,7 +466,6 @@ export default function Contexts(): React.JSX.Element {
                                                 >
                                                     <X size={18} />
                                                 </button>
-
                                             </div>
                                         ))
                                     )}
