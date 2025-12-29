@@ -106,7 +106,7 @@ export default function SettingsPage() {
 
   return (
     <main className="min-h-screen p-8 bg-background">
-      <h1 className="mb-8 text-4xl font-bold text-gray-900">Settings</h1>
+      <h1 className="mb-8 text-4xl font-bold text-cdmsa-text-primary">Settings</h1>
 
       <Card className="max-w-xl border border-gray-200 shadow-sm rounded-2xl p-6 space-y-6">
         <div>
@@ -160,13 +160,13 @@ export default function SettingsPage() {
             className="
               px-6 py-2.5
               rounded-xl
-              bg-purple-600
+              bg-cdmsa-primary
               text-white
               text-sm
               font-medium
               shadow-sm
-              hover:bg-purple-700
-              disabled:bg-purple-300
+              hover:bg-cdmsa-primary-hover
+              disabled:bg-cdmsa-primary
               disabled:cursor-not-allowed
               transition-all duration-150
             "

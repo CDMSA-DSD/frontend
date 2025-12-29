@@ -284,7 +284,7 @@ export default function OrganizationSettings() {
           </div>
 
           {/* GitHub section */}
-          <div className="space-y-4 border rounded-xl p-4 border-black">
+          <div className="space-y-4 border rounded-xl p-4 border-gray-300">
             <div>
               <h2 className="text-base font-semibold text-gray-900">GitHub integration</h2>
               <p className="text-xs mt-1 text-gray-900">
@@ -318,7 +318,7 @@ export default function OrganizationSettings() {
                   type="button"
                   onClick={handleConnectGitHubWithToken}
                   disabled={!githubToken || connecting}
-                  className="w-full"
+                  className="w-full bg-cdmsa-primary hover:bg-cdmsa-primary-hover"
                 >
                   {connecting ? "Connecting..." : "Connect GitHub"}
                 </Button>
@@ -417,7 +417,7 @@ export default function OrganizationSettings() {
           <button
             type="submit"
             disabled={savingOrg}
-            className="h-12 w-full bg-[#5E50A4] text-white rounded-lg hover:bg-violet-700 transition-colors"
+            className="h-12 w-full bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-colors"
           >
             {savingOrg ? "Saving..." : "Save Organization Details"}
           </button>

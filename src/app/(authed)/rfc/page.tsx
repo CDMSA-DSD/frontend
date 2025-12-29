@@ -68,7 +68,7 @@ export default function RFCPage() {
     switch (status) {
       case 'CLOSED_DECIDED':
       case 'CLOSED_NON_DECIDED':
-        return 'bg-purple-200 text-purple-800';
+        return 'bg-blue-100 text-blue-800';
       case 'UNDER_REVIEW':
         return 'bg-green-200 text-green-800';
       default:
@@ -211,7 +211,7 @@ export default function RFCPage() {
         <h1 className="text-4xl font-bold text-gray-900">Requests for Comments</h1>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-colors"
         >
           <Plus className="w-5 h-5" />
           New RFC
@@ -240,33 +240,33 @@ export default function RFCPage() {
                 <div className="flex-shrink-0">
                   <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
                     <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <g opacity="0.6">
+                    <g opacity="0.6">
                         <line y1="-1.50402" x2="26.6757" y2="-1.50402"
-                          transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
-                          strokeOpacity="0.47" strokeWidth="3.00805" />
+                              transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="46.9282" y2="-1.50402"
-                          transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
-                          strokeOpacity="0.47" strokeWidth="3.00805" />
+                              transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="46.6837" y2="-1.50402"
-                          transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
-                          strokeOpacity="0.47" strokeWidth="3.00805" />
+                              transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="38.7414" y2="-1.50402"
-                          transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
-                          strokeOpacity="0.47" strokeWidth="3.00805" />
+                              transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="41.2294" y2="-1.50402"
-                          transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
-                          strokeOpacity="0.47" strokeWidth="3.00805" />
+                              transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
                         <line y1="-1.50402" x2="40.2477" y2="-1.50402"
-                          transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
-                          strokeOpacity="0.47" strokeWidth="3.00805" />
-                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8" />
-                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF" />
-                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4" />
-                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF" />
-                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF" />
-                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA" />
-                      </g>
-                    </svg>
+                              transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#8eb4eeff"/>
+                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#83afd5ff"/>
+                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#256a98ff"/>
+                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#89befaff"/>
+                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#63a2bfff"/>
+                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5691daff"/>
+                    </g>
+                </svg>
                   </div>
                 </div>
 
@@ -310,7 +310,7 @@ export default function RFCPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-violet-600 overflow-hidden max-h-[90vh] flex flex-col"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-cdmsa-border overflow-hidden max-h-[90vh] flex flex-col"
 
           >
             {/* Modal Header */}
@@ -330,7 +330,7 @@ export default function RFCPage() {
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
                   disabled={isSubmitting}
                 />
               </div>
@@ -345,7 +345,7 @@ export default function RFCPage() {
                   id="context"
                   value={formData.context}
                   onChange={(e) => setFormData({ ...formData, context: e.target.value })}
-                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
                   disabled={isSubmitting}
                 />
               </div>
@@ -361,7 +361,7 @@ export default function RFCPage() {
                   onChange={(e) => setFormData({ ...formData, problemStatement: e.target.value })}
                   placeholder="Describe the issue or motivation behind this RFC"
                   rows={4}
-                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -386,9 +386,9 @@ export default function RFCPage() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-full
-               bg-violet-50 text-violet-800 text-sm font-medium
-               border border-violet-200 shadow-sm
-               hover:bg-violet-100 transition-colors"
+               bg-cdmsa-sidebar text-cdmsa-text-primary text-sm font-medium
+               border border-cdmsa-border shadow-sm
+               hover:bg-cdmsa-secondary transition-colors"
                 >
                   <Paperclip className="w-4 h-4" />
                   Add Attachments
@@ -408,7 +408,7 @@ export default function RFCPage() {
                   Architecture Diagram (optional)
                 </label>
 
-                <div className="flex flex-col items-start gap-3 p-4 bg-violet-50/50 border border-violet-100 rounded-xl">
+                <div className="flex flex-col items-start gap-3 p-4 bg-cdmsa-bg border border-gray-200 rounded-xl">
                   {diagramXml ? (
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2 text-green-700 font-medium">
@@ -440,7 +440,7 @@ export default function RFCPage() {
                         <button
                             type="button"
                             onClick={() => setIsDrawIoEditorOpen(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all text-sm font-semibold shadow-sm"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-all text-sm font-semibold shadow-sm"
                         >
                           <Plus className="w-4 h-4" />
                           Design Architecture Diagram
@@ -524,7 +524,7 @@ export default function RFCPage() {
             <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-2 px-6 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 bg-cdmsa-secondary text-cdmsa-text-primary rounded-lg hover:bg-cdmsa-sidebar transition-colors disabled:opacity-50"
                 disabled={isSubmitting}
               >
                 <X className="w-5 h-5" />
@@ -533,7 +533,7 @@ export default function RFCPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleSubmit}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-colors disabled:bg-cdmsa-primary disabled:cursor-not-allowed"
                   disabled={isSubmitting || !formData.title || !formData.context || !formData.problemStatement}
                 >
                   <Send className="w-5 h-5" />

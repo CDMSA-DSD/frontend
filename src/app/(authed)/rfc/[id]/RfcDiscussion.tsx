@@ -58,7 +58,7 @@ export default function RfcDiscussion({ rfcData, fetchRfcData, users }: {
   return (
       <div className="space-y-6">
         <hr className="mt-10"></hr>
-        <h2 className="text-2xl font-semibold text-violet-700 mb-4">Discussion</h2>
+        <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">Discussion</h2>
         <div className="bg-white border text-black border-gray-200 rounded-lg p-4">
             <MentionsInput
                 className="mentions"
@@ -82,7 +82,7 @@ export default function RfcDiscussion({ rfcData, fetchRfcData, users }: {
           <div className="flex justify-end mt-2">
             <button
               onClick={() => handlePostComment(newCommentContent, mentions)}
-              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+              className="px-4 py-2 bg-cdmsa-secondary text-cdmsa-text-primary rounded-lg hover:bg-cdmsa-sidebar"
               disabled={isPostingComment || !newCommentContent.trim()}
             >
               {isPostingComment ? 'Posting...' : 'Post Comment'}

@@ -96,7 +96,7 @@ function EditADRModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-8 border-2 border-violet-600"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-8 border-2 border-cdmsa-border"
       >
         <div className="p-6 border-b">
           <h2 className="text-2xl font-bold text-center text-gray-900">
@@ -114,7 +114,7 @@ function EditADRModal({
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
               disabled={isSubmitting}
             />
           </div>
@@ -129,7 +129,7 @@ function EditADRModal({
               onChange={(e) => setFormData({ ...formData, context: e.target.value })}
               placeholder="Describe the context"
               rows={3}
-              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
               disabled={isSubmitting}
             />
           </div>
@@ -144,7 +144,7 @@ function EditADRModal({
               onChange={(e) => setFormData({ ...formData, decision: e.target.value })}
               placeholder="Describe the decision"
               rows={3}
-              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
               disabled={isSubmitting}
             />
           </div>
@@ -161,7 +161,7 @@ function EditADRModal({
               }
               placeholder="Describe the consequences"
               rows={3}
-              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+              className="text-gray-700 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
               disabled={isSubmitting}
             />
           </div>
@@ -170,7 +170,7 @@ function EditADRModal({
         <div className="p-6 flex items-center justify-between">
           <button
             onClick={handleCancel}
-            className="flex items-center gap-2 px-6 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2.5 bg-cdmsa-secondary text-cdmsa-text-primary rounded-lg hover:bg-cdmsa-sidebar transition-colors disabled:opacity-50"
             disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
@@ -178,7 +178,7 @@ function EditADRModal({
           </button>
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-colors disabled:cursor-not-allowed"
             disabled={
               isSubmitting ||
               !formData.title ||
@@ -235,7 +235,7 @@ function CancelADRModal({
         <div className="p-6 flex items-center justify-between">
           <button
             onClick={() => !isSubmitting && onClose()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2.5 bg-cdmsa-secondary text-cdmsa-text-primary rounded-lg hover:bg-cdmsa-sidebar transition-colors disabled:opacity-50"
             disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
@@ -274,8 +274,8 @@ function ADRSidebar({
     <aside className="w-80 shrink-0 p-6">
       <div className="space-y-8">
         <section>
-          <h3 className="mb-3 text-lg font-semibold text-purple-600">
-            Decision
+          <h3 className="mb-3 text-lg font-semibold text-cdmsa-text-primary">
+            Date
           </h3>
           <div className="flex items-center gap-2 text-sm">
             {adr.status === "APPROVED" ? (
@@ -301,14 +301,14 @@ function ADRSidebar({
         </section>
 
         <section>
-          <h3 className="mb-3 text-lg font-semibold text-purple-600">
+          <h3 className="mb-3 text-lg font-semibold text-cdmsa-text-primary">
             Source RFC
           </h3>
           {rfc ? (
             <>
               <div className="flex items-center gap-2 text-sm">
-                <div className="flex size-5 items-center justify-center rounded bg-purple-100">
-                  <AlertTriangle className="size-3 text-purple-600" />
+                <div className="flex size-5 items-center justify-center rounded bg-cdmsa-secondary">
+                  <AlertTriangle className="size-3 text-cdmsa-text-primary" />
                 </div>
                 <Link
                   href={`/rfc/${rfc.id}`}
@@ -323,7 +323,7 @@ function ADRSidebar({
                 {isDraft && adr.author && (
                   <>
                     <button
-                      className="flex size-10 items-center justify-center rounded-full bg-purple-600 text-white shadow hover:bg-purple-700"
+                      className="flex size-10 items-center justify-center rounded-full bg-cdmsa-primary text-white shadow hover:bg-cdmsa-primary-hover"
                       title="Edit ADR"
                       onClick={onEdit}
                     >
@@ -596,7 +596,7 @@ export default function AdrDetailPage() {
         <main className="flex-1 p-8">
           <div className="space-y-10">
             <section>
-              <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+              <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">
                 Context
               </h2>
               <div className="space-y-4 leading-relaxed text-gray-700 whitespace-pre-line">
@@ -609,7 +609,7 @@ export default function AdrDetailPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+              <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">
                 Decision
               </h2>
               <div className="space-y-4 leading-relaxed text-gray-700 whitespace-pre-line">
@@ -622,7 +622,7 @@ export default function AdrDetailPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+              <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">
                 Consequences
               </h2>
               <div className="space-y-4 leading-relaxed text-gray-700 whitespace-pre-line">
@@ -635,7 +635,7 @@ export default function AdrDetailPage() {
             </section>
 
             <section>
-              <h2 className="mb-4 text-2xl font-semibold text-violet-700">
+              <h2 className="mb-4 text-2xl font-semibold text-cdmsa-text-primary">
                 Participating users
               </h2>
 

@@ -88,7 +88,7 @@ export default function DashboardPage() {
     switch (status) {
       case 'CLOSED_DECIDED':
       case 'CLOSED_NON_DECIDED':
-        return 'bg-purple-200 text-purple-800';
+        return 'bg-blue-100 text-blue-800';
       case 'UNDER_REVIEW':
         return 'bg-green-200 text-green-800';
       default:
@@ -337,11 +337,11 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen p-8">
-      <h1 className="text-4xl font-bold mb-8 text-gray-900">Welcome</h1>
+      <h1 className="text-4xl font-bold mb-8 text-cdmsa-black">Welcome</h1>
 
       {/* Search + filters */}
       <section className="mb-10">
-        <h2 className="text-2xl font-semibold mb-4">
+        <h2 className="text-2xl font-semibold mb-4 text-black">
           Search RFCs and ADRs
         </h2>
 
@@ -425,7 +425,7 @@ export default function DashboardPage() {
             </button>
             <button
               type="button"
-              className="px-4 py-2.5 rounded-xl bg-purple-600 text-sm text-white shadow-sm hover:bg-purple-700 transition-all duration-150 disabled:bg-purple-300 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl bg-cdmsa-primary text-sm text-white shadow-sm hover:bg-cdmsa-primary-hover transition-all duration-150 disabled:bg-cdmsa-primary disabled:cursor-not-allowed"
               onClick={() => {
                 runSearch();
                 setShowSuggestions(false);
@@ -641,7 +641,7 @@ export default function DashboardPage() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-semibold text-gray-700">Recent RFCs</h2>
-          <Link href="/rfc" className="text-sm text-purple-600 hover:text-purple-700 hover:underline">
+          <Link href="/rfc" className="text-sm text-cdmsa-primary hover:text-cdmsa-primary-hover hover:underline">
             View all &gt;
           </Link>
         </div>
@@ -682,7 +682,7 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-semibold text-gray-700">Recent ADRs</h2>
           <Link
             href="/adr"
-            className="text-sm text-purple-600 hover:text-purple-700 hover:underline"
+            className="text-sm text-cdmsa-primary hover:text-cdmsa-primary-hover hover:underline"
           >
             View all &gt;
           </Link>

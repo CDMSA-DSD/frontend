@@ -36,26 +36,26 @@ export default function Home(): React.JSX.Element {
                         <line y1="-1.50402" x2="40.2477" y2="-1.50402"
                               transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
                               strokeOpacity="0.47" strokeWidth="3.00805"/>
-                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8"/>
-                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF"/>
-                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4"/>
-                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF"/>
-                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF"/>
-                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA"/>
+                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#8eb4eeff"/>
+                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#83afd5ff"/>
+                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#256a98ff"/>
+                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#89befaff"/>
+                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#63a2bfff"/>
+                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5691daff"/>
                     </g>
                 </svg>
 
-                <h1 className="text-8xl text-black font-bold">Welcome</h1>
-                <h2 className="text-xl text-[#5E50A4] text-center">A service that keep all your organizations architectural issues and discussions on a RFC and your decisions in an ADR.</h2>
-                <h3 className="text-1xl text-[#625B71] text-center">Get started by creating a new organization or
+                <h1 className="text-8xl text-cdmsa-text-primary font-bold">Welcome</h1>
+                <h2 className="text-xl text-cdmsa-text-primary text-center">A service that keep all your organizations architectural issues and discussions on a RFC and your decisions in an ADR.</h2>
+                <h3 className="text-1xl text-cdmsa-text-secondary text-center">Get started by creating a new organization or
                     logging into your account.</h3>
                 <div className="flex gap-3">
-                    <button className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
+                    <button className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] bg-cdmsa-primary text-white hover:cdmsa-primary-hover transition-colors"
                             onClick={() => setShowNewOrganizationModal(true)}>
                         Create an Organization
                     </button>
                     <button
-                        className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] text-[#4F378A] bg-[#DFDDFF] hover:bg-violet-300 transition-colors"
+                        className="drop-shadow-xl lg:w-[270px] h-[60px] rounded-[24px] text-cdmsa-text-primary bg-cdmsa-secondary "
                         onClick={() => setShowLoginModal(true)}
                     >Login
                     </button>
@@ -159,7 +159,7 @@ export default function Home(): React.JSX.Element {
                     }}
                 >
                     <div
-                        className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-10"
+                        className="w-[560px] rounded-[24px] bg-white border border-cdmsa-border shadow-2xl p-10"
                         onClick={(e) => e.stopPropagation() /* Because parent div close the modal */}
                     >
                         <h2 className="text-3xl font-bold text-center text-black">
@@ -169,12 +169,12 @@ export default function Home(): React.JSX.Element {
                         {/* "2 pages" controlled by a useState ([step, setStep]*/}
                         {step === 1 && (
                             <div>
-                                <p className="mt-3 text-center font-semibold text-black">
+                                <p className="mt-3 text-center font-semibold text-cdmsa-text-primary">
                                     Create your admin account first
                                 </p>
                                 <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden">
                                     <div
-                                        className="h-3 bg-[#5E50A4]"
+                                        className="h-3 bg-cdmsa-primary"
                                         style={{width: "55%"}}
                                     />
                                 </div>
@@ -195,7 +195,7 @@ export default function Home(): React.JSX.Element {
                                                     setError(null);
                                                     setFormData({...formData, adminFirstName: e.currentTarget.value})
                                                 }}
-                                                className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                                className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                                 placeholder="John"
                                             />
                                         </div>
@@ -210,7 +210,7 @@ export default function Home(): React.JSX.Element {
                                                     setError(null);
                                                     setFormData({...formData, adminLastName: e.currentTarget.value})
                                                 }}
-                                                className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                                className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                                 placeholder="Doe"
                                             />
                                         </div>
@@ -230,7 +230,7 @@ export default function Home(): React.JSX.Element {
                                                     adminEmail: e.currentTarget.value,
                                                 });
                                             }}
-                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                             placeholder="john@example.com"
                                         />
                                     </div>
@@ -246,7 +246,7 @@ export default function Home(): React.JSX.Element {
                                                 ...formData,
                                                 adminPassword: e.currentTarget.value
                                             })}
-                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                             placeholder="********"
                                         />
                                     </div>
@@ -262,7 +262,7 @@ export default function Home(): React.JSX.Element {
                                                 ...formData,
                                                 adminPasswordConfirm: e.currentTarget.value
                                             })}
-                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                             placeholder="********"
                                         />
                                     </div>
@@ -273,7 +273,7 @@ export default function Home(): React.JSX.Element {
 
                                     <button
                                         type="submit"
-                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
+                                        className="mt-2 w-full h-[56px] rounded-[24px] bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover transition-colors"
                                     >
                                         Next
                                     </button>
@@ -288,7 +288,7 @@ export default function Home(): React.JSX.Element {
                                 </p>
                                 <div className="mt-5 h-3 w-full rounded-full bg-[#D9D9D9] overflow-hidden flex">
                                     <div
-                                        className="h-3 bg-[#5E50A4] ml-auto"
+                                        className="h-3 bg-cdmsa-primary ml-auto"
                                         style={{width: "55%"}}
                                     />
                                 </div>
@@ -307,7 +307,7 @@ export default function Home(): React.JSX.Element {
                                             onChange={(e) =>
                                                 setFormData({...formData, orgName: e.currentTarget.value})
                                             }
-                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                             placeholder="A company"
                                         />
                                     </div>
@@ -322,7 +322,7 @@ export default function Home(): React.JSX.Element {
                                             onChange={(e) =>
                                                 setFormData({...formData, orgDomain: e.currentTarget.value})
                                             }
-                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                             placeholder="example.com"
                                         />
                                     </div>
@@ -336,7 +336,7 @@ export default function Home(): React.JSX.Element {
                                             onChange={(e) =>
                                                 setFormData({...formData, orgDescription: e.currentTarget.value})
                                             }
-                                            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                             rows={3}
                                             placeholder="Short description"
                                         />
@@ -345,7 +345,7 @@ export default function Home(): React.JSX.Element {
                                     <div className="flex gap-3">
                                         <button
                                             type="submit"
-                                            className="flex-1 h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
+                                            className="flex-1 h-[56px] rounded-[24px] bg-cdmsa-primary text-white hover:cdmsa-primary-hover transition-colors"
                                         >
                                             {submitting ? "Creating..." : "Create Organization"}
                                         </button>
@@ -410,7 +410,7 @@ export default function Home(): React.JSX.Element {
                     className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md "
                     onClick={() => onClose()}>
                     <div
-                        className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-20"
+                        className="w-[560px] rounded-[24px] bg-white border border-cdmsa-border shadow-2xl p-20"
                         onClick={(e) => e.stopPropagation()  /* Because parent div close the modal */}
                     >
                         <h2 className="text-3xl font-bold text-center text-black">
@@ -428,7 +428,7 @@ export default function Home(): React.JSX.Element {
                                     type="text" required
                                     value={formData.username}
                                     onChange={(e) => setFormData(prev => ({...prev, username: e.target.value}))}
-                                    className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                    className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                     placeholder="john@example.com"
                                 />
                             </div>
@@ -441,14 +441,14 @@ export default function Home(): React.JSX.Element {
                                     type="password" required
                                     value={formData.password}
                                     onChange={(e) => setFormData(prev => ({...prev, password: e.target.value}))}
-                                    className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+                                    className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
                                     placeholder="********"
                                 />
                             </div>
 
                             <button
                                 type="submit"
-                                className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
+                                className="mt-2 w-full h-[56px] rounded-[24px] bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover transition-colors"
                             >
                                 Login
                             </button>
@@ -457,12 +457,12 @@ export default function Home(): React.JSX.Element {
                                 <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                                     <input
                                         type="checkbox"
-                                        className="h-4 w-4 rounded border-gray-400 text-[#5E50A4] focus:ring-[#5E50A4]"
+                                        className="h-4 w-4 rounded border-gray-400 text-cdmsa-text-primary focus:ring-cdmsa-text-primary "
                                     />
-                                    <span className="text-black">Remember me</span>
+                                    <span className="text-cdmsa-text-primary">Remember me</span>
                                 </label>
 
-                                <a href="/forgot-password" className="text-[#5E50A4] hover:underline">
+                                <a href="/forgot-password" className="text-cdmsa-text-primary hover:underline">
                                     Forgot Password?
                                 </a>
                             </div>
@@ -470,7 +470,7 @@ export default function Home(): React.JSX.Element {
                                 <a href="#" onClick={() => {
                                     onClose();
                                     setShowNewOrganizationModal(true)
-                                }} className="text-[#5E50A4] font-semibold hover:underline">
+                                }} className="text-cdmsa-text-primary font-semibold hover:underline">
                                     Create an Organization instead
                                 </a>
                             </p>

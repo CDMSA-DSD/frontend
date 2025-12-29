@@ -192,7 +192,7 @@ export default function Contexts(): React.JSX.Element {
 
                 <button
                     onClick={() => setShowNewContextModal(true)}
-                    className=" h-14 rounded-full bg-[#5E50A4]  px-8  text-sm  font-medium  text-white  shadow-sm  hover:bg-violet-700  transition"
+                    className=" h-14 rounded-full bg-cdmsa-primary  px-8  text-sm  font-medium  text-white  shadow-sm  hover:bg-cdmsa-primary-hover transition"
                 >
                     Create context
                 </button>
@@ -206,7 +206,7 @@ export default function Contexts(): React.JSX.Element {
                     return (
                         <details
                             key={context.id}
-                            className="rounded-3xl border border-[#E6E1F3] bg-white shadow-sm"
+                            className="rounded-3xl border border-gray-200 bg-white shadow-sm"
                             onToggle={(e) => {
                                 if ((e.target as HTMLDetailsElement).open) {
                                     getContextMembers(context.id)
@@ -229,8 +229,8 @@ export default function Contexts(): React.JSX.Element {
           px-2
           py-1
           rounded-full
-          bg-[#F2EFFA]
-          text-[#5E50A4]
+          bg-cdmsa-sidebar
+          text-cdmsa-text-primary
           font-medium
         "
                                             >
@@ -260,7 +260,7 @@ export default function Contexts(): React.JSX.Element {
                             </summary>
 
                             {/* BODY */}
-                            <div className="border-t border-[#E6E1F3] px-6 py-6">
+                            <div className="border-t border-gray-200 px-6 py-6">
 
                                 {/* ADD MEMBER */}
                                 <form
@@ -293,7 +293,7 @@ export default function Contexts(): React.JSX.Element {
   outline-none
   focus:outline-none
   focus:ring-2
-  focus:ring-[#C7BDF0]
+  focus:ring-cdmsa-border
   focus:border-[#C7BDF0]
 "
 
@@ -317,7 +317,7 @@ export default function Contexts(): React.JSX.Element {
 
                                     <button
                                         type="submit"
-                                        className="whitespace-nowrap h-12 rounded-full bg-violet-600 px-6 text-sm font-medium text-white hover:bg-violet-700 transition"
+                                        className="whitespace-nowrap h-12 rounded-full bg-cdmsa-primary px-6 text-sm font-medium text-white hover:bg-cdmsa-primary-hover transition"
                                     >
                                         Add user
                                     </button>
@@ -327,9 +327,9 @@ export default function Contexts(): React.JSX.Element {
                                 <div className="
   rounded-2xl
   border
-  border-[#E6E1F3]
+  border-gray-200
   divide-y
-  divide-[#E6E1F3]
+  divide-gray-200
   overflow-hidden
 ">
                                     <div className="
@@ -387,13 +387,13 @@ export default function Contexts(): React.JSX.Element {
                                                     className="
     h-9
     rounded-full
-    bg-[#F2EFFA]
+    bg-cdmsa-sidebar
     px-3
     text-sm
     text-gray-700
     outline-none
     focus:ring-2
-    focus:ring-[#C7BDF0]
+    focus:ring-cdmsa-border
   "
                                                 >
                                                     <option value="member">Member</option>
@@ -489,7 +489,7 @@ export default function Contexts(): React.JSX.Element {
                 onClick={() => onClose()}
             >
                 <div
-                    className="w-[560px] rounded-[24px] bg-white border border-[#5E50A4] shadow-2xl p-8"
+                    className="w-[560px] rounded-[24px] bg-white border border-cdmsa-border shadow-2xl p-8"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {errorMessage && (
@@ -508,7 +508,7 @@ export default function Contexts(): React.JSX.Element {
                                 onChange={(e) =>
                                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                                 }
-                                className="w-full rounded-[10px] border border-[#E6E1F3]
+                                className="w-full rounded-[10px] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cdmsa-border
  px-4 py-4"
                             />
                         </div>
@@ -521,7 +521,7 @@ export default function Contexts(): React.JSX.Element {
                                 onChange={(e) =>
                                     setFormData((prev) => ({ ...prev, type: e.target.value }))
                                 }
-                                className="w-full rounded-[10px] border border-[#E6E1F3]
+                                className="w-full rounded-[10px] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cdmsa-border
  px-4 py-4"
                             />
                         </div>
@@ -537,7 +537,7 @@ export default function Contexts(): React.JSX.Element {
                                         description: e.target.value,
                                     }))
                                 }
-                                className="w-full rounded-[10px] border border-[#E6E1F3]
+                                className="w-full rounded-[10px] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cdmsa-border
  px-4 py-4 min-h-[120px]"
                             />
                         </div>
@@ -545,14 +545,14 @@ export default function Contexts(): React.JSX.Element {
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-4 h-[40px] rounded-[20px] border border-[#E6E1F3]
- text-[#5E50A4]"
+                                className="px-4 h-[40px] rounded-[20px] bg-cdmsa-secondary
+ text-cdmsa-text-primary hover:bg-cdmsa-sidebar"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="px-6 h-[40px] rounded-[20px] bg-[#5E50A4] text-white"
+                                className="px-6 h-[40px] rounded-[20px] bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
                             >
                                 Create
                             </button>
