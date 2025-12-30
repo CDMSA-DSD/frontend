@@ -239,7 +239,7 @@ export default function OrganizationSettings() {
   return (
     <div className="min-h-screen p-8">
       <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">
-        Manage the organization's settings here
+        Manage the organization&#39;s settings here
       </h1>
 
       <div className="max-w-md">
