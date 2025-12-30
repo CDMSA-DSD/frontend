@@ -12,27 +12,8 @@ interface SidebarProps {
 
 export function Sidebar({ open = true, onClose }: SidebarProps) {
   const pathname = usePathname()
-
-  const navigation = [
-    { name: 'Dashboard', href: `/dashboard`, icon: LayoutDashboard },
-    { name: 'RFC', href: `/rfc`, icon: MessageSquare },
-    { name: 'ADR', href: `/adr`, icon: FileText },
-  ]
-
-  const adminNavigation = [
-    { name: 'Manage Users', href: `/admin/users`, icon: Users },
-    { name: 'Manage Organization', href: `/admin/organization`, icon: Building2 },
-    { name: 'Manage Contexts', href: `/admin/contexts`, icon: FolderTree },
-  ]
-
-  const router = useRouter();
-  const logout = () => {
-    fetch('/api/logout', { method: 'POST', credentials: 'include' }).catch(() => { })
-    try { localStorage.removeItem('auth') } catch (e) { }
-    router.push('/')
-  }
-
   const [auth, setAuth] = useState<{ isAdmin?: boolean; contextIsAdmin?: any[] } | null>(null);
+  
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -44,6 +25,24 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
       setAuth(null);
     }
   }, []);
+
+  const navigation = [
+    { name: 'Dashboard', href: `/dashboard`, icon: LayoutDashboard },
+    { name: 'RFC', href: `/rfc`, icon: MessageSquare },
+    { name: 'ADR', href: `/adr`, icon: FileText },
+  ]
+
+  const adminNavigation = [
+    { name: auth?.isAdmin ? 'Manage Users' : 'View Users', href: `/admin/users`, icon: Users },
+    { name: auth?.isAdmin || (auth?.contextIsAdmin && auth.contextIsAdmin.length > 0) ? 'Manage Contexts' : 'View Contexts', href: `/admin/contexts`, icon: FolderTree },
+    { name: 'Manage Organization', href: `/admin/organization`, icon: Building2 },
+  ]
+
+  const router = useRouter();
+  const logout = () => {
+    try { localStorage.removeItem('auth') } catch (e) { }
+    router.push('/')
+  }
 
   return (
     <>
@@ -124,9 +123,7 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
             {(() => {
               const itemsToShow = auth?.isAdmin
                 ? adminNavigation
-                : (auth?.contextIsAdmin && auth.contextIsAdmin.length > 0)
-                  ? adminNavigation.filter(i => i.name === 'Manage Contexts')
-                  : [];
+                : adminNavigation.filter(item => item.name !== 'Manage Organization')
 
               return itemsToShow.map((item) => {
                 const isActive = pathname === item.href

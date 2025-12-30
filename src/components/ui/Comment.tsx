@@ -9,6 +9,7 @@ interface CommentZoneProps {
     handleSubmit: (comment: string, mentions: number[], parentId: number | null) => void;
     members: { id: number, firstname: string, lastName: string }[]
     isReply?: boolean;
+    isReviewer?: boolean;
 }
 
 function renderCommentText(text: string) {
@@ -47,7 +48,7 @@ function renderCommentText(text: string) {
 }
 
 
-export default function CommentZone({ comment, handleSubmit, members, isReply = false }: CommentZoneProps): React.JSX.Element {
+export default function CommentZone({ comment, handleSubmit, members, isReply = false, isReviewer = false }: CommentZoneProps): React.JSX.Element {
     const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
     const [replyText, setReplyText] = useState<string>("");
     const [mentions, setMentions] = useState<number[]>([]);
@@ -76,9 +77,11 @@ export default function CommentZone({ comment, handleSubmit, members, isReply = 
                     <span className="text-sm text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
                 </div>
                 <p className="text-gray-700 mb-3">{renderCommentText(comment.content)}</p>
-                <div className="flex items-center gap-4">
-                    <button className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setShowReplyForm(true)}>Reply</button>
-                </div>
+                {isReviewer && (
+                    <div className="flex items-center gap-4">
+                        <button className="text-sm text-gray-600 hover:text-gray-900" onClick={() => setShowReplyForm(true)}>Reply</button>
+                    </div>
+                )}
                 {/* Reply Form */}
                 {showReplyForm && (
                     <div className="mt-4 text-black">
@@ -105,13 +108,12 @@ export default function CommentZone({ comment, handleSubmit, members, isReply = 
                             className="px-4 py-1 text-white rounded-lg bg-cdmsa-secondary hover:bg-cdmsa-secondary"
                         >
                             Reply
-                        </button
-                        >
+                        </button>
                     </div>
                 )
                 }
             </div>
-            {comment.replies?.map((reply) => <CommentZone key={reply.id} handleSubmit={handleSubmit} members={members} comment={reply} isReply={true} />)}
+            {comment.replies?.map((reply) => <CommentZone key={reply.id} handleSubmit={handleSubmit} members={members} comment={reply} isReply={true} isReviewer={isReviewer} />)}
         </div>
     )
 }

@@ -13,6 +13,7 @@ export type UsersListUser = {
 type UsersListProps = {
   users: UsersListUser[]
   onDeleteUser?: (id: number) => void
+  isAdmin?: boolean
 }
 
 const formatJoined = (user: UsersListUser): string => {
@@ -30,7 +31,7 @@ const formatJoined = (user: UsersListUser): string => {
   return ""
 }
 
-export function UsersList({ users, onDeleteUser }: UsersListProps) {
+export function UsersList({ users, onDeleteUser, isAdmin = false }: UsersListProps) {
   return (
     <div
       className="
@@ -76,6 +77,7 @@ export function UsersList({ users, onDeleteUser }: UsersListProps) {
               lastName={user.lastName}
               joinedOn={formatJoined(user)}
               onDelete={onDeleteUser ? () => onDeleteUser(user.id) : undefined}
+              isAdmin={isAdmin}
             />
           ))}
         </div>

@@ -2,11 +2,8 @@
 import { FileText, Lightbulb, MessageSquare } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
 import { Comment } from '@/lib/types'
-import CommentZone from "@/components/ui/Comment";
-import { MentionsInput, Mention } from "react-mentions";
 import ErrorBanner from "@/src/components/ui/errorBanner"
 import OkBanner from "@/src/components/ui/okBanner"
 import RfcPresentation from './RfcPresentation'
@@ -40,6 +37,7 @@ export interface BackendRFC {
   createdAt: string
   updatedAt: string
   isAuthor: boolean
+  isReviewer: boolean
   alternatives: BackendAlternative[]
   comments: Comment[],
   userReviewers?: Array<User>
