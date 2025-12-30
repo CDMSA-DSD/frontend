@@ -4,7 +4,7 @@ export default function MicrosoftOAuth({inviteToken} : {inviteToken?: string | n
     if(process.env.NEXT_PUBLIC_MICROSOFT_OAUTH_CLIENT_ID == null)
         return null;
     return (
-        <a className="items-center justify-center p-4 flex mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors"
+        <a className="items-center justify-center p-4 flex mt-2 w-full h-[56px] rounded-[24px] bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover transition-colors"
            href={("").concat("https://login.microsoftonline.com/common/oauth2/v2.0/authorize?",
                    `client_id=${process.env.NEXT_PUBLIC_MICROSOFT_OAUTH_CLIENT_ID}`,
                    "&response_type=code",

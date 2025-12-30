@@ -52,14 +52,14 @@ export default function DrawIoEditorModal({ isOpen, initialXml, onSave, onClose,
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-white w-full h-full max-w-7xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col shadow-2xl border border-violet-200">
-                <div className="p-4 border-b flex justify-between items-center bg-violet-50">
-                    <h3 className="font-bold text-violet-900">{title || "Diagram Editor"}</h3>
+            <div className="bg-white w-full h-full max-w-7xl max-h-[90vh] rounded-xl overflow-hidden flex flex-col shadow-2xl border border-cdmsa-border">
+                <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="font-bold text-cdmsa-text-primary">{title || "Diagram Editor"}</h3>
                     <button
                         onClick={onClose}
-                        className="p-1 hover:bg-violet-200 rounded-full transition-colors"
+                        className="p-1 hover:bg-cdmsa-sidebar rounded-full transition-colors"
                     >
-                        <X className="w-6 h-6 text-violet-700" />
+                        <X className="w-6 h-6 text-cdmsa-text-primary" />
                     </button>
                 </div>
 

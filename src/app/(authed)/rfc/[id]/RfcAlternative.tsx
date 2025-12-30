@@ -446,11 +446,11 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
       ) : (
         <>
           <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-semibold text-violet-700 mb-4">Alternatives ({alternatives.length})</h3>
+            <h3 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">Alternatives ({alternatives.length})</h3>
             {rfcData.status === 'UNDER_REVIEW' && rfcData.isAuthor ? (
               <button
                 onClick={() => setShowNewAlternativeModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+                className="flex items-center gap-2 px-4 py-2 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover"
               >
                 <Plus className="w-5 h-5" />
                 Add Alternative
@@ -480,39 +480,39 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
           <div className="flex-shrink-0">
             <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
               <svg width="131" height="96" viewBox="0 0 131 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g opacity="0.6">
-                  <line y1="-1.50402" x2="26.6757" y2="-1.50402"
-                    transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
-                    strokeOpacity="0.47" strokeWidth="3.00805" />
-                  <line y1="-1.50402" x2="46.9282" y2="-1.50402"
-                    transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
-                    strokeOpacity="0.47" strokeWidth="3.00805" />
-                  <line y1="-1.50402" x2="46.6837" y2="-1.50402"
-                    transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
-                    strokeOpacity="0.47" strokeWidth="3.00805" />
-                  <line y1="-1.50402" x2="38.7414" y2="-1.50402"
-                    transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
-                    strokeOpacity="0.47" strokeWidth="3.00805" />
-                  <line y1="-1.50402" x2="41.2294" y2="-1.50402"
-                    transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
-                    strokeOpacity="0.47" strokeWidth="3.00805" />
-                  <line y1="-1.50402" x2="40.2477" y2="-1.50402"
-                    transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
-                    strokeOpacity="0.47" strokeWidth="3.00805" />
-                  <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#AEA9E8" />
-                  <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#C4B7FF" />
-                  <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#5E50A4" />
-                  <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#A67DFF" />
-                  <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#6A63BF" />
-                  <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5658DA" />
-                </g>
-              </svg>
+                    <g opacity="0.6">
+                        <line y1="-1.50402" x2="26.6757" y2="-1.50402"
+                              transform="matrix(0.72131 -0.692613 0.691627 0.722255 44.282 82.0857)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="46.9282" y2="-1.50402"
+                              transform="matrix(0.999747 0.022497 -0.0224356 0.999748 13.9697 54.8997)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="46.6837" y2="-1.50402"
+                              transform="matrix(0.671888 0.740653 -0.739738 0.672895 33.4744 15.0444)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="38.7414" y2="-1.50402"
+                              transform="matrix(0.646343 -0.763047 0.762175 0.647372 74.3296 50.6768)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="41.2294" y2="-1.50402"
+                              transform="matrix(0.990922 0.134438 -0.134077 0.990971 76.9661 58.8589)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                        <line y1="-1.50402" x2="40.2477" y2="-1.50402"
+                              transform="matrix(0.464978 -0.885322 0.884798 0.465975 10.0161 50.6768)" stroke="#625B71"
+                              strokeOpacity="0.47" strokeWidth="3.00805"/>
+                        <ellipse cx="99.3709" cy="19.7956" rx="9.22536" ry="9.23798" fill="#8eb4eeff"/>
+                        <ellipse cx="119.798" cy="64.2695" rx="11.2022" ry="11.2175" fill="#83afd5ff"/>
+                        <ellipse cx="69.8488" cy="54.8997" rx="13.1791" ry="13.1971" fill="#256a98ff"/>
+                        <ellipse cx="30.3118" cy="10.5577" rx="10.5433" ry="10.5577" fill="#89befaff"/>
+                        <ellipse cx="9.88431" cy="52.9199" rx="9.88431" ry="9.89783" fill="#63a2bfff"/>
+                        <ellipse cx="39.01" cy="86.5729" rx="9.22536" ry="9.23798" fill="#5691daff"/>
+                    </g>
+                </svg>
             </div>
           </div>
 
           <div className="flex-1">
             <h3
-              className="text-xl font-semibold text-violet-700 mb-2 cursor-pointer hover:text-violet-800"
+              className="text-xl font-semibold text-cdmsa-text-primary mb-2 cursor-pointer hover:text-cdmsa-primary-hover"
               onClick={() => setSelectedAlternative(alt)}
             >
               {alt.title}
@@ -534,8 +534,8 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
               >
                 <ThumbsUp
                   className={`w-5 h-5 ${userVotes[alt.id] === true
-                    ? 'text-violet-600'
-                    : 'text-gray-400 hover:text-violet-600'
+                    ? 'text-cdmsa-border'
+                    : 'text-gray-400 hover:text-cdmsa-primary-hover'
                     }`}
                 />
                 <span className="text-sm text-gray-700">
@@ -551,8 +551,8 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
               >
                 <ThumbsDown
                   className={`w-5 h-5 ${userVotes[alt.id] === false
-                    ? 'text-violet-600'
-                    : 'text-gray-400 hover:text-violet-600'
+                    ? 'text-cdmsa-border'
+                    : 'text-gray-400 hover:text-cdmsa-primary-hover'
                     }`}
                 />
                 <span className="text-sm text-gray-700">
@@ -626,7 +626,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
           <></>
         ) : (
           <section className="mt-4 border-t border-gray-100 pt-3">
-              <h3 className="text-sm font-semibold text-violet-700 mb-2">
+              <h3 className="text-sm font-semibold text-cdmsa-text-primary mb-2">
                 Attachments
               </h3>
 
@@ -635,11 +635,11 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                 <ul className="space-y-1">
                   {altAttachments[alt.id].map((att) => (
                     <li key={att.id} className="flex items-center gap-2">
-                      <Paperclip className="w-3 h-3 text-violet-600" />
+                      <Paperclip className="w-3 h-3 text-cdmsa-primary" />
                       <button
                         type="button"
                         onClick={() => handleDownloadAltAttachment(att)}
-                        className="text-violet-700 hover:underline text-xs"
+                        className="text-cdmsa-primary hover:underline text-xs"
                       >
                         {att.fileName}
                       </button>
@@ -675,7 +675,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                         ?.click()
                     }
                     className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
-                          bg-violet-600 text-white hover:bg-violet-700"
+                          bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
                     disabled={altUploading[alt.id]}
                   >
                     <Paperclip className="w-3 h-3" />
@@ -694,8 +694,8 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                         onClick={() => uploadAlternativeAttachments(alt.id)}
                         disabled={altUploading[alt.id]}
                         className="px-4 py-2 text-xs rounded-full
-                        bg-violet-600 text-white font-medium
-                        hover:bg-violet-700 disabled:opacity-50"
+                        bg-cdmsa-secondary text-cdmsa-text-primary font-medium
+                        hover:bg-cdmsa-sidebar disabled:opacity-50"
                       >
                         {altUploading[alt.id] ? "Uploading..." : "Upload attachments"}
                       </button>
@@ -711,7 +711,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
           <></>
       ) : (
           <section className="mt-4 border-t border-gray-100 pt-3">
-            <h3 className="text-sm font-semibold text-violet-700 mb-2">
+            <h3 className="text-sm font-semibold text-cdmsa-text-primary mb-2">
               Diagram
             </h3>
 
@@ -725,7 +725,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                             onClick={() => {
                               setActiveAltIdForModal(alt.id);
                             }}
-                            className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700"
+                            className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
                         >
                           Edit diagram
                         </button>
@@ -740,7 +740,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                             onClick={() => {
                               setActiveAltIdForModal(alt.id);
                             }}
-                            className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700"
+                            className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
                         >
                           Add diagram
                         </button>
@@ -764,7 +764,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
           <></>
         ) : (
         <div className="mt-4 border-t border-gray-100 pt-3">
-          <h4 className="text-sm font-semibold text-violet-700 mb-2">Additional content</h4>
+          <h4 className="text-sm font-semibold text-cdmsa-text-primary mb-2">Additional content</h4>
           {alt.addition ? (
             <div className="text-xs text-gray-700 whitespace-pre-line mb-2">
               {alt.addition}
@@ -780,7 +780,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                   type="button"
                   onClick={() => startEditingAltAddition(alt.id)}
                   className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
-                          bg-violet-600 text-white hover:bg-violet-700"
+                          bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
                 >
                   {alt.addition ? 'Edit addition' : 'Add addition'}
                 </button>
@@ -791,7 +791,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                     onChange={(e) => setAltAdditionInputs(prev => ({ ...prev, [alt.id]: e.target.value }))}
                     rows={3}
                     placeholder="Append an addition to this alternative..."
-                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
                     disabled={!!altAdding[alt.id]}
                   />
                   <div className="flex gap-2">
@@ -799,7 +799,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                       type="button"
                       onClick={() => handleSubmitAltAddition(alt.id)}
                       disabled={!!altAdding[alt.id] || !(altAdditionInputs[alt.id] ?? '').trim()}
-                      className="px-3 py-1.5 bg-violet-600 text-white text-xs rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                      className="px-3 py-1.5 bg-cdmsa-secondary text-cdmsa-text-primary text-xs rounded-lg hover:bg-cdmsa-sidebar disabled:opacity-50"
                     >
                       {altAdding[alt.id] ? 'Saving...' : (alt.addition ? 'Save additional content' : 'Add Addition')}
                     </button>
@@ -858,7 +858,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                 id="adr-title"
                 value={adrFormData.title}
                 onChange={(e) => setAdrFormData({ ...adrFormData, title: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
                 disabled={isSubmittingAdr}
               />
             </div>
@@ -872,7 +872,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                 value={adrFormData.context}
                 onChange={(e) => setAdrFormData({ ...adrFormData, context: e.target.value })}
                 rows={5}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
                 disabled={isSubmittingAdr}
               />
             </div>
@@ -886,7 +886,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                 value={adrFormData.decision}
                 onChange={(e) => setAdrFormData({ ...adrFormData, decision: e.target.value })}
                 rows={5}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
                 disabled={isSubmittingAdr}
               />
             </div>
@@ -900,7 +900,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                 value={adrFormData.consequences}
                 onChange={(e) => setAdrFormData({ ...adrFormData, consequences: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
                 disabled={isSubmittingAdr}
                 placeholder="Describe the consequences of this decision..."
               />
@@ -928,7 +928,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
 
             <button
               onClick={handleSubmitAdr}
-              className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400"
+              className="px-6 py-2.5 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-colors"
               disabled={isSubmittingAdr || !adrFormData.title || !adrFormData.context || !adrFormData.decision || !adrFormData.consequences}
             >
               {isSubmittingAdr ? 'Saving ADR...' : 'Save ADR & Close RFC'}
@@ -947,7 +947,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-violet-600 overflow-hidden max-h-[90vh] flex flex-col"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 border-2 border-cdmsa-border overflow-hidden max-h-[90vh] flex flex-col"
           >
             <div className="p-8 border-b">
               <h2 className="text-3xl font-bold text-center text-gray-900">Add New Alternative</h2>
@@ -964,7 +964,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                   type="text"
                   value={alternativeForm.title}
                   onChange={(e) => setAlternativeForm({ ...alternativeForm, title: e.target.value })}
-                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
                   disabled={isSubmittingAlternative}
                 />
               </div>
@@ -978,7 +978,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                   value={alternativeForm.description}
                   onChange={(e) => setAlternativeForm({ ...alternativeForm, description: e.target.value })}
                   rows={4}
-                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                  className="text-gray-900 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
                   disabled={isSubmittingAlternative}
                 />
               </div>
@@ -1001,7 +1001,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                       value={alternativeForm.prosInput}
                       onChange={(e) => setAlternativeForm(prev => ({ ...prev, prosInput: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addProsItem() } }}
-                      className="text-gray-900 flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="text-gray-900 flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
                       disabled={isSubmittingAlternative}
                       placeholder="Pro"
                     />
@@ -1028,7 +1028,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                       value={alternativeForm.consInput}
                       onChange={(e) => setAlternativeForm(prev => ({ ...prev, consInput: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addConsItem() } }}
-                      className="text-gray-900 flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="text-gray-900 flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
                       disabled={isSubmittingAlternative}
                       placeholder="Con"
                     />
@@ -1060,7 +1060,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                     onClick={() => newAltFileInputRef.current?.click()}
                     disabled={isSubmittingAlternative}
                     className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
-                          bg-violet-600 text-white hover:bg-violet-700"
+                          bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
                   >
                     <Paperclip className="w-4 h-4" />
                     Add attachments
@@ -1087,7 +1087,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                         <button
                             type="button"
                             onClick={() => setIsNewAltEditorOpen(true)}
-                            className="text-xs text-violet-600 underline"
+                            className="text-xs text-cdmsa-text-primary underline"
                         >
                           Edit diagram
                         </button>
@@ -1096,7 +1096,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
                       <button
                           type="button"
                           onClick={() => setIsNewAltEditorOpen(true)}
-                          className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700"
+                          className="px-3 py-1.5 text-xs rounded-lg bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
                       >
                         + Design Diagram
                       </button>
@@ -1117,7 +1117,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
             <div className="p-6 flex items-center justify-between">
               <button
                 onClick={handleCancelAlternative}
-                className="flex items-center gap-2 px-6 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 bg-cdmsa-secondary text-cdmsa-text-primary rounded-lg hover:bg-cdmsa-sidebar transition-colors disabled:opacity-50"
                 disabled={isSubmittingAlternative}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1125,7 +1125,7 @@ export default function RfcAlternative({rfcData, setRfcData, alternatives, fetch
               </button>
               <button
                 onClick={handleSubmitAlternative}
-                className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-2.5 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-colors disabled:cursor-not-allowed"
                 disabled={isSubmittingAlternative || !alternativeForm.title || !alternativeForm.description}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2L11 13" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M22 2l-7 20-4-9-9-4 20-7z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>

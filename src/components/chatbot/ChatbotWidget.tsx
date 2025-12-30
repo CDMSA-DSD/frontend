@@ -82,7 +82,7 @@ export function ChatbotWidget() {
       <Dialog.Trigger asChild>
         <button
           type="button"
-          className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-purple-600 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-cdmsa-primary px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-cdmsa-primary-hover focus:outline-none focus:ring-2 focus:ring-cdmsa-border focus:ring-offset-2"
           aria-label="Open chatbot"
         >
           <MessageCircle className="h-5 w-5" />
@@ -103,7 +103,7 @@ export function ChatbotWidget() {
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-cdmsa-border"
                 aria-label="Close chatbot"
               >
                 <X className="h-4 w-4" />
@@ -147,7 +147,7 @@ export function ChatbotWidget() {
                 <input
                   type="text"
                   placeholder="Type a message…"
-                  className="flex-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="flex-1 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-cdmsa-border focus:border-cdmsa-border"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={onKeyDown}
@@ -155,7 +155,7 @@ export function ChatbotWidget() {
                 />
                 <button
                   type="button"
-                  className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-purple-300"
+                  className="rounded-xl bg-cdmsa-secondary px-4 py-2 text-sm font-medium text-cdmsa-text-primary shadow-sm hover:bg-cdmsa-sidebar disabled:cursor-not-allowed"
                   onClick={handleSend}
                   disabled={!canSend}
                 >

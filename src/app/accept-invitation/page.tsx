@@ -127,7 +127,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
         </p>
       )}
 
-      <h2 className="text-3xl font-bold text-center text-black">
+      <h2 className="text-3xl font-bold text-center text-cdmsa-text-primary">
         Register
       </h2>
 
@@ -147,7 +147,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
                   firstname: e.target.value,
                 }))
               }
-              className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+              className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
               placeholder="John"
             />
           </div>
@@ -165,7 +165,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
                   lastname: e.target.value,
                 }))
               }
-              className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+              className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
               placeholder="Doe"
             />
           </div>
@@ -185,7 +185,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
                 email: e.target.value,
               }))
             }
-            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
             placeholder="john@example.com"
           />
         </div>
@@ -204,7 +204,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
                 password: e.target.value,
               }))
             }
-            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
             placeholder="********"
           />
         </div>
@@ -223,7 +223,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
                 passwordConfirm: e.target.value,
               }))
             }
-            className="w-full rounded-[10px] border border-[#5E50A4] px-4 py-3 outline-none focus:ring-2 focus:ring-[#5E50A4]"
+            className="w-full rounded-[10px] border border-cdmsa-border px-4 py-3 outline-none focus:ring-2 focus:ring-cdmsa-border"
             placeholder="********"
           />
         </div>
@@ -231,7 +231,7 @@ function AcceptInvitationForm({ router }: { router: AppRouterInstance }) {
         <button
           type="submit"
           disabled={submitting || !token}
-          className="mt-2 w-full h-[56px] rounded-[24px] bg-[#5E50A4] text-white hover:bg-violet-700 transition-colors disabled:bg-violet-300 disabled:cursor-not-allowed"
+          className="mt-2 w-full h-[56px] rounded-[24px] bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover transition-colors disabled:bg-cdmsa-secondary disabled:cursor-not-allowed"
         >
           {submitting ? "Registering..." : "Register"}
         </button>

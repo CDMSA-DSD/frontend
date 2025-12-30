@@ -338,7 +338,7 @@ export default function UsersPage() {
                   border-0
                   outline-none
                   focus:outline-none
-                  focus-visible:ring-0
+                  focus-visible:ring-cdmsa-border
                   focus-visible:ring-offset-0
                   placeholder:text-gray-500
                 "
@@ -355,12 +355,13 @@ export default function UsersPage() {
               className="
                 h-14
                 rounded-full
-                bg-[#f2f2f2]
+                bg-cdmsa-primary
                 px-8
-                text-sm
+                text-m
+                text-white
                 font-medium
                 shadow-sm
-                hover:bg-[#e5e5e5]
+                hover:bg-cdmsa-primary-hover
                 transition
               "
             >
@@ -386,7 +387,7 @@ export default function UsersPage() {
           onClick={closeInviteModal}
         >
           <div
-            className="mx-4 w-full max-w-lg rounded-2xl border-2 border-violet-600 bg-white shadow-2xl"
+            className="mx-4 w-full max-w-lg rounded-2xl border-2 border-cdmsa-border bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -409,15 +410,15 @@ export default function UsersPage() {
                 className="
                   w-full
                   rounded-lg
-                  bg-violet-600
+                  bg-cdmsa-primary
                   px-6
                   py-2.5
                   text-sm
                   font-medium
                   text-white
                   transition-colors
-                  hover:bg-violet-700
-                  disabled:bg-violet-400
+                  hover:bg-cdmsa-primary-hover
+                  disabled:bg-cdmsa-primary
                   disabled:cursor-not-allowed
                 "
               >
@@ -512,14 +513,14 @@ export default function UsersPage() {
                   items-center
                   gap-2
                   rounded-lg
-                  bg-purple-100
+                  bg-cdmsa-secondary
                   px-6
                   py-2.5
                   text-sm
                   font-medium
-                  text-purple-700
+                  text-cdmsa-text-primary
                   transition-colors
-                  hover:bg-purple-200
+                  hover:bg-cdmsa-sidebar
                   disabled:opacity-50
                 "
               >
