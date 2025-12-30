@@ -96,14 +96,14 @@ describe('Sidebar', () => {
       (usePathname as jest.Mock).mockReturnValue('/rfc');
       render(<Sidebar />);
       const rfcLink = screen.getByText('RFC').closest('a');
-      expect(rfcLink).toHaveClass('bg-[#C5B8E0]', 'text-gray-900');
+      expect(rfcLink).toHaveClass('bg-[#83afd5ff] text-gray-900');
     });
 
     it('does not highlight inactive navigation items', () => {
       (usePathname as jest.Mock).mockReturnValue('/dashboard');
       render(<Sidebar />);
       const rfcLink = screen.getByText('RFC').closest('a');
-      expect(rfcLink).toHaveClass('text-gray-700', 'hover:bg-[#D4CBEB]');
+      expect(rfcLink).toHaveClass('text-gray-700 hover:bg-cdmsa-secondary');
       expect(rfcLink).not.toHaveClass('bg-[#C5B8E0]');
     });
 
