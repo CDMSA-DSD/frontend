@@ -6,7 +6,6 @@ import ErrorBanner from "@/components/ui/errorBanner"
 import fetcher from "@/src/lib/fetcher"
 import { getAdminStatus, updateContextAdminStatus } from "@/src/lib/utils";
 import { AutoComplete, AutoCompleteCompleteEvent } from "primereact/autocomplete";
-import { get } from "http";
 
 export default function Contexts(): React.JSX.Element {
     type ContextType = {
