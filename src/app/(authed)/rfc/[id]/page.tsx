@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { parseDescription } from '@/lib/utils'
 import fetcher from '@/src/lib/fetcher'
-import {Comment } from '@/lib/types'
+import { Comment } from '@/lib/types'
 import CommentZone from "@/components/ui/Comment";
 import { MentionsInput, Mention } from "react-mentions";
 import ErrorBanner from "@/src/components/ui/errorBanner"
@@ -44,7 +44,7 @@ export interface BackendRFC {
   comments: Comment[],
   userReviewers?: Array<User>
   contextReviewers?: Array<Context>
-  isWatching?:boolean // remove "?" when backend implemented
+  isWatching?: boolean // remove "?" when backend implemented
   xml: string | null
   attachments: Attachment[]
   addition?: string | null
@@ -231,7 +231,7 @@ export default function RFCDetailPage() {
     }
   };
 
-  const fetchUsers = async () : Promise<void> => {
+  const fetchUsers = async (): Promise<void> => {
     try {
       const res = await fetcher(process.env.NEXT_PUBLIC_BACKEND_URL + "/users?page=0&size=100");
       if (res.ok) {
@@ -245,25 +245,25 @@ export default function RFCDetailPage() {
   };
 
   const handleSubscribe = async () => {
-    try{
+    try {
       const res = await fetcher(`${process.env.NEXT_PUBLIC_BACKEND_URL}/rfcs/${rfcId}/subscribe`, {
-          method:"POST",
-          headers: {
-              'Content-Type': 'application/json'
-          },
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
       })
-      if(res.ok) {
-        setRfcData((prev: BackendRFC | null): BackendRFC => ({...prev!, isWatching: true}))
+      if (res.ok) {
+        setRfcData((prev: BackendRFC | null): BackendRFC => ({ ...prev!, isWatching: true }))
         setErrorMessage(null)
         setOkMessage("You have successfully subscribed to " + rfcData?.title)
       }
       else {
-        const data : {message:string} = await res.json()
+        const data: { message: string } = await res.json()
         setOkMessage(null)
         setOkMessage(data.message)
       }
     }
-    catch(e){
+    catch (e) {
       console.log(e)
     }
   }
@@ -291,26 +291,26 @@ export default function RFCDetailPage() {
 
   return (
     <div className="min-h-screen bg-white p-8">
-      <ErrorBanner text={errorMessage}/>
-      <OkBanner text={okMessage}/>
+      <ErrorBanner text={errorMessage} />
+      <OkBanner text={okMessage} />
       <h1 className="text-4xl font-bold text-center text-gray-900 mb-2">{rfcData.title}</h1>
       <p className="text-lg text-center text-gray-500 mb-4">
-        RFC #{rfcData.id} | Author: {rfcData.authorName} | Status: {rfcData.status.replace(/_/g, ' ')} {rfcData.isWatching? "| 👁️ Watched" : "| "}
-          {!rfcData.isWatching && (
-              <button
-                  onClick={handleSubscribe}
-                  className=" justify-center px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold"
-              >
-                  Subscribe
-              </button>
-          )}
+        RFC #{rfcData.id} | Author: {rfcData.authorName} | Status: {rfcData.status.replace(/_/g, ' ')} {rfcData.isWatching ? "| 👁️ Watched" : "| "}
+        {!rfcData.isWatching && (
+          <button
+            onClick={handleSubscribe}
+            className=" justify-center px-4 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover font-semibold"
+          >
+            Subscribe
+          </button>
+        )}
 
       </p>
 
       <div className="flex justify-center mb-4">
         <button
           onClick={scrollToDiscussion}
-          className="px-3 py-1.5 text-xs rounded-lg bg-violet-600 text-white hover:bg-violet-700"
+          className="px-3 py-1.5 text-xs rounded-lg bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
         >
           Go to Discussion
         </button>
@@ -321,7 +321,7 @@ export default function RFCDetailPage() {
           <button
             onClick={() => setActiveTab('presentation')}
             className={`flex items-center gap-2 pb-4 transition-colors ${activeTab === 'presentation'
-              ? 'text-violet-700 border-b-2 border-violet-700'
+              ? 'text-cdmsa-border border-b-2 border-cdmsa-border'
               : 'text-gray-600 hover:text-gray-900'
               }`}
           >
@@ -331,7 +331,7 @@ export default function RFCDetailPage() {
           <button
             onClick={() => setActiveTab('alternatives')}
             className={`flex items-center gap-2 pb-4 transition-colors ${activeTab === 'alternatives'
-              ? 'text-violet-700 border-b-2 border-violet-700'
+              ? 'text-cdmsa-border border-b-2 border-cdmsa-border'
               : 'text-gray-600 hover:text-gray-900'
               }`}
           >
@@ -343,7 +343,7 @@ export default function RFCDetailPage() {
 
       <div className="max-w-6xl mx-auto">
         {activeTab === 'presentation' && <RfcPresentation rfcData={rfcData} setRfcData={setRfcData} fetchRfcData={fetchRfcData} diagramXml={diagramXml} setDiagramXml={setDiagramXml} setOkMessage={setOkMessage} setErrorMessage={setErrorMessage} users={users} />}
-        {activeTab === 'alternatives' && <RfcAlternative rfcData={rfcData} setRfcData={setRfcData} alternatives={alternatives} fetchAlternativeAttachments={fetchAlternativeAttachments} fetchRfcData={fetchRfcData} altAttachments={altAttachments} altDiagramXml={altDiagramXml} setAltDiagramXml={setAltDiagramXml} setErrorMessage={setErrorMessage}/>}
+        {activeTab === 'alternatives' && <RfcAlternative rfcData={rfcData} setRfcData={setRfcData} alternatives={alternatives} fetchAlternativeAttachments={fetchAlternativeAttachments} fetchRfcData={fetchRfcData} altAttachments={altAttachments} altDiagramXml={altDiagramXml} setAltDiagramXml={setAltDiagramXml} setErrorMessage={setErrorMessage} />}
         <div id="discussion-section">
           <RfcDiscussion rfcData={rfcData} fetchRfcData={fetchRfcData} users={users} />
         </div>

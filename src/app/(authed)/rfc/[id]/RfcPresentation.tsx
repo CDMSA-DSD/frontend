@@ -255,14 +255,14 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-2xl font-semibold text-violet-700 mb-4">Context</h2>
+        <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">Context</h2>
         <p className="text-gray-700 leading-relaxed whitespace-pre-line">
           {contextText || rfcData.description}
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold text-violet-700 mb-4">Problem</h2>
+        <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">Problem</h2>
         <div className="space-y-4 text-gray-700">
           {problemText ? (
             <p className="leading-relaxed whitespace-pre-line">{problemText}</p>
@@ -279,7 +279,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
         <></>
       ) : (
       <section>
-        <h2 className="text-2xl font-semibold text-violet-700 mb-4">
+        <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">
           Attachments
         </h2>
 
@@ -287,11 +287,11 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
           <ul className="space-y-2">
             {rfcData.attachments.map((att) => (
               <li key={att.id} className="flex items-center gap-2">
-                <Paperclip className="w-4 h-4 text-violet-600" />
+                <Paperclip className="w-4 h-4 text-cdmsa-primary" />
                 <button
                   type="button"
                   onClick={() => handleDownloadAttachment(att)}
-                  className="text-violet-700 hover:underline text-sm"
+                  className="text-cdmsa-primary hover:underline text-sm"
                 >
                   {att.fileName}
                 </button>
@@ -327,7 +327,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center px-3 py-1.5 text-xs rounded-lg
-                        bg-violet-600 text-white hover:bg-violet-700"
+                        bg-cdmsa-primary text-white hover:bg-cdmsa-primary-hover"
               disabled={uploadingRfcAttachments}
             >
               <Paperclip className="w-4 h-4" />
@@ -345,8 +345,8 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
                   onClick={handleUploadRfcAttachments}
                   disabled={uploadingRfcAttachments}
                   className="px-4 py-2 text-sm rounded-full
-      bg-violet-600 text-white font-medium
-      hover:bg-violet-700 disabled:opacity-50"
+      bg-cdmsa-secondary text-cdmsa-text-primary font-medium
+      hover:bg-cdmsa-sidebar disabled:opacity-50"
                 >
                   {uploadingRfcAttachments ? "Uploading..." : "Upload attachments"}
                 </button>
@@ -361,7 +361,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
       {/* Diagram with draw.io */}
       {(!rfcData.xml && !rfcData.isAuthor) ? null : (
           <section className="border-t border-gray-100 pt-8">
-            <h2 className="text-2xl font-bold text-violet-800 mb-6 text-center md:text-left">Architecture Diagram</h2>
+            <h2 className="text-2xl font-bold text-cdmsa-text-primary mb-6 text-center md:text-left">Architecture Diagram</h2>
 
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
               {rfcData.xml ? (
@@ -374,7 +374,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
                           <button
                               type="button"
                               onClick={() => setIsDrawIoModalOpen(true)}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all font-medium shadow-md"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-all font-medium shadow-md"
                           >
                             Edit architecture diagram
                           </button>
@@ -415,7 +415,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
         <></>
       ) : (
         <section>
-          <h2 className="text-2xl font-semibold text-violet-700 mb-4">Additional Content</h2>
+          <h2 className="text-2xl font-semibold text-cdmsa-text-primary mb-4">Additional Content</h2>
 
           <div className="prose text-gray-700 whitespace-pre-line mb-4">
             {rfcData.addition ? (
@@ -431,8 +431,8 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
                 <div>
                   <button
                     onClick={startEditingRfcAddition}
-                    className="px-4 py-2 text-sm rounded-lg bg-violet-600 text-white
-                    hover:bg-violet-700 disabled:opacity-50"
+                    className="px-4 py-2 text-sm rounded-lg bg-cdmsa-primary text-white
+                    hover:bg-cdmsa-primary-hover disabled:opacity-50"
                   >
                     {rfcData.addition ? 'Edit additional content' : 'Add additional content'}
                   </button>
@@ -443,7 +443,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
                     placeholder="Append an addition / annex paragraph to this RFC..."
                     value={rfcAdditionInput}
                     onChange={(e) => setRfcAdditionInput(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cdmsa-border resize-none"
                     rows={4}
                     disabled={isAddingRfcAddition}
                   />
@@ -451,7 +451,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
                     <button
                       onClick={handleSubmitRfcAddition}
                       disabled={isAddingRfcAddition || !rfcAdditionInput.trim()}
-                      className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                      className="px-4 py-2 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover disabled:opacity-50"
                     >
                       {isAddingRfcAddition ? 'Saving...' : (rfcData.addition ? 'Save' : 'Add additional content')}
                     </button>
@@ -477,14 +477,14 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
         <></>
       ) : (
         <section>
-          <h2 className="text-2xl font-semibold text-violet-700">Reviewers</h2>
+          <h2 className="text-2xl font-semibold text-cdmsa-text-primary">Reviewers</h2>
 
           {rfcData.isAuthor && rfcData.status === "UNDER_REVIEW" && (
             <div className="mt-2 mb-4">
               <button
                 onClick={handleOpenReviewersModal}
-                className="px-4 py-2 text-sm rounded-lg bg-violet-600 text-white
-                hover:bg-violet-700 disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded-lg bg-cdmsa-primary text-white
+                hover:bg-cdmsa-primary-hover disabled:opacity-50"
               >
                 Manage Reviewers
               </button>
@@ -497,7 +497,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Individual Reviewers</h3>
                 <div className="flex flex-wrap gap-2">
                   {rfcData.userReviewers.map(reviewer => (
-                    <div key={reviewer.id} className="bg-violet-100 text-violet-800 px-3 py-1.5 rounded-full text-sm font-medium">
+                    <div key={reviewer.id} className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm font-medium">
                       {reviewer.firstname} {reviewer.lastName} ({reviewer.email})
                     </div>
                   ))}
@@ -543,7 +543,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-auto my-8 border-2 border-violet-600"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-auto my-8 border-2 border-cdmsa-border"
           >
             <div className="p-6 border-b">
               <h2 className="text-2xl font-bold text-center text-gray-900">Manage Reviewers</h2>
@@ -618,7 +618,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
             <div className="p-6 flex items-center justify-between bg-gray-50 rounded-b-2xl">
               <button
                 onClick={() => setShowReviewersModal(false)}
-                className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                className="px-6 py-2.5 bg-cdmsa-secondary text-cdmsa-text-primary rounded-lg hover:bg-cdmsa-sidebar transition-colors disabled:opacity-50"
                 disabled={isAssigningReviewers}
               >
                 Cancel
@@ -630,7 +630,7 @@ export default function RfcPresentation({ rfcData, setRfcData, fetchRfcData, dia
                 </span>
                 <button
                   onClick={handleAssignReviewers}
-                  className="px-6 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:bg-violet-400"
+                  className="px-6 py-2.5 bg-cdmsa-primary text-white rounded-lg hover:bg-cdmsa-primary-hover transition-colors"
                   disabled={isAssigningReviewers || isLoadingReviewerData}
                 >
                   {isAssigningReviewers ? 'Assigning...' : 'Assign Reviewers'}

@@ -46,7 +46,7 @@ export function NotificationDrawer({
           <div className="flex items-center gap-3">
             <button
               onClick={onMarkAllRead}
-              className="text-sm text-purple-600 hover:underline"
+              className="text-sm text-cdmsa-text-primary hover:underline"
             >
               Mark all read
             </button>

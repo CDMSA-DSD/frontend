@@ -66,7 +66,7 @@ export default function CommentZone({ comment, handleSubmit, members, isReply = 
                 <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-gray-900">
                         {comment.authorName}
-                        <span className="ml-2 text-sm text-purple-600 bg-gray-100 rounded-full px-3 py-1">
+                        <span className="ml-2 text-sm text-cdmsa-text-primary bg-blue-50 rounded-full px-3 py-1">
                             {comment.author}
                         </span>
                     </span>
@@ -102,7 +102,7 @@ export default function CommentZone({ comment, handleSubmit, members, isReply = 
                         </MentionsInput>
                         <button
                             onClick={() => handleSubmit(replyText, mentions, comment.id)}
-                            className="px-4 py-1 text-white rounded-lg bg-violet-600 hover:bg-violet-700"
+                            className="px-4 py-1 text-white rounded-lg bg-cdmsa-secondary hover:bg-cdmsa-secondary"
                         >
                             Reply
                         </button
