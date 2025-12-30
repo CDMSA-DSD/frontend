@@ -98,7 +98,7 @@ export default function RfcDiscussion({ rfcData, fetchRfcData, users }: {
           {rfcData.comments.length > 0 ? (
             rfcData.comments.map((comment) => <CommentZone key={comment.id} members={users.map(m => m)} handleSubmit={handlePostComment} comment={comment} isReply={false} isReviewer={rfcData.isReviewer} />)
           ) : (
-            <p className="text-gray-500 italic">Be the first to comment on this RFC.</p>
+            <p className="text-gray-500 italic">{rfcData.isReviewer ? "Be the first to comment on this RFC." : "No comments available."}</p>
           )}
         </div>
       </div>
