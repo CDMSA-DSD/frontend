@@ -86,7 +86,7 @@ test("saves organization details on form submit", async () => {
   await waitFor(() => expect(screen.getByDisplayValue(/Old Co/i)).toBeInTheDocument());
 
   const nameInput = screen.getByLabelText(/Company Name/i);
-  const domainInput = screen.getByLabelText(/Domain/i);
+  const domainInput = screen.getByLabelText(/^Domain$/i);
 
   await userEvent.clear(nameInput);
   await userEvent.type(nameInput, "New Co");
