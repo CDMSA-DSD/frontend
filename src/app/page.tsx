@@ -6,6 +6,7 @@ import React, {FormEvent, Suspense, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import MicrosoftOAuth from "@/components/ui/MicrosoftOAuth";
 import {setLoginSession} from "@/lib/utils";
+import {NewOrganizationFormData} from "@/lib/types";
 
 export default function Home(): React.JSX.Element {
     function ErrorFromSearchParams() : React.JSX.Element {
@@ -77,19 +78,6 @@ export default function Home(): React.JSX.Element {
     function NewOrganizationModal({open, onClose}: { open: boolean; onClose: () => void; })
         : React.JSX.Element | null {
         // On successful registration we close this modal and open the login modal.
-
-        type NewOrganizationFormData = {
-            orgName: string,
-            orgDomain: string,
-            orgDescription: string,
-
-            adminFirstName: string,
-            adminLastName: string,
-            adminEmail: string,
-            adminPassword: string,
-            adminPasswordConfirm: string,
-        };
-
         const [step, setStep] = useState<1 | 2>(1);
         const [submitting, setSubmitting] = useState(false);
         const [error, setError] = useState<string | null>(null);
@@ -286,6 +274,7 @@ export default function Home(): React.JSX.Element {
                                         Next
                                     </button>
                                 </form>
+                                <MicrosoftOAuth newOrg={true}/>
                             </div>
                         )}
 

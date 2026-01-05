@@ -1,3 +1,5 @@
+import {useState} from "react";
+
 export interface Page<T> {
   content: T[];
   totalElements: number;
@@ -57,3 +59,14 @@ export interface NotificationStatus {
   notisNotRead: number
 }
 
+export interface NewOrganizationFormData {
+    orgName: string,
+    orgDomain: string,
+    orgDescription: string,
+
+    adminFirstName: string,
+    adminLastName: string,
+    adminEmail: string,
+    adminPassword: string,
+    adminPasswordConfirm: string,
+}
