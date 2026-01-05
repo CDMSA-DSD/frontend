@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+
 import fetcher from "@/src/lib/fetcher"
 
 const BACKEND_URL =
@@ -21,11 +23,12 @@ type Branch = {
 }
 
 export default function OrganizationSettings() {
-  const [companyName, setCompanyName] = useState("")
-  const [domain, setDomain] = useState("")
-  const [description, setDescription] = useState("")
+  const [companyName, setCompanyName] = useState<string>("")
+  const [domain, setDomain] = useState<string>("")
+  const [isEmailDomainRequired, setIsEmailDomainRequired] = useState<boolean>(false)
+  const [description, setDescription] = useState<string>("")
 
-  const [githubToken, setGithubToken] = useState("")
+  const [githubToken, setGithubToken] = useState<string>("")
 
   const [repoOwner, setRepoOwner] = useState<string | null>(null)
   const [selectedRepoName, setSelectedRepoName] = useState<string | null>(null)
@@ -57,6 +60,7 @@ export default function OrganizationSettings() {
 
         setCompanyName(data.companyName || data.name || "")
         setDomain(data.domain || "")
+        setIsEmailDomainRequired(data.isEmailDomainRequired || false)
         setDescription(data.description || "")
 
         setRepoOwner(data.repoOwner ?? null)
@@ -84,6 +88,7 @@ export default function OrganizationSettings() {
         body: JSON.stringify({
           companyName,
           domain,
+          isEmailDomainRequired,
           description,
         }),
       })
@@ -96,6 +101,7 @@ export default function OrganizationSettings() {
       const updated = await res.json()
       setCompanyName(updated.companyName ?? updated.name ?? "")
       setDomain(updated.domain ?? "")
+      setIsEmailDomainRequired(updated.isEmailDomainRequired ?? false)
       setDescription(updated.description ?? "")
       setRepoOwner(updated.repoOwner ?? null)
       setSelectedRepoName(updated.selectedRepoName ?? null)
@@ -239,7 +245,7 @@ export default function OrganizationSettings() {
   return (
     <div className="min-h-screen p-8">
       <h1 className="mb-8 text-4xl font-bold text-foreground text-gray-900 max-w-3xl">
-        Manage the organization's settings here
+        Manage the organization&#39;s settings here
       </h1>
 
       <div className="max-w-md">
@@ -269,6 +275,17 @@ export default function OrganizationSettings() {
                 className="h-11 bg-white text-gray-900"
               />
             </div>
+            <div className="space-y-2 flex-col item-center flex space-x-2">
+              <Label htmlFor="emailDomain" className="text-sm font-normal text-gray-900">
+                Force new users to use the email from organization&#39;s domain. {isEmailDomainRequired}
+              </Label>
+              <Switch id="emailDomain"
+                      className="data-[state=checked]:bg-cdmsa-primary w-50px"
+                      checked={isEmailDomainRequired}
+                      onClick={ () => setIsEmailDomainRequired(!isEmailDomainRequired)}
+              />
+            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm font-normal text-gray-900">
