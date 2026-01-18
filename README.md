@@ -1,24 +1,25 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
+## Requirements
 
-First, run the development server:
+- Docker and Docker Compose
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Configure .env, you can make a copy from `.env.example` or use this template:
+```
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_MICROSOFT_OAUTH_CLIENT_ID=""
 ```
 
+Only `NEXT_PUBLIC_MICROSOFT_OAUTH_CLIENT_ID` is optional. If you do not fill it, all the functionalities around Microsoft will be disabled (and the buttons will vanish).
+
+## Run
+
+Just do `docker compose up -d`
+
+By default, frontend is on port `3000` and backend `8080`.
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
 
